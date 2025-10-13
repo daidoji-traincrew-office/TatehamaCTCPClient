@@ -1,4 +1,4 @@
-using Dapplo.Microsoft.Extensions.Hosting.WinForms;
+ï»¿using Dapplo.Microsoft.Extensions.Hosting.WinForms;
 using OpenIddict.Client;
 using System.Diagnostics;
 using System.Drawing.Drawing2D;
@@ -14,12 +14,12 @@ namespace TatehamaCTCPClient.Forms {
         private OpenIddictClientService service;
 
         /// <summary>
-        /// ƒT[ƒoÚ‘±—p
+        /// ã‚µãƒ¼ãƒæ¥ç¶šç”¨
         /// </summary>
         private ServerCommunication? serverCommunication;
 
         /// <summary>
-        /// TIDManagerƒIƒuƒWƒFƒNƒg
+        /// TIDManagerã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ
         /// </summary>
         private readonly CTCPManager displayManager;
 
@@ -28,22 +28,22 @@ namespace TatehamaCTCPClient.Forms {
         public Panel Panel1 => panel1;
 
         /// <summary>
-        /// Å‘O–Ê•\¦‚Å‚ ‚é‚©
+        /// æœ€å‰é¢è¡¨ç¤ºã§ã‚ã‚‹ã‹
         /// </summary>
-        private bool topMostSetting = true;
+        private bool topMostSetting = false;
 
         /// <summary>
-        /// Šg‘å‹¾‚ğg—p‚µ‚Ä‚¢‚éó‘Ô‚Å‚ ‚é‚©
+        /// æ‹¡å¤§é¡ã‚’ä½¿ç”¨ã—ã¦ã„ã‚‹çŠ¶æ…‹ã§ã‚ã‚‹ã‹
         /// </summary>
         private bool usingMagnifyingGlass = false;
 
         /// <summary>
-        /// Šg‘å‹¾‚Ì’¼Œa
+        /// æ‹¡å¤§é¡ã®ç›´å¾„
         /// </summary>
         private int magnifyingGlassSize = 240;
 
         /// <summary>
-        /// •\¦‚³‚ê‚é‚Ì·‚ğ‘«‚·‘O
+        /// è¡¨ç¤ºã•ã‚Œã‚‹æ™‚åˆ»ã®æ™‚å·®ã‚’è¶³ã™å‰
         /// </summary>
         public DateTime Clock {
             get;
@@ -51,7 +51,7 @@ namespace TatehamaCTCPClient.Forms {
         }
 
         /// <summary>
-        /// Œ»À‚Ì
+        /// ç¾å®Ÿã®æ™‚åˆ»
         /// </summary>
         public DateTime RealTime {
             get;
@@ -59,7 +59,7 @@ namespace TatehamaCTCPClient.Forms {
         } = DateTime.Now;
 
         /// <summary>
-        /// Œ»À‚Æ‚Ì·
+        /// ç¾å®Ÿã¨ã®æ™‚å·®
         /// </summary>
         public TimeSpan TimeOffset {
             get;
@@ -67,12 +67,12 @@ namespace TatehamaCTCPClient.Forms {
         } = new(14, 0, 0);
 
         /// <summary>
-        /// ·‚ğ•\¦‚·‚é‚©i0‚Í•\¦‚¹‚¸‚»‚êˆÈŠO‚Í0‚Ü‚Å‚ÌƒJƒEƒ“ƒgƒ_ƒEƒ“j
+        /// æ™‚å·®ã‚’è¡¨ç¤ºã™ã‚‹ã‹ï¼ˆ0ã¯è¡¨ç¤ºã›ãšãã‚Œä»¥å¤–ã¯0ã¾ã§ã®ã‚«ã‚¦ãƒ³ãƒˆãƒ€ã‚¦ãƒ³ï¼‰
         /// </summary>
         private int showOffset = 0;
 
         /// <summary>
-        /// Šg‘å—¦i0–¢–‚ÍƒtƒBƒbƒg•\¦j
+        /// æ‹¡å¤§ç‡ï¼ˆ0æœªæº€ã¯ãƒ•ã‚£ãƒƒãƒˆè¡¨ç¤ºï¼‰
         /// </summary>
         public int CTCPScale {
             get;
@@ -89,14 +89,14 @@ namespace TatehamaCTCPClient.Forms {
         } = false;
 
         /// <summary>
-        /// ƒ}ƒEƒXˆÊ’uiƒhƒ‰ƒbƒO‘€ì‘Î‰—pj
+        /// ãƒã‚¦ã‚¹ä½ç½®ï¼ˆãƒ‰ãƒ©ãƒƒã‚°æ“ä½œå¯¾å¿œç”¨ï¼‰
         /// </summary>
         private Point mouseLoc = Point.Empty;
 
         private Cursor defaultCursor = Cursors.SizeAll;
 
         /// <summary>
-        /// WASDƒL[‚È‚Çg—p‚ÌˆÚ“®—Ê
+        /// WASDã‚­ãƒ¼ãªã©ä½¿ç”¨æ™‚ã®ç§»å‹•é‡
         /// </summary>
         private int scrollDelta = 15;
 
@@ -104,10 +104,10 @@ namespace TatehamaCTCPClient.Forms {
             get => labelStatus.Text;
             set {
                 if (serverCommunication != null) {
-                    value = $"StatusF{(ServerAddress.SignalAddress.Contains("dev") ? "Dev" : "Prod")}ƒT[ƒo {value}";
+                    value = $"Statusï¼š{(ServerAddress.SignalAddress.Contains("dev") ? "Dev" : "Prod")}ã‚µãƒ¼ãƒ {value}";
                 }
                 else {
-                    value = $"StatusF{value}";
+                    value = $"Statusï¼š{value}";
                 }
                 if (InvokeRequired) {
                     Invoke(() => labelStatus.Text = value);
@@ -157,7 +157,7 @@ namespace TatehamaCTCPClient.Forms {
         public CTCPWindow(OpenIddictClientService service) {
             this.service = service;
             InitializeComponent();
-            LogManager.AddInfoLog("‹N“®");
+            LogManager.AddInfoLog("èµ·å‹•");
 
             pictureBox2.Parent = pictureBox1;
             pictureBox3.Parent = pictureBox1;
@@ -200,11 +200,11 @@ namespace TatehamaCTCPClient.Forms {
 
             if (CTCPScale > 0) {
                 labelScale.ForeColor = Color.White;
-                labelScale.Text = $"ScaleF{CTCPScale}%";
+                labelScale.Text = $"Scaleï¼š{CTCPScale}%";
             }
             else {
                 labelScale.ForeColor = Color.LightGreen;
-                labelScale.Text = $"ScaleF{(int)((double)pictureBox1.Image.Width / displayManager.OriginalBitmap.Width * 100 + 0.5)}%";
+                labelScale.Text = $"Scaleï¼š{(int)((double)pictureBox1.Image.Width / displayManager.OriginalBitmap.Width * 100 + 0.5)}%";
             }
 
 
@@ -220,7 +220,7 @@ namespace TatehamaCTCPClient.Forms {
                 menuItemQuickTimeSetting.DropDownItems.Add(menu);
                 menu.Name = $"menuItemHour{time}";
                 menu.Size = new Size(110, 22);
-                menu.Text = $"{time}‘ä";
+                menu.Text = $"{time}æ™‚å°";
                 menu.Click += (sender, e) => { SetHourQuick(time); };
             }
         }
@@ -245,18 +245,18 @@ namespace TatehamaCTCPClient.Forms {
 
             SetTopMost(topMostSetting);
 
-            //ƒfƒtƒHƒ‹ƒg‚ÌƒT[ƒo‚Ö‚ÌÚ‘±ˆ—
+            //ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã®ã‚µãƒ¼ãƒã¸ã®æ¥ç¶šå‡¦ç†
             /*serverCommunication = new(this, service);
             serverCommunication.DataUpdated += UpdateServerData;
-            LogManager.AddInfoLog($"{(ServerAddress.SignalAddress.Contains("dev") ? "Dev" : "Prod")}ƒT[ƒo‚ÉÚ‘±‚µ‚Ü‚·");
+            LogManager.AddInfoLog($"{(ServerAddress.SignalAddress.Contains("dev") ? "Dev" : "Prod")}ã‚µãƒ¼ãƒã«æ¥ç¶šã—ã¾ã™");
             await TryConnectServer();*/
         }
 
 
         /// <summary>
-        /// ‰^“]‰ïƒT[ƒo‚ÆÚ‘±‚·‚é
+        /// é‹è»¢ä¼šã‚µãƒ¼ãƒã¨æ¥ç¶šã™ã‚‹
         /// </summary>
-        /// <param name="url">Ú‘±æ‚ÌURL</param>
+        /// <param name="url">æ¥ç¶šå…ˆã®URL</param>
         /// <returns></returns>
         private async Task TryConnectServer() {
             if (serverCommunication != null) {
@@ -266,7 +266,7 @@ namespace TatehamaCTCPClient.Forms {
 
 
         /// <summary>
-        /// ƒT[ƒo‚©‚ç‚Ìƒf[ƒ^‚ªXV‚³‚ê‚½Û‚ÉŒÄ‚Î‚ê‚é
+        /// ã‚µãƒ¼ãƒã‹ã‚‰ã®ãƒ‡ãƒ¼ã‚¿ãŒæ›´æ–°ã•ã‚ŒãŸéš›ã«å‘¼ã°ã‚Œã‚‹
         /// </summary>
         /// <param name="tcData"></param>
         private void UpdateServerData(DataToCTCP? data) {
@@ -383,15 +383,15 @@ namespace TatehamaCTCPClient.Forms {
             if (delaySeconds > 10) {
                 if (!ServerCommunication.Error) {
                     ServerCommunication.Error = true;
-                    LogManager.AddWarningLog("ƒT[ƒo‚©‚ç‚ÌóM‚ª10•bˆÈã‚ ‚è‚Ü‚¹‚ñ");
-                    LabelStatusText = $"ƒf[ƒ^óM•s”\(ÅIóMF{updatedTime?.ToString("H:mm:ss")})";
-                    Debug.WriteLine($"ƒf[ƒ^óM•s”\: {delaySeconds}");
+                    LogManager.AddWarningLog("ã‚µãƒ¼ãƒã‹ã‚‰ã®å—ä¿¡ãŒ10ç§’ä»¥ä¸Šã‚ã‚Šã¾ã›ã‚“");
+                    LabelStatusText = $"ãƒ‡ãƒ¼ã‚¿å—ä¿¡ä¸èƒ½(æœ€çµ‚å—ä¿¡ï¼š{updatedTime?.ToString("H:mm:ss")})";
+                    Debug.WriteLine($"ãƒ‡ãƒ¼ã‚¿å—ä¿¡ä¸èƒ½: {delaySeconds}");
                     if (!Silent) {
                         TaskDialog.ShowDialog(new TaskDialogPage {
-                            Caption = "ƒf[ƒ^óM•s”\ | TID - ƒ_ƒCƒ„‰^“]‰ï",
-                            Heading = "ƒf[ƒ^óM•s”\",
+                            Caption = "ãƒ‡ãƒ¼ã‚¿å—ä¿¡ä¸èƒ½ | TID - ãƒ€ã‚¤ãƒ¤é‹è»¢ä¼š",
+                            Heading = "ãƒ‡ãƒ¼ã‚¿å—ä¿¡ä¸èƒ½",
                             Icon = TaskDialogIcon.Error,
-                            Text = "ƒT[ƒo‘¤‚©‚ç‚Ìƒf[ƒ^óM‚ª10•bˆÈã‚ ‚è‚Ü‚¹‚ñ‚Å‚µ‚½B\n•œ‹Œ‚ğ‚İ‚Ü‚·‚ªA‚µ‚Î‚ç‚­Œo‚Á‚Ä‚à•œ‹Œ‚µ‚È‚¢ê‡‚ÍƒAƒvƒŠƒP[ƒVƒ‡ƒ“‚ÌÄ‹N“®‚ğ‚¨‚·‚·‚ß‚µ‚Ü‚·B"
+                            Text = "ã‚µãƒ¼ãƒå´ã‹ã‚‰ã®ãƒ‡ãƒ¼ã‚¿å—ä¿¡ãŒ10ç§’ä»¥ä¸Šã‚ã‚Šã¾ã›ã‚“ã§ã—ãŸã€‚\nå¾©æ—§ã‚’è©¦ã¿ã¾ã™ãŒã€ã—ã°ã‚‰ãçµŒã£ã¦ã‚‚å¾©æ—§ã—ãªã„å ´åˆã¯ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³ã®å†èµ·å‹•ã‚’ãŠã™ã™ã‚ã—ã¾ã™ã€‚"
                         });
                     }
                     else {
@@ -400,11 +400,11 @@ namespace TatehamaCTCPClient.Forms {
                 }
             }
             else if (delaySeconds > 1) {
-                if (!LabelStatusText.Contains("ÅIóM")) {
-                    LogManager.AddWarningLog("ƒT[ƒo‚©‚ç‚ÌóM‚ª1•bˆÈã‚ ‚è‚Ü‚¹‚ñ");
+                if (!LabelStatusText.Contains("æœ€çµ‚å—ä¿¡")) {
+                    LogManager.AddWarningLog("ã‚µãƒ¼ãƒã‹ã‚‰ã®å—ä¿¡ãŒ1ç§’ä»¥ä¸Šã‚ã‚Šã¾ã›ã‚“");
                 }
-                LabelStatusText = $"ƒf[ƒ^³íóM(ÅIóMF{updatedTime?.ToString("H:mm:ss")})";
-                Debug.WriteLine($"ƒf[ƒ^óM•s”\: {delaySeconds}");
+                LabelStatusText = $"ãƒ‡ãƒ¼ã‚¿æ­£å¸¸å—ä¿¡(æœ€çµ‚å—ä¿¡ï¼š{updatedTime?.ToString("H:mm:ss")})";
+                Debug.WriteLine($"ãƒ‡ãƒ¼ã‚¿å—ä¿¡ä¸èƒ½: {delaySeconds}");
             }
         }
 
@@ -476,7 +476,7 @@ namespace TatehamaCTCPClient.Forms {
         private void SetTopMost(bool topMost) {
             TopMost = topMost;
             menuItemTopMost.CheckState = topMost ? CheckState.Checked : CheckState.Unchecked;
-            labelTopMost.Text = $"Å‘O–ÊF{(topMost ? "ON" : "OFF")}";
+            labelTopMost.Text = $"æœ€å‰é¢ï¼š{(topMost ? "ON" : "OFF")}";
             labelTopMost.ForeColor = topMost ? Color.Yellow : Color.Gray;
         }
 
@@ -516,7 +516,7 @@ namespace TatehamaCTCPClient.Forms {
         public void SetSilent(bool silent) {
             Silent = silent;
             menuItemSilent.CheckState = silent ? CheckState.Checked : CheckState.Unchecked;
-            labelSilent.Text = $"ƒTƒCƒŒƒ“ƒgF{(silent ? "ON" : "OFF")}";
+            labelSilent.Text = $"ã‚µã‚¤ãƒ¬ãƒ³ãƒˆï¼š{(silent ? "ON" : "OFF")}";
             labelSilent.ForeColor = silent ? Color.Gray : Color.White;
             if (displayManager != null) {
                 foreach (var w in displayManager.SubWindows) {
@@ -574,7 +574,7 @@ namespace TatehamaCTCPClient.Forms {
             if (scale > max) {
                 scale = max;
             }
-            LogManager.AddInfoLog($"Šg‘å—¦•ÏXF{(scale > 0 ? $"{scale}%" : "fit")}");
+            LogManager.AddInfoLog($"æ‹¡å¤§ç‡å¤‰æ›´ï¼š{(scale > 0 ? $"{scale}%" : "fit")}");
 
             foreach (var k in scaleMenuDict.Keys) {
                 scaleMenuDict[k].CheckState = k == scale ? CheckState.Indeterminate : CheckState.Unchecked;
@@ -591,17 +591,17 @@ namespace TatehamaCTCPClient.Forms {
             displayManager.ChangeScale();
             if (scale > 0) {
                 labelScale.ForeColor = Color.White;
-                labelScale.Text = $"ScaleF{scale}%";
+                labelScale.Text = $"Scaleï¼š{scale}%";
             }
             else {
                 labelScale.ForeColor = Color.LightGreen;
-                labelScale.Text = $"ScaleF{(int)((double)pictureBox1.Image.Width / displayManager.OriginalBitmap.Width * 100 + 0.5)}%";
+                labelScale.Text = $"Scaleï¼š{(int)((double)pictureBox1.Image.Width / displayManager.OriginalBitmap.Width * 100 + 0.5)}%";
             }
             ChangeDefaultCursor();
         }
 
         public void SetFixedScale(bool value) {
-            LogManager.AddInfoLog($"Šg‘å—¦•ÏXF{(value ? "”{—¦ŒÅ’è" : "fit")}");
+            LogManager.AddInfoLog($"æ‹¡å¤§ç‡å¤‰æ›´ï¼š{(value ? "å€ç‡å›ºå®š" : "fit")}");
 
             foreach (var k in scaleMenuDict.Keys) {
                 scaleMenuDict[k].CheckState = CheckState.Unchecked;
@@ -621,7 +621,7 @@ namespace TatehamaCTCPClient.Forms {
                 labelScale.ForeColor = Color.LightGreen;
                 displayManager.ChangeScale();
             }
-            labelScale.Text = $"ScaleF{(int)((double)pictureBox1.Image.Width / displayManager.OriginalBitmap.Width * 100 + 0.5)}%";
+            labelScale.Text = $"Scaleï¼š{(int)((double)pictureBox1.Image.Width / displayManager.OriginalBitmap.Width * 100 + 0.5)}%";
             ChangeDefaultCursor();
         }
 
@@ -808,7 +808,7 @@ namespace TatehamaCTCPClient.Forms {
                 if (WindowState != FormWindowState.Minimized) {
                     if (CTCPScale == -1 && !FixedScale) {
                         displayManager.ChangeScale();
-                        labelScale.Text = $"ScaleF{(int)((double)pictureBox1.Image.Width / displayManager.OriginalBitmap.Width * 100 + 0.5)}%";
+                        labelScale.Text = $"Scaleï¼š{(int)((double)pictureBox1.Image.Width / displayManager.OriginalBitmap.Width * 100 + 0.5)}%";
                     }
                     else {
                         ChangeDefaultCursor();
@@ -821,12 +821,12 @@ namespace TatehamaCTCPClient.Forms {
         private void CTCPWindow_SizeChanged(object sender, EventArgs e) {
             if (WindowState == FormWindowState.Minimized) {
                 if (!windowMinimized) {
-                    LogManager.AddInfoLog("ƒEƒBƒ“ƒhƒE‚ªÅ¬‰»‚³‚ê‚Ü‚µ‚½");
+                    LogManager.AddInfoLog("ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ãŒæœ€å°åŒ–ã•ã‚Œã¾ã—ãŸ");
                     windowMinimized = true;
                 }
             }
             else if (windowMinimized) {
-                LogManager.AddInfoLog("ƒEƒBƒ“ƒhƒE‚ÌÅ¬‰»‚ª‰ğœ‚³‚ê‚Ü‚µ‚½");
+                LogManager.AddInfoLog("ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã®æœ€å°åŒ–ãŒè§£é™¤ã•ã‚Œã¾ã—ãŸ");
                 windowMinimized = false;
             }
         }
@@ -839,11 +839,11 @@ namespace TatehamaCTCPClient.Forms {
         private void CTCPWindow_Closing(object sender, EventArgs e) {
             if (LogManager.Output && LogManager.NeededWarning) {
                 TaskDialog.ShowDialog(new TaskDialogPage {
-                    Caption = "ƒGƒ‰[ƒƒOo—Í | TID - ƒ_ƒCƒ„‰^“]‰ï",
-                    Heading = "ƒGƒ‰[ƒƒOo—Í",
+                    Caption = "ã‚¨ãƒ©ãƒ¼ãƒ­ã‚°å‡ºåŠ› | TID - ãƒ€ã‚¤ãƒ¤é‹è»¢ä¼š",
+                    Heading = "ã‚¨ãƒ©ãƒ¼ãƒ­ã‚°å‡ºåŠ›",
                     Icon = TaskDialogIcon.Information,
                     Text =
-                        $"ƒGƒ‰[ƒƒO‚ªo—Í‚³‚ê‚Ü‚µ‚½B\n–{ƒ\ƒtƒg‚Ì»ì’S“–Ò‚É‚¨–â‚¢‡‚í‚¹‚Ì‚¤‚¦A\n•K—v‚Èê‡‚ÍErrorLog.txt‚ğ‚¨‘—‚è‚­‚¾‚³‚¢B\niErrorLog.txt‚ÍŸ‰ñ‹N“®Œã‚Éíœ‚³‚ê‚éê‡‚ª‚ ‚è‚Ü‚·j"
+                        $"ã‚¨ãƒ©ãƒ¼ãƒ­ã‚°ãŒå‡ºåŠ›ã•ã‚Œã¾ã—ãŸã€‚\næœ¬ã‚½ãƒ•ãƒˆã®è£½ä½œæ‹…å½“è€…ã«ãŠå•ã„åˆã‚ã›ã®ã†ãˆã€\nå¿…è¦ãªå ´åˆã¯ErrorLog.txtã‚’ãŠé€ã‚Šãã ã•ã„ã€‚\nï¼ˆErrorLog.txtã¯æ¬¡å›èµ·å‹•å¾Œã«å‰Šé™¤ã•ã‚Œã‚‹å ´åˆãŒã‚ã‚Šã¾ã™ï¼‰"
                 });
             }
         }
