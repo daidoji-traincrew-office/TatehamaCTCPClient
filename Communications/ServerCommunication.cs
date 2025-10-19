@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using TatehamaCTCPClient.Manager;
 using TatehamaCTCPClient.Models;
 using TatehamaCTCPClient.Forms;
+using Microsoft.EntityFrameworkCore.Migrations.Operations;
 
 namespace TatehamaCTCPClient.Communications {
     public class ServerCommunication : IAsyncDisposable {
@@ -495,6 +496,48 @@ namespace TatehamaCTCPClient.Communications {
                         _window.PlayWarningSound();
                     }
                 }
+            }
+        }
+
+        /// <summary>
+        /// サーバーへ物理てこイベント送信用データをリクエスト
+        /// </summary>
+        /// <param name="leverData"></param>
+        /// <returns></returns>
+        public async Task SendLeverEventDataRequestToServerAsync(InterlockingLeverData leverData) {
+            if(_connection == null) {
+                return;
+            }
+            try {
+                // サーバーメソッドの呼び出し
+                var data = await _connection.InvokeAsync<InterlockingLeverData>(
+                    "SetPhysicalLeverData", leverData);
+                try {
+                    if (data != null) {
+                        // 変更があれば更新
+                        /*var lever = _dataManager.DataFromServer
+                            .PhysicalLevers.FirstOrDefault(l => l.Name == data.Name);
+                        foreach (var property in data.GetType().GetProperties()) {
+                            var newValue = property.GetValue(data);
+                            var oldValue = property.GetValue(lever);
+                            if (newValue != null && !newValue.Equals(oldValue)) {
+                                property.SetValue(lever, newValue);
+                            }
+                        }*/
+
+                        // コントロール更新処理
+                        /*_dataUpdateViewModel.UpdateControl(_dataManager.DataFromServer);*/
+                    }
+                    else {
+                        Debug.WriteLine("Failed to receive Data.");
+                    }
+                }
+                catch (Exception ex) {
+                    Debug.WriteLine($"Error server receiving: {ex.Message}{ex.StackTrace}");
+                }
+            }
+            catch (Exception exception) {
+                Debug.WriteLine($"Failed to send event data to server: {exception.Message}");
             }
         }
     }

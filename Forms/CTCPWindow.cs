@@ -154,6 +154,8 @@ namespace TatehamaCTCPClient.Forms {
 
         public bool Silent { get; private set; } = false;
 
+        public readonly Panel buttonPanel = new Panel();
+
         public CTCPWindow(OpenIddictClientService service) {
             this.service = service;
             InitializeComponent();
@@ -223,6 +225,14 @@ namespace TatehamaCTCPClient.Forms {
                 menu.Text = $"{time}時台";
                 menu.Click += (sender, e) => { SetHourQuick(time); };
             }
+
+            panel1.Controls.Add(buttonPanel);
+            buttonPanel.Location = new Point(99, 62);
+            buttonPanel.Name = "p";
+            buttonPanel.Size = new Size(29, 19);
+            buttonPanel.Parent = pictureBox1;
+            buttonPanel.Cursor = Cursors.Hand;
+            buttonPanel.BackColor = Color.Black;
         }
 
         private void AddScale(int scale) {
@@ -1043,7 +1053,7 @@ namespace TatehamaCTCPClient.Forms {
                 var start = selectionStarting.Value;
                 var end = e.Location;
                 var center = new Point((start.X + end.X) / 2 - end.X + Cursor.Position.X, (start.Y + end.Y) / 2 - end.Y + Cursor.Position.Y);
-                end = new Point(end.X > 16 ? (start.X < pictureBox1.Width && end.X < pictureBox1.Width - 16 ? end.X : pictureBox1.Width) : (start.X > 0 ? 0 : end.X), end.Y > 16 ? (start.Y < pictureBox1.Height && end.Y < pictureBox1.Height - 16 ? end.Y : pictureBox1.Height) : (start.Y > 0 ? 0 : end.Y));
+                end = new Point(end.X > 16 ? (start.X >= pictureBox1.Width || end.X < pictureBox1.Width - 16 ? end.X : pictureBox1.Width) : (start.X > 0 ? 0 : end.X), end.Y > 16 ? (start.Y >= pictureBox1.Height || end.Y < pictureBox1.Height - 16 ? end.Y : pictureBox1.Height) : (start.Y > 0 ? 0 : end.Y));
                 var startOrig = ConvertPointToOriginal(start);
                 var endOrig = ConvertPointToOriginal(end);
                 var pos = new Point(Math.Min(start.X, end.X), Math.Min(start.Y, end.Y));
@@ -1051,8 +1061,6 @@ namespace TatehamaCTCPClient.Forms {
                 var sizeOrig = new Size(Math.Abs(startOrig.X - endOrig.X), Math.Abs(startOrig.Y - endOrig.Y));
                 if (size.Width > 1 && size.Height > 1) {
                     lock (pictureBox3) {
-                        pictureBox3.Location = pos;
-                        pictureBox3.Size = size;
                         var screenSize = Screen.FromControl(this).Bounds;
                         screenSize = new Rectangle(screenSize.Location, new Size(screenSize.Width + 20, screenSize.Height + 20));
                         var old = pictureBox3.Image;
@@ -1061,6 +1069,8 @@ namespace TatehamaCTCPClient.Forms {
                         g.Clear(Color.Transparent);
                         g.DrawRectangle(sizeOrig.Width > 120 && sizeOrig.Width <= screenSize.Width && sizeOrig.Height > 100 && sizeOrig.Height <= screenSize.Height ? Pens.LimeGreen : Pens.DarkRed, 0, 0, size.Width - 1, size.Height - 1);
                         pictureBox3.Image = b;
+                        pictureBox3.Location = pos;
+                        pictureBox3.Size = size;
                         old?.Dispose();
                     }
                 }
@@ -1101,7 +1111,7 @@ namespace TatehamaCTCPClient.Forms {
                     }
                     var end = e.Location;
                     var center = new Point((start.X + end.X) / 2 - end.X + Cursor.Position.X, (start.Y + end.Y) / 2 - end.Y + Cursor.Position.Y);
-                    end = new Point(end.X > 16 ? (start.X < pictureBox1.Width && end.X < pictureBox1.Width - 16 ? end.X : pictureBox1.Width) : (start.X > 0 ? 0 : end.X), end.Y > 16 ? (start.Y < pictureBox1.Height && end.Y < pictureBox1.Height - 16 ? end.Y : pictureBox1.Height) : (start.Y > 0 ? 0 : end.Y));
+                    end = new Point(end.X > 16 ? (start.X >= pictureBox1.Width || end.X < pictureBox1.Width - 16 ? end.X : pictureBox1.Width) : (start.X > 0 ? 0 : end.X), end.Y > 16 ? (start.Y >= pictureBox1.Height || end.Y < pictureBox1.Height - 16 ? end.Y : pictureBox1.Height) : (start.Y > 0 ? 0 : end.Y));
                     start = ConvertPointToOriginal(start);
                     end = ConvertPointToOriginal(end);
                     var p = new Point(Math.Min(start.X, end.X), Math.Min(start.Y, end.Y));
@@ -1159,23 +1169,39 @@ namespace TatehamaCTCPClient.Forms {
             }
         }
 
-        private Point ConvertPointToOriginal(int x, int y) {
+        public Point ConvertPointToOriginal(int x, int y) {
             return new Point(x * displayManager.OriginalBitmap.Width / pictureBox1.Width, y * displayManager.OriginalBitmap.Height / pictureBox1.Height);
         }
 
-        private Point ConvertPointToOriginal(Point p) {
+        public Point ConvertPointToOriginal(Point p) {
             return ConvertPointToOriginal(p.X, p.Y);
         }
 
-        private Point ConvertPointToScreen(int x, int y) {
+        public Point ConvertPointToScreen(int x, int y) {
             return new Point(x * pictureBox1.Width / displayManager.OriginalBitmap.Width, y * pictureBox1.Height / displayManager.OriginalBitmap.Height);
         }
 
-        private Point ConvertPointToScreen(Point p) {
+        public Point ConvertPointToScreen(Point p) {
             return ConvertPointToScreen(p.X, p.Y);
         }
 
-        private bool IsInArea(Point point, int areaX, int areaY, Size areaSize, int padding = 0) {
+        public Size ConvertSizeToOriginal(int x, int y) {
+            return new Size(x * displayManager.OriginalBitmap.Width / pictureBox1.Width, y * displayManager.OriginalBitmap.Height / pictureBox1.Height);
+        }
+
+        public Size ConvertSizeToOriginal(Size s) {
+            return ConvertSizeToOriginal(s.Width, s.Height);
+        }
+
+        public Size ConvertSizeToScreen(int x, int y) {
+            return new Size(x * pictureBox1.Width / displayManager.OriginalBitmap.Width, y * pictureBox1.Height / displayManager.OriginalBitmap.Height);
+        }
+
+        public Size ConvertSizeToScreen(Size s) {
+            return ConvertSizeToScreen(s.Width, s.Height);
+        }
+
+        public bool IsInArea(Point point, int areaX, int areaY, Size areaSize, int padding = 0) {
             var p = ConvertPointToOriginal(point);
             return p.X >= areaX - padding && p.X < (areaX + areaSize.Width + padding) && p.Y >= areaY - padding && p.Y < (areaY + areaSize.Height + padding);
         }

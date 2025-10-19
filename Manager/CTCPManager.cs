@@ -2,11 +2,15 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Drawing.Imaging;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 using TatehamaCTCPClient.Communications;
 using TatehamaCTCPClient.Forms;
+using TatehamaCTCPClient.Models;
+using TatehamaCTCPClient.Settings;
 
 namespace TatehamaCTCPClient.Manager {
     public class CTCPManager {
@@ -20,6 +24,9 @@ namespace TatehamaCTCPClient.Manager {
         /// </summary>
         private CTCPWindow window;
 
+
+        private readonly List<StationSetting> stationSettings;
+
         /// <summary>
         /// 起動時背景画像
         /// </summary>
@@ -31,9 +38,28 @@ namespace TatehamaCTCPClient.Manager {
         private Image backgroundImage;
 
         /// <summary>
+        /// ボタン画像
+        /// </summary>
+        private Image buttonsImage;
+
+        /// <summary>
         /// TID画像の元画像（リサイズ前）
         /// </summary>
         private Bitmap originalBitmap;
+
+        private CharacterSet middleCharSet;
+
+        private CharacterSet smallCharSet;
+
+        private CharacterSet xsmallCharSet;
+
+
+
+
+
+
+
+
 
         private readonly List<SubWindow> subWindows = [];
 
@@ -53,6 +79,8 @@ namespace TatehamaCTCPClient.Manager {
         /// </summary>
         public Bitmap OriginalBitmap => originalBitmap;
 
+        public ReadOnlyCollection<StationSetting> StationSettings { get; init; }
+
         public ReadOnlyCollection<SubWindow> SubWindows { get; init; }
 
         public CTCPWindow Window => window;
@@ -71,13 +99,18 @@ namespace TatehamaCTCPClient.Manager {
             this.pictureBox = pictureBox;
             this.window = window;
 
+            stationSettings = LoadStationSetting("station.tsv");
 
-
-
+            StationSettings = stationSettings.AsReadOnly();
             SubWindows = subWindows.AsReadOnly();
 
             backgroundDefault = Image.FromFile(".\\png\\Background-1.png");
             backgroundImage = Image.FromFile(".\\png\\Background.png");
+            buttonsImage = Image.FromFile(".\\png\\buttons.png");
+
+            middleCharSet = new CharacterSet(".\\tsv\\char_middle.tsv");
+            smallCharSet = new CharacterSet(".\\tsv\\char_small.tsv");
+            xsmallCharSet = new CharacterSet(".\\tsv\\char_xsmall.tsv");
 
             window.Panel1.Size = new Size(window.ClientSize.Width, window.ClientSize.Height - window.Panel1.Location.Y);
 
@@ -109,10 +142,52 @@ namespace TatehamaCTCPClient.Manager {
 
             window.Size = new Size(Math.Max(backgroundDefault.Width * window.CTCPScale / 100, backgroundDefault.Width) + window.Size.Width - window.ClientSize.Width, Math.Max(backgroundDefault.Height * window.CTCPScale / 100, backgroundDefault.Height) + window.Panel1.Location.Y + window.Size.Height - window.ClientSize.Height);
 
+            // 試験表示
+            {
+                using var g = Graphics.FromImage(pictureBox.Image);
+                foreach(var s in stationSettings) {
+                    g.DrawString($"{s.Number} {s.Name} 集中", new Font("ＭＳ ゴシック", 16, GraphicsUnit.Pixel), Brushes.White, s.Location.X, s.Location.Y);
+                }
+
+
+                DrawSmallText(g, "2R", 104, 102, 19, 5, new());
+                DrawSmallText(g, "5LA", 204, 92, 19, 5, new());
+                DrawSmallText(g, "15L13", 515, 191, 19, 5, new());
+
+                var ia = new ImageAttributes();
+                ia.SetRemapTable([new ColorMap { OldColor = Color.White, NewColor = Color.FromArgb(0x38, 0x46, 0x72) }]);
+                middleCharSet.DrawText(g, "TA", 795, 225, 19, 11, ia);
+            }
 
             originalBitmap = new Bitmap(pictureBox.Image);
             ChangeScale();
             window.DetectResize = true;
+        }
+
+        private List<StationSetting> LoadStationSetting(string fileName) {
+            List<StationSetting> list = [];
+            try {
+                using var sr = new StreamReader($".\\tsv\\{fileName}");
+                sr.ReadLine();
+                var line = sr.ReadLine();
+                while (line != null) {
+                    if (line.StartsWith('#')) {
+                        line = sr.ReadLine();
+                        continue;
+                    }
+                    var texts = line.Split('\t');
+                    line = sr.ReadLine();
+
+                    if (texts.Any(t => t.Length <= 0) || texts.Length < 5) {
+                        continue;
+                    }
+
+                    list.Add(new StationSetting(texts[0], texts[1], texts[2], new Point(int.Parse(texts[3]), int.Parse(texts[4]))));
+                }
+            }
+            catch {
+            }
+            return list;
         }
 
         public void ChangeScale() {
@@ -143,6 +218,8 @@ namespace TatehamaCTCPClient.Manager {
                             }
                             oldPic.Dispose();
                         }
+                        window.buttonPanel.Location = ConvertPointToScreen(99, 62);
+                        window.buttonPanel.Size = ConvertSizeToScreen(29, 19);
                     }
             }
             catch (Exception e) {
@@ -208,7 +285,7 @@ namespace TatehamaCTCPClient.Manager {
             lock (originalBitmap) {
                 var i = new Bitmap(originalBitmap);
                 using (var g = Graphics.FromImage(i)) {
-                    g.DrawString((window.Clock + window.TimeOffset).ToString("H:mm:ss"), new Font("ＭＳ ゴシック", 9), Brushes.White, originalBitmap.Width - 51, 0);
+                    g.DrawString((window.Clock + window.TimeOffset).ToString("H:mm:ss"), new Font("ＭＳ ゴシック", 12, GraphicsUnit.Pixel), Brushes.White, originalBitmap.Width - 51, 0);
                 }
                 Clipboard.SetImage(i);
                 i.Dispose();
@@ -222,7 +299,7 @@ namespace TatehamaCTCPClient.Manager {
                 using (var g = Graphics.FromImage(i)) {
                     g.Clear(Color.FromArgb(10, 10, 10));
                     g.DrawImage(originalBitmap, new Rectangle(0, 13, width, height), x, y, width, height, GraphicsUnit.Pixel);
-                    g.DrawString((window.Clock + window.TimeOffset).ToString("H:mm:ss"), new Font("ＭＳ ゴシック", 9), Brushes.White, width - 51, 0);
+                    g.DrawString((window.Clock + window.TimeOffset).ToString("H:mm:ss"), new Font("ＭＳ ゴシック", 12, GraphicsUnit.Pixel), Brushes.White, width - 51, 0);
                 }
                 Clipboard.SetImage(i);
                 i.Dispose();
@@ -251,6 +328,51 @@ namespace TatehamaCTCPClient.Manager {
                     sw.SetClock(time);
                 }
             }
+        }
+
+        public Point ConvertPointToOriginal(int x, int y) {
+            return new Point(x * originalBitmap.Width / pictureBox.Width, y * originalBitmap.Height / pictureBox.Height);
+        }
+
+        public Point ConvertPointToOriginal(Point p) {
+            return ConvertPointToOriginal(p.X, p.Y);
+        }
+
+        public Point ConvertPointToScreen(int x, int y) {
+            return new Point(x * pictureBox.Width / originalBitmap.Width, y * pictureBox.Height / originalBitmap.Height);
+        }
+
+        public Point ConvertPointToScreen(Point p) {
+            return ConvertPointToScreen(p.X, p.Y);
+        }
+
+        public Size ConvertSizeToOriginal(int x, int y) {
+            return new Size(x * originalBitmap.Width / pictureBox.Width, y * originalBitmap.Height / pictureBox.Height);
+        }
+
+        public Size ConvertSizeToOriginal(Size s) {
+            return ConvertSizeToOriginal(s.Width, s.Height);
+        }
+
+        public Size ConvertSizeToScreen(int x, int y) {
+            return new Size(x * pictureBox.Width / originalBitmap.Width, y * pictureBox.Height / originalBitmap.Height);
+        }
+
+        public Size ConvertSizeToScreen(Size s) {
+            return ConvertSizeToScreen(s.Width, s.Height);
+        }
+
+        public bool IsInArea(Point point, int areaX, int areaY, Size areaSize, int padding = 0) {
+            var p = ConvertPointToOriginal(point);
+            return p.X >= areaX - padding && p.X < (areaX + areaSize.Width + padding) && p.Y >= areaY - padding && p.Y < (areaY + areaSize.Height + padding);
+        }
+
+        public bool DrawText(Graphics g, string text, int x, int y, int width, int height, ImageAttributes ia, ContentAlignment align = ContentAlignment.MiddleCenter) {
+            return middleCharSet.DrawText(g, text, x, y, width, height, ia, align) || smallCharSet.DrawText(g, text, x, y, width, height, ia, align) || xsmallCharSet.DrawText(g, text, x, y, width, height, ia, align);
+        }
+
+        public bool DrawSmallText(Graphics g, string text, int x, int y, int width, int height, ImageAttributes ia, ContentAlignment align = ContentAlignment.MiddleCenter) {
+            return smallCharSet.DrawText(g, text, x, y, width, height, ia, align) || xsmallCharSet.DrawText(g, text, x, y, width, height, ia, align);
         }
     }
 }
