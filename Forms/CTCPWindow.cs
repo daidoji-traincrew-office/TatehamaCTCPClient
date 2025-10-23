@@ -131,6 +131,8 @@ namespace TatehamaCTCPClient.Forms {
 
         private bool windowMinimized = false;
 
+        private bool resized = false;
+
         private Point? selectionStarting = null;
 
         public int MarkupType {
@@ -800,6 +802,10 @@ namespace TatehamaCTCPClient.Forms {
                     }
                 }
             }
+            if (resized && (mod & Keys.Control) != Keys.Control) {
+                resized = false;
+                displayManager.RelocateButtons();
+            }
 
         }
 
@@ -808,7 +814,8 @@ namespace TatehamaCTCPClient.Forms {
                 DetectResize = false;
                 if (WindowState != FormWindowState.Minimized) {
                     if (CTCPScale == -1 && !FixedScale) {
-                        displayManager.ChangeScale();
+                        displayManager.ChangeScale(false);
+                        resized = true;
                         labelScale.Text = $"Scale：{(int)((double)pictureBox1.Image.Width / displayManager.OriginalBitmap.Width * 100 + 0.5)}%";
                     }
                     else {
@@ -816,6 +823,13 @@ namespace TatehamaCTCPClient.Forms {
                     }
                 }
                 DetectResize = true;
+            }
+        }
+
+        private void CTCPWindow_ResizeEnd(object sender, EventArgs e) {
+            if (displayManager != null) {
+                resized = false;
+                displayManager.RelocateButtons();
             }
         }
 

@@ -175,7 +175,7 @@ namespace TatehamaCTCPClient.Manager {
                     p.Size = b.Type.Size;
                     p.Parent = pictureBox;
                     p.Cursor = Cursors.Hand;
-                    p.BackColor = Color.Transparent;
+                    p.BackColor = Color.Black;
                     buttonPanels.Add(b.Name, p);
                 }
             }
@@ -265,7 +265,7 @@ namespace TatehamaCTCPClient.Manager {
             return list;
         }
 
-        public void ChangeScale() {
+        public void ChangeScale(bool relocateButtons = true) {
 
             try {
                 PrepareChangeScale();
@@ -293,11 +293,8 @@ namespace TatehamaCTCPClient.Manager {
                             }
                             oldPic.Dispose();
                         }
-                        foreach(var bp in buttonPanels.Values) {
-                            var b = buttons[bp.Name];
-                            bp.Location = ConvertPointToScreen(b.Location);
-                            bp.Size = ConvertSizeToScreen(b.Type.Size);
-
+                        if (relocateButtons) {
+                            RelocateButtons();
                         }
                     }
             }
@@ -317,6 +314,15 @@ namespace TatehamaCTCPClient.Manager {
                 }
             }
 
+        }
+
+        public void RelocateButtons() {
+            foreach (var bp in buttonPanels.Values) {
+                var b = buttons[bp.Name];
+                bp.Location = ConvertPointToScreen(b.Location);
+                bp.Size = ConvertSizeToScreen(b.Type.Size);
+
+            }
         }
 
         private void PrepareChangeScale() {

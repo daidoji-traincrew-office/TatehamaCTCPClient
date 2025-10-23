@@ -322,6 +322,7 @@
             Name = "CTCPWindow";
             Text = "全線CTCP | CTCP - ダイヤ運転会";
             FormClosing += CTCPWindow_Closing;
+            ResizeEnd += CTCPWindow_ResizeEnd;
             SizeChanged += CTCPWindow_SizeChanged;
             KeyDown += CTCPWindow_KeyDown;
             KeyUp += CTCPWindow_KeyUp;
