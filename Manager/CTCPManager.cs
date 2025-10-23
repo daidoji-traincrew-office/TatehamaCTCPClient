@@ -27,6 +27,12 @@ namespace TatehamaCTCPClient.Manager {
 
         private readonly List<StationSetting> stationSettings;
 
+        private readonly Dictionary<string, ButtonType> buttonTypes;
+
+        private readonly Dictionary<string, CTCPButton> buttons;
+
+        private readonly Dictionary<string, Panel> buttonPanels = [];
+
         /// <summary>
         /// 起動時背景画像
         /// </summary>
@@ -100,6 +106,8 @@ namespace TatehamaCTCPClient.Manager {
             this.window = window;
 
             stationSettings = LoadStationSetting("station.tsv");
+            buttonTypes = LoadButtonType("buttons_type.tsv");
+            buttons = LoadRouteButtons("buttons_route.tsv");
 
             StationSettings = stationSettings.AsReadOnly();
             SubWindows = subWindows.AsReadOnly();
@@ -108,9 +116,9 @@ namespace TatehamaCTCPClient.Manager {
             backgroundImage = Image.FromFile(".\\png\\Background.png");
             buttonsImage = Image.FromFile(".\\png\\buttons.png");
 
-            middleCharSet = new CharacterSet(".\\tsv\\char_middle.tsv");
-            smallCharSet = new CharacterSet(".\\tsv\\char_small.tsv");
-            xsmallCharSet = new CharacterSet(".\\tsv\\char_xsmall.tsv");
+            middleCharSet = new CharacterSet("char_middle.tsv");
+            smallCharSet = new CharacterSet("char_small.tsv");
+            xsmallCharSet = new CharacterSet("char_xsmall.tsv");
 
             window.Panel1.Size = new Size(window.ClientSize.Width, window.ClientSize.Height - window.Panel1.Location.Y);
 
@@ -150,13 +158,26 @@ namespace TatehamaCTCPClient.Manager {
                 }
 
 
-                DrawSmallText(g, "2R", 104, 102, 19, 5, new());
+                /*DrawSmallText(g, "2R", 104, 102, 19, 5, new());
                 DrawSmallText(g, "5LA", 204, 92, 19, 5, new());
-                DrawSmallText(g, "15L13", 515, 191, 19, 5, new());
+                DrawSmallText(g, "15L13", 515, 191, 19, 5, new());*/
 
                 var ia = new ImageAttributes();
                 ia.SetRemapTable([new ColorMap { OldColor = Color.White, NewColor = Color.FromArgb(0x38, 0x46, 0x72) }]);
                 middleCharSet.DrawText(g, "TA", 795, 225, 19, 11, ia);
+
+                foreach(var b in buttons.Values) {
+                    DrawSmallText(g, b.Label, b.Location.X + b.Type.LabelPosition.X, b.Location.Y + b.Type.LabelPosition.Y, b.Type.LabelSize.Width, b.Type.LabelSize.Height, new());
+                    var p = new Panel();
+                    window.Panel1.Controls.Add(p);
+                    p.Location = b.Location;
+                    p.Name = b.Name;
+                    p.Size = b.Type.Size;
+                    p.Parent = pictureBox;
+                    p.Cursor = Cursors.Hand;
+                    p.BackColor = Color.Transparent;
+                    buttonPanels.Add(b.Name, p);
+                }
             }
 
             originalBitmap = new Bitmap(pictureBox.Image);
@@ -178,11 +199,65 @@ namespace TatehamaCTCPClient.Manager {
                     var texts = line.Split('\t');
                     line = sr.ReadLine();
 
-                    if (texts.Any(t => t.Length <= 0) || texts.Length < 5) {
+                    if (texts.Length < 5 || texts.Any(t => t.Length <= 0)) {
                         continue;
                     }
 
                     list.Add(new StationSetting(texts[0], texts[1], texts[2], new Point(int.Parse(texts[3]), int.Parse(texts[4]))));
+                }
+            }
+            catch {
+            }
+            return list;
+        }
+
+        private Dictionary<string, ButtonType> LoadButtonType(string fileName) {
+            Dictionary<string, ButtonType> list = [];
+            try {
+                using var sr = new StreamReader($".\\tsv\\{fileName}");
+                sr.ReadLine();
+                var line = sr.ReadLine();
+                while (line != null) {
+                    if (line.StartsWith('#')) {
+                        line = sr.ReadLine();
+                        continue;
+                    }
+                    var texts = line.Split('\t');
+                    line = sr.ReadLine();
+
+
+                    if (texts.Length < 10 || texts.Any(t => t == "")) {
+                        continue;
+                    }
+
+                    list.Add(texts[0], new ButtonType(texts[0], int.Parse(texts[1]), int.Parse(texts[2]), int.Parse(texts[3]), int.Parse(texts[4]), int.Parse(texts[6]), int.Parse(texts[7]), int.Parse(texts[8]), int.Parse(texts[9])));
+                }
+            }
+            catch {
+            }
+            return list;
+        }
+
+        private Dictionary<string, CTCPButton> LoadRouteButtons(string fileName) {
+            Dictionary<string, CTCPButton> list = [];
+            try {
+                using var sr = new StreamReader($".\\tsv\\{fileName}");
+                sr.ReadLine();
+                var line = sr.ReadLine();
+                while (line != null) {
+                    if (line.StartsWith('#')) {
+                        line = sr.ReadLine();
+                        continue;
+                    }
+                    var texts = line.Split('\t');
+                    line = sr.ReadLine();
+
+
+                    if (texts.Length < 5/*7 || texts.Any(t => t == "")*/) {
+                        continue;
+                    }
+
+                    list.Add(texts[0], new CTCPButton(texts[0], int.Parse(texts[1]), int.Parse(texts[2]), buttonTypes[texts[3]], texts[4], "", LCR.Center));
                 }
             }
             catch {
@@ -218,8 +293,12 @@ namespace TatehamaCTCPClient.Manager {
                             }
                             oldPic.Dispose();
                         }
-                        window.buttonPanel.Location = ConvertPointToScreen(99, 62);
-                        window.buttonPanel.Size = ConvertSizeToScreen(29, 19);
+                        foreach(var bp in buttonPanels.Values) {
+                            var b = buttons[bp.Name];
+                            bp.Location = ConvertPointToScreen(b.Location);
+                            bp.Size = ConvertSizeToScreen(b.Type.Size);
+
+                        }
                     }
             }
             catch (Exception e) {

@@ -154,12 +154,10 @@ namespace TatehamaCTCPClient.Forms {
 
         public bool Silent { get; private set; } = false;
 
-        public readonly Panel buttonPanel = new Panel();
-
         public CTCPWindow(OpenIddictClientService service) {
             this.service = service;
             InitializeComponent();
-            LogManager.AddInfoLog("起動");
+            LogManager.AddInfoLog($"起動 ver. {ServerAddress.Version}");
 
             pictureBox2.Parent = pictureBox1;
             pictureBox3.Parent = pictureBox1;
@@ -226,13 +224,6 @@ namespace TatehamaCTCPClient.Forms {
                 menu.Click += (sender, e) => { SetHourQuick(time); };
             }
 
-            panel1.Controls.Add(buttonPanel);
-            buttonPanel.Location = new Point(99, 62);
-            buttonPanel.Name = "p";
-            buttonPanel.Size = new Size(29, 19);
-            buttonPanel.Parent = pictureBox1;
-            buttonPanel.Cursor = Cursors.Hand;
-            buttonPanel.BackColor = Color.Black;
         }
 
         private void AddScale(int scale) {

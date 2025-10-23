@@ -23,7 +23,7 @@ namespace TatehamaCTCPClient.Models {
             MultiCharacters = multiCharacters.AsReadOnly();
 
             try {
-                using var sr = new StreamReader(fileName);
+                using var sr = new StreamReader($".\\tsv\\{fileName}");
                 sr.ReadLine();
                 var line = sr.ReadLine();
                 while (line != null) {
