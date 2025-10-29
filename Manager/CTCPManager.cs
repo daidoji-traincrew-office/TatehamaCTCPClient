@@ -29,7 +29,9 @@ namespace TatehamaCTCPClient.Manager {
 
         private readonly Dictionary<string, ButtonType> buttonTypes;
 
-        private readonly Dictionary<string, CTCPButton> buttons;
+        private readonly Dictionary<string, CTCPButton> buttons = [];
+
+        private readonly Dictionary<string, CTCPButton> destinationButtons = [];
 
         private readonly Dictionary<string, Panel> buttonPanels = [];
 
@@ -59,7 +61,7 @@ namespace TatehamaCTCPClient.Manager {
 
         private CharacterSet xsmallCharSet;
 
-
+        private bool resizing = false;
 
 
 
@@ -107,7 +109,10 @@ namespace TatehamaCTCPClient.Manager {
 
             stationSettings = LoadStationSetting("station.tsv");
             buttonTypes = LoadButtonType("buttons_type.tsv");
-            buttons = LoadRouteButtons("buttons_route.tsv");
+            LoadRouteButtons("buttons_route.tsv");
+            LoadSelectionButtons("buttons_selection.tsv");
+            LoadDestinationButtons("buttons_destination.tsv");
+            LoadOtherButtons("buttons_others.tsv");
 
             StationSettings = stationSettings.AsReadOnly();
             SubWindows = subWindows.AsReadOnly();
@@ -164,10 +169,12 @@ namespace TatehamaCTCPClient.Manager {
 
                 var ia = new ImageAttributes();
                 ia.SetRemapTable([new ColorMap { OldColor = Color.White, NewColor = Color.FromArgb(0x38, 0x46, 0x72) }]);
-                middleCharSet.DrawText(g, "TA", 795, 225, 19, 11, ia);
 
                 foreach(var b in buttons.Values) {
-                    DrawSmallText(g, b.Label, b.Location.X + b.Type.LabelPosition.X, b.Location.Y + b.Type.LabelPosition.Y, b.Type.LabelSize.Width, b.Type.LabelSize.Height, new());
+                    g.DrawImage(buttonsImage, new Rectangle(b.Location.X, b.Location.Y, b.Type.Size.Width, b.Type.Size.Height), b.Type.Location.X, b.Type.Location.Y, b.Type.Size.Width, b.Type.Size.Height, GraphicsUnit.Pixel, new());
+                    if (b.Label.Length > 0) {
+                        DrawSmallText(g, b.Label, b.Location.X + b.Type.LabelPosition.X, b.Location.Y + b.Type.LabelPosition.Y, b.Type.LabelSize.Width, b.Type.LabelSize.Height, new());
+                    }
                     var p = new Panel();
                     window.Panel1.Controls.Add(p);
                     p.Location = b.Location;
@@ -175,7 +182,21 @@ namespace TatehamaCTCPClient.Manager {
                     p.Size = b.Type.Size;
                     p.Parent = pictureBox;
                     p.Cursor = Cursors.Hand;
-                    p.BackColor = Color.Black;
+                    p.BackColor = Color.Transparent;
+                    buttonPanels.Add(b.Name, p);
+                }
+
+                foreach (var b in destinationButtons.Values) {
+                    g.DrawImage(buttonsImage, new Rectangle(b.Location.X, b.Location.Y, b.Type.Size.Width, b.Type.Size.Height), b.Type.Location.X, b.Type.Location.Y, b.Type.Size.Width, b.Type.Size.Height, GraphicsUnit.Pixel, new());
+                    middleCharSet.DrawText(g, b.Label, b.Location.X + b.Type.LabelPosition.X, b.Location.Y + b.Type.LabelPosition.Y, b.Type.LabelSize.Width, b.Type.LabelSize.Height, ia);
+                    var p = new Panel();
+                    window.Panel1.Controls.Add(p);
+                    p.Location = b.Location;
+                    p.Name = b.Name;
+                    p.Size = b.Type.Size;
+                    p.Parent = pictureBox;
+                    p.Cursor = Cursors.Hand;
+                    p.BackColor = Color.Transparent;
                     buttonPanels.Add(b.Name, p);
                 }
             }
@@ -238,8 +259,7 @@ namespace TatehamaCTCPClient.Manager {
             return list;
         }
 
-        private Dictionary<string, CTCPButton> LoadRouteButtons(string fileName) {
-            Dictionary<string, CTCPButton> list = [];
+        private void LoadRouteButtons(string fileName) {
             try {
                 using var sr = new StreamReader($".\\tsv\\{fileName}");
                 sr.ReadLine();
@@ -257,18 +277,94 @@ namespace TatehamaCTCPClient.Manager {
                         continue;
                     }
 
-                    list.Add(texts[0], new CTCPButton(texts[0], int.Parse(texts[1]), int.Parse(texts[2]), buttonTypes[texts[3]], texts[4], "", LCR.Center));
+                    buttons.Add(texts[0], new CTCPButton(texts[0], int.Parse(texts[1]), int.Parse(texts[2]), buttonTypes[texts[3]], texts[4], "", LCR.Center));
                 }
             }
             catch {
             }
-            return list;
+        }
+
+        private void LoadSelectionButtons(string fileName) {
+            try {
+                using var sr = new StreamReader($".\\tsv\\{fileName}");
+                sr.ReadLine();
+                var line = sr.ReadLine();
+                while (line != null) {
+                    if (line.StartsWith('#')) {
+                        line = sr.ReadLine();
+                        continue;
+                    }
+                    var texts = line.Split('\t');
+                    line = sr.ReadLine();
+
+
+                    if (texts.Length < 5/*7 || texts.Any(t => t == "")*/) {
+                        continue;
+                    }
+
+                    buttons.Add(texts[0], new CTCPButton(texts[0], int.Parse(texts[1]), int.Parse(texts[2]), buttonTypes[texts[3]], texts[4], "", LCR.Center));
+                }
+            }
+            catch {
+            }
+        }
+
+        private void LoadDestinationButtons(string fileName) {
+            try {
+                using var sr = new StreamReader($".\\tsv\\{fileName}");
+                sr.ReadLine();
+                var line = sr.ReadLine();
+                while (line != null) {
+                    if (line.StartsWith('#')) {
+                        line = sr.ReadLine();
+                        continue;
+                    }
+                    var texts = line.Split('\t');
+                    line = sr.ReadLine();
+
+
+                    if (texts.Length < 5/*7 || texts.Any(t => t == "")*/) {
+                        continue;
+                    }
+
+                    destinationButtons.Add(texts[0], new CTCPButton(texts[0], int.Parse(texts[1]), int.Parse(texts[2]), buttonTypes[texts[3]], texts[4], "", LCR.Center));
+                }
+            }
+            catch {
+            }
+        }
+
+        private void LoadOtherButtons(string fileName) {
+            try {
+                using var sr = new StreamReader($".\\tsv\\{fileName}");
+                sr.ReadLine();
+                var line = sr.ReadLine();
+                while (line != null) {
+                    if (line.StartsWith('#')) {
+                        line = sr.ReadLine();
+                        continue;
+                    }
+                    var texts = line.Split('\t');
+                    line = sr.ReadLine();
+
+
+                    if (texts.Length < 5/*7 || texts.Any(t => t == "")*/) {
+                        continue;
+                    }
+
+                    buttons.Add(texts[0], new CTCPButton(texts[0], int.Parse(texts[1]), int.Parse(texts[2]), buttonTypes[texts[3]], "", "", LCR.Center));
+                }
+            }
+            catch {
+            }
         }
 
         public void ChangeScale(bool relocateButtons = true) {
 
             try {
                 PrepareChangeScale();
+
+                HideButtons();
 
                 lock (originalBitmap)
                     lock (pictureBox) {
@@ -304,7 +400,7 @@ namespace TatehamaCTCPClient.Manager {
                 Debug.WriteLine($"Server send failed: {e.Message}\n{e.StackTrace}");
                 if (!ServerCommunication.Error) {
                     ServerCommunication.Error = true;
-                    window.Invoke(new Action(() => { window.LabelStatusText = "データ受信失敗"; }));
+                    window.Invoke(new Action(() => { window.LabelStatusText = "描画エラー"; }));
                     TaskDialog.ShowDialog(new TaskDialogPage {
                         Caption = "描画エラー | TID - ダイヤ運転会",
                         Heading = "描画エラー",
@@ -316,13 +412,24 @@ namespace TatehamaCTCPClient.Manager {
 
         }
 
+        public void HideButtons() {
+            if (!resizing) {
+                resizing = true;
+                foreach (var bp in buttonPanels.Values) {
+                    bp.Location = new Point(-100, -100);
+                }
+            }
+        }
+
         public void RelocateButtons() {
             foreach (var bp in buttonPanels.Values) {
-                var b = buttons[bp.Name];
-                bp.Location = ConvertPointToScreen(b.Location);
-                bp.Size = ConvertSizeToScreen(b.Type.Size);
+                if (buttons.TryGetValue(bp.Name, out var b) || destinationButtons.TryGetValue(bp.Name, out b)) {
+                    bp.Size = ConvertSizeToScreen(b.Type.Size);
+                    bp.Location = ConvertPointToScreen(b.Location);
+                }
 
             }
+            resizing = false;
         }
 
         private void PrepareChangeScale() {

@@ -274,6 +274,8 @@
             labelScale.Text = "Scale：100%";
             labelScale.TextAlign = ContentAlignment.TopRight;
             labelScale.MouseDown += labelScale_MouseDown;
+            labelScale.MouseLeave += labelScale_Leave;
+            labelScale.MouseHover += labelScale_Hover;
             // 
             // labelTopMost
             // 
@@ -322,6 +324,7 @@
             Name = "CTCPWindow";
             Text = "全線CTCP | CTCP - ダイヤ運転会";
             FormClosing += CTCPWindow_Closing;
+            ResizeBegin += CTCPWindow_ResizeBegin;
             ResizeEnd += CTCPWindow_ResizeEnd;
             SizeChanged += CTCPWindow_SizeChanged;
             KeyDown += CTCPWindow_KeyDown;

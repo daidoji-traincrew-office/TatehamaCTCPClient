@@ -131,8 +131,6 @@ namespace TatehamaCTCPClient.Forms {
 
         private bool windowMinimized = false;
 
-        private bool resized = false;
-
         private Point? selectionStarting = null;
 
         public int MarkupType {
@@ -532,11 +530,19 @@ namespace TatehamaCTCPClient.Forms {
             SetFixedScale(true);
         }
 
+        private void labelScale_Hover(object sender, EventArgs e) {
+            displayManager.HideButtons();
+        }
+
+        private void labelScale_Leave(object sender, EventArgs e) {
+            displayManager.RelocateButtons();
+        }
+
 
         private void labelScale_MouseDown(object sender, MouseEventArgs e) {
             if (CTCPScale > 0) {
                 if (ModifierKeys.HasFlag(Keys.Shift)) {
-                    SetScale(-1);
+                    SetScale(-1, false);
                 }
                 else if (ModifierKeys.HasFlag(Keys.Control)) {
                     SetFixedScale(true);
@@ -550,7 +556,7 @@ namespace TatehamaCTCPClient.Forms {
                         i = Math.Max(Array.IndexOf(scaleArray, CTCPScale) - 1, 0);
                     }
                     if (i >= 0) {
-                        SetScale(scaleArray[i]);
+                        SetScale(scaleArray[i], false);
                     }
                 }
             }
@@ -562,13 +568,13 @@ namespace TatehamaCTCPClient.Forms {
                     SetFixedScale(false);
                 }
                 else {
-                    SetScale(initialScale);
+                    SetScale(initialScale, false);
                 }
             }
         }
 
 
-        private void SetScale(int scale) {
+        private void SetScale(int scale, bool relocateButtons = true) {
             var min = scaleMenuDict.Keys.Min();
             var max = scaleMenuDict.Keys.Max();
             if (scale < min && scale != -1) {
@@ -591,7 +597,7 @@ namespace TatehamaCTCPClient.Forms {
             FixedScale = false;
             CTCPScale = scale;
 
-            displayManager.ChangeScale();
+            displayManager.ChangeScale(relocateButtons);
             if (scale > 0) {
                 labelScale.ForeColor = Color.White;
                 labelScale.Text = $"Scale：{scale}%";
@@ -685,6 +691,7 @@ namespace TatehamaCTCPClient.Forms {
             }
             else */if ((mod & Keys.Control) == Keys.Control) {
                 pictureBox1.Cursor = Cursors.Cross;
+                displayManager.HideButtons();
             }
             if (e.KeyData == (Keys.C | Keys.Control)) {
                 if (selectionStarting.HasValue) {
@@ -802,11 +809,16 @@ namespace TatehamaCTCPClient.Forms {
                     }
                 }
             }
-            if (resized && (mod & Keys.Control) != Keys.Control) {
-                resized = false;
+            if ((mod & Keys.Control) != Keys.Control) {
                 displayManager.RelocateButtons();
             }
 
+        }
+
+        private void CTCPWindow_ResizeBegin(object sender, EventArgs e) {
+            if (displayManager != null) {
+                displayManager.HideButtons();
+            }
         }
 
         private void CTCPWindow_Resize(object sender, EventArgs e) {
@@ -815,7 +827,6 @@ namespace TatehamaCTCPClient.Forms {
                 if (WindowState != FormWindowState.Minimized) {
                     if (CTCPScale == -1 && !FixedScale) {
                         displayManager.ChangeScale(false);
-                        resized = true;
                         labelScale.Text = $"Scale：{(int)((double)pictureBox1.Image.Width / displayManager.OriginalBitmap.Width * 100 + 0.5)}%";
                     }
                     else {
@@ -828,7 +839,6 @@ namespace TatehamaCTCPClient.Forms {
 
         private void CTCPWindow_ResizeEnd(object sender, EventArgs e) {
             if (displayManager != null) {
-                resized = false;
                 displayManager.RelocateButtons();
             }
         }
@@ -874,7 +884,7 @@ namespace TatehamaCTCPClient.Forms {
                         i = Math.Max(Array.IndexOf(scaleArray, CTCPScale) - 1, 0);
                     }
                     if (i >= 0) {
-                        SetScale(scaleArray[i]);
+                        SetScale(scaleArray[i], false);
                     }
                 }
                 else {
