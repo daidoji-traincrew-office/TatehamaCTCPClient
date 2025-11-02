@@ -104,6 +104,8 @@
             pictureBox1.TabIndex = 0;
             pictureBox1.TabStop = false;
             pictureBox1.MouseDown += PictureBox1_MouseDown;
+            pictureBox1.MouseEnter += picturebox1_Enter;
+            pictureBox1.MouseLeave += picturebox1_Leave;
             pictureBox1.MouseMove += PictureBox1_MouseMove;
             pictureBox1.MouseUp += PictureBox1_MouseUp;
             pictureBox1.MouseWheel += PictureBox1_MouseWheel;

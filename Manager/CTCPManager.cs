@@ -5,12 +5,14 @@ using System.Diagnostics;
 using System.Drawing.Imaging;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using TatehamaCTCPClient.Communications;
 using TatehamaCTCPClient.Forms;
 using TatehamaCTCPClient.Models;
 using TatehamaCTCPClient.Settings;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.Rebar;
 
 namespace TatehamaCTCPClient.Manager {
     public class CTCPManager {
@@ -34,6 +36,18 @@ namespace TatehamaCTCPClient.Manager {
         private readonly Dictionary<string, CTCPButton> destinationButtons = [];
 
         private readonly Dictionary<string, Panel> buttonPanels = [];
+
+        private readonly Dictionary<string, TrainWindow> trainWindows;
+
+        /// <summary>
+        /// 列車番号の色
+        /// </summary>
+        private readonly Dictionary<string, Color> numColor = [];
+
+        /// <summary>
+        /// 列車番号以外の色
+        /// </summary>
+        private readonly Dictionary<string, Color> colorDict = [];
 
         /// <summary>
         /// 起動時背景画像
@@ -113,6 +127,7 @@ namespace TatehamaCTCPClient.Manager {
             LoadSelectionButtons("buttons_selection.tsv");
             LoadDestinationButtons("buttons_destination.tsv");
             LoadOtherButtons("buttons_others.tsv");
+            trainWindows = LoadTrainWindows("trainwindow.tsv");
 
             StationSettings = stationSettings.AsReadOnly();
             SubWindows = subWindows.AsReadOnly();
@@ -124,6 +139,44 @@ namespace TatehamaCTCPClient.Manager {
             middleCharSet = new CharacterSet("char_middle.tsv");
             smallCharSet = new CharacterSet("char_small.tsv");
             xsmallCharSet = new CharacterSet("char_xsmall.tsv");
+
+
+
+            try {
+                using var sr = new StreamReader(".\\tsv\\color_setting.tsv");
+                sr.ReadLine();
+                var line = sr.ReadLine();
+                while (line != null) {
+                    if (line.StartsWith('#')) {
+                        line = sr.ReadLine();
+                        continue;
+                    }
+                    var texts = line.Split('\t');
+                    line = sr.ReadLine();
+
+                    var i = 0;
+                    for (; i < texts.Length; i++) {
+                        if (texts[i] == "") {
+                            break;
+                        }
+                    }
+                    if (i < 4) {
+                        continue;
+                    }
+
+                    var s = texts[0];
+
+                    if (s.Length < 6) {
+                        var color = Color.FromArgb(int.Parse(texts[1]), int.Parse(texts[2]), int.Parse(texts[3]));
+                        numColor.Add(s, color);
+                    }
+                    else {
+                        colorDict.Add(texts[0], Color.FromArgb(int.Parse(texts[1]), int.Parse(texts[2]), int.Parse(texts[3])));
+                    }
+                }
+            }
+            catch {
+            }
 
             window.Panel1.Size = new Size(window.ClientSize.Width, window.ClientSize.Height - window.Panel1.Location.Y);
 
@@ -159,13 +212,13 @@ namespace TatehamaCTCPClient.Manager {
             {
                 using var g = Graphics.FromImage(pictureBox.Image);
                 foreach(var s in stationSettings) {
+                    g.FillRectangle(new SolidBrush(Color.FromArgb(40, 40, 40)), s.Location.X + 3, s.Location.Y, 150, 15);
                     g.DrawString($"{s.Number} {s.Name} 集中", new Font("ＭＳ ゴシック", 16, GraphicsUnit.Pixel), Brushes.White, s.Location.X, s.Location.Y);
                 }
 
+                var hover = pictureBox.ClientRectangle.Contains(pictureBox.PointToClient(Cursor.Position)) && window.Panel1.ClientRectangle.Contains(window.Panel1.PointToClient(Cursor.Position));
 
-                /*DrawSmallText(g, "2R", 104, 102, 19, 5, new());
-                DrawSmallText(g, "5LA", 204, 92, 19, 5, new());
-                DrawSmallText(g, "15L13", 515, 191, 19, 5, new());*/
+
 
                 var ia = new ImageAttributes();
                 ia.SetRemapTable([new ColorMap { OldColor = Color.White, NewColor = Color.FromArgb(0x38, 0x46, 0x72) }]);
@@ -177,7 +230,7 @@ namespace TatehamaCTCPClient.Manager {
                     }
                     var p = new Panel();
                     window.Panel1.Controls.Add(p);
-                    p.Location = b.Location;
+                    p.Location = hover ? b.Location : new Point(-100, -100);
                     p.Name = b.Name;
                     p.Size = b.Type.Size;
                     p.Parent = pictureBox;
@@ -191,7 +244,7 @@ namespace TatehamaCTCPClient.Manager {
                     middleCharSet.DrawText(g, b.Label, b.Location.X + b.Type.LabelPosition.X, b.Location.Y + b.Type.LabelPosition.Y, b.Type.LabelSize.Width, b.Type.LabelSize.Height, ia);
                     var p = new Panel();
                     window.Panel1.Controls.Add(p);
-                    p.Location = b.Location;
+                    p.Location = hover ? b.Location : new Point(-100, -100);
                     p.Name = b.Name;
                     p.Size = b.Type.Size;
                     p.Parent = pictureBox;
@@ -199,10 +252,75 @@ namespace TatehamaCTCPClient.Manager {
                     p.BackColor = Color.Transparent;
                     buttonPanels.Add(b.Name, p);
                 }
+
+                var rand = new Random();
+
+                foreach (var w in trainWindows.Values) {
+                    g.FillRectangle(new SolidBrush(Color.FromArgb(40, 40, 40)), w.Location.X, w.Location.Y, 67, 13);
+                    var randValue = rand.Next(20);
+                    if (randValue > 0) {
+                        randValue = rand.Next(43);
+                        var numHeader = "";
+                        var numFooter = "";
+                        var numBody = "";
+                        if (randValue == 42) {
+                            numHeader = "試";
+                        }
+                        else if (randValue >= 40) {
+                            numHeader = "回";
+                            if (randValue == 41) {
+                                numFooter = "A";
+                            }
+                        }
+                        else if (randValue % 4 == 0) {
+                            numHeader = "臨";
+                        }
+                        switch (randValue / 4) {
+                            case 1:
+                                numFooter = "C";
+                                break;
+                            case 2:
+                                numFooter = "B";
+                                break;
+                            case 3:
+                                numFooter = "K";
+                                break;
+                            case 4:
+                                numFooter = "A";
+                                break;
+                        }
+                        randValue = rand.Next(12);
+                        switch (randValue - 8) {
+                            case 1:
+                                numFooter += "X";
+                                break;
+                            case 2:
+                                numFooter += "Y";
+                                break;
+                            case 3:
+                                numFooter += "Z";
+                                break;
+                        }
+                        randValue = rand.Next(4, 25) * 100;
+                        randValue += rand.Next(3) * 3000;
+                        randValue += rand.Next(2, 100);
+                        numBody = randValue.ToString();
+
+                        DrawTrainNumber(g, numHeader, numBody, numFooter, w.Location.X, w.Location.Y);
+
+                    }
+                    else {
+                        var l = middleCharSet.MultiCharacters.Values.Where(s => s.Name.Length > 2).ToArray();
+                        randValue = rand.Next(l.Length);
+                        var hf = l[randValue].Name;
+
+                        DrawNonTrainNumber(g, l[randValue].Name, w.Location.X, w.Location.Y);
+                    }
+                }
             }
 
             originalBitmap = new Bitmap(pictureBox.Image);
-            ChangeScale();
+            ChangeScale(false);
             window.DetectResize = true;
         }
 
@@ -359,6 +477,42 @@ namespace TatehamaCTCPClient.Manager {
             }
         }
 
+        private Dictionary<string, TrainWindow> LoadTrainWindows(string fileName) {
+            Dictionary<string, TrainWindow> list = [];
+            try {
+                using var sr = new StreamReader($".\\tsv\\{fileName}");
+                sr.ReadLine();
+                var line = sr.ReadLine();
+                TrainWindow? t = null;
+                while (line != null) {
+                    if (line.StartsWith('#')) {
+                        line = sr.ReadLine();
+                        continue;
+                    }
+                    var texts = line.Split('\t');
+                    line = sr.ReadLine();
+
+                    if (texts.Length < 4 || texts[3].Length <= 0) {
+                        continue;
+                    }
+                    if (texts[0].Length <= 0) {
+                        if (t == null) {
+                            continue;
+                        }
+                        t.AddTtcName(texts[3]);
+                    }
+                    else {
+                        t = new TrainWindow(texts[0], int.Parse(texts[1]), int.Parse(texts[2]), texts[3]);
+                        list.Add(texts[0], t);
+                    }
+
+                }
+            }
+            catch {
+            }
+            return list;
+        }
+
         public void ChangeScale(bool relocateButtons = true) {
 
             try {
@@ -469,7 +623,76 @@ namespace TatehamaCTCPClient.Manager {
 
         }
 
+        public void DrawTrainNumber(Graphics g, string numHeader, string numBody, string numFooter, int x, int y, bool fill = false) {
+            if (fill) {
+                g.FillRectangle(new SolidBrush(Color.FromArgb(40, 40, 40)), x, y, 67, 13);
+            }
 
+
+            // 種別色
+            Color? classColor = null;
+            var hf = $"{numHeader}{numFooter}";
+            foreach (var k in numColor.Keys) {
+                if (hf.Contains(k)) {
+                    classColor = numColor[k];
+                    break;
+                }
+            }
+            if (classColor == null) {
+                classColor = Color.White;
+            }
+            var iaType = new ImageAttributes();
+            iaType.SetRemapTable([new ColorMap { OldColor = Color.White, NewColor = classColor.Value }]);
+
+            middleCharSet.DrawText(g, numHeader, x + 1, y + 1, 11, 11, iaType, ContentAlignment.MiddleLeft);
+            middleCharSet.DrawText(g, numBody, x + 13, y + 1, 39, 11, iaType, ContentAlignment.MiddleRight);
+            middleCharSet.DrawText(g, numFooter, x + 53, y + 1, 13, 11, iaType, ContentAlignment.MiddleLeft);
+        }
+
+        public void DrawNonTrainNumber(Graphics g, string number, int x, int y, bool fill = false) {
+            if (fill) {
+                g.FillRectangle(new SolidBrush(Color.FromArgb(40, 40, 40)), x, y, 67, 13);
+            }
+
+            // 種別色
+            Color? classColor = null;
+            foreach (var k in numColor.Keys) {
+                if (number.Contains(k)) {
+                    classColor = numColor[k];
+                    break;
+                }
+            }
+            if (classColor == null) {
+                if (colorDict.ContainsKey("UNKNOWN")) {
+                    classColor = colorDict["UNKNOWN"];
+                }
+                else {
+                    classColor = Color.FromArgb(129, 129, 129);
+                }
+            }
+            var iaType = new ImageAttributes();
+            iaType.SetRemapTable([new ColorMap { OldColor = Color.White, NewColor = classColor.Value }]);
+
+            middleCharSet.DrawText(g, number, x + 1, y + 1, 65, 11, iaType, ContentAlignment.MiddleLeft);
+        }
+
+        public void DrawTrainNumber(Graphics g, string number, int x, int y, bool fill) {
+            if (fill) {
+                g.FillRectangle(new SolidBrush(Color.FromArgb(40, 40, 40)), x, y, 67, 13);
+            }
+
+            var numHeader = Regex.Replace(number, @"[0-9a-zA-Z]", "");  // 列番の頭の文字（回、試など）
+            var numBodyStr = Regex.Replace(number, @"[^0-9]", "");
+            var isTrain = int.TryParse(numBodyStr, out var numBody);  // 列番本体（数字部分）
+            var numFooter = Regex.Replace(number, @"[^a-zA-Z]", "");  // 列番の末尾の文字
+
+            if (isTrain) {
+                DrawTrainNumber(g, numHeader, numBodyStr, numFooter, x, y);
+            }
+            else {
+                DrawNonTrainNumber(g, number, x, y);
+            }
+        }
 
 
 

@@ -530,12 +530,24 @@ namespace TatehamaCTCPClient.Forms {
             SetFixedScale(true);
         }
 
+        private void picturebox1_Enter(object sender, EventArgs e) {
+            if (!ModifierKeys.HasFlag(Keys.Control)) {
+                displayManager.RelocateButtons();
+            }
+        }
+
+        private void picturebox1_Leave(object sender, EventArgs e) {
+            if (!pictureBox1.ClientRectangle.Contains(pictureBox1.PointToClient(Cursor.Position)) || !panel1.ClientRectangle.Contains(panel1.PointToClient(Cursor.Position))) {
+                displayManager.HideButtons();
+            }
+        }
+
         private void labelScale_Hover(object sender, EventArgs e) {
-            displayManager.HideButtons();
+            /*displayManager.HideButtons();*/
         }
 
         private void labelScale_Leave(object sender, EventArgs e) {
-            displayManager.RelocateButtons();
+            /*displayManager.RelocateButtons();*/
         }
 
 
@@ -809,7 +821,7 @@ namespace TatehamaCTCPClient.Forms {
                     }
                 }
             }
-            if ((mod & Keys.Control) != Keys.Control) {
+            if ((mod & Keys.Control) != Keys.Control && pictureBox1.ClientRectangle.Contains(pictureBox1.PointToClient(Cursor.Position))) {
                 displayManager.RelocateButtons();
             }
 
@@ -839,7 +851,7 @@ namespace TatehamaCTCPClient.Forms {
 
         private void CTCPWindow_ResizeEnd(object sender, EventArgs e) {
             if (displayManager != null) {
-                displayManager.RelocateButtons();
+                /*displayManager.RelocateButtons();*/
             }
         }
 
@@ -1234,7 +1246,7 @@ namespace TatehamaCTCPClient.Forms {
                 pictureBox1.Cursor = Cursors.Cross;
                 pictureBox2.Cursor = Cursors.Cross;
             }
-            else {
+            else if(pictureBox1.Cursor != defaultCursor || pictureBox2.Cursor != Cursors.Cross) {
                 pictureBox1.Cursor = defaultCursor;
                 pictureBox2.Cursor = Cursors.Cross;
             }

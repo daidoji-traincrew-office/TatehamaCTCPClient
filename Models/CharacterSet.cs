@@ -76,7 +76,7 @@ namespace TatehamaCTCPClient.Models {
                         x += width - mc.Size.Width;
                         break;
                 }
-                g.DrawImage(CharacterImage, new Rectangle(x, y, mc.Size.Width, mc.Size.Height), mc.Location.X, mc.Location.Y, mc.Size.Width, mc.Size.Width, GraphicsUnit.Pixel, ia);
+                g.DrawImage(CharacterImage, new Rectangle(x, y, mc.Size.Width, mc.Size.Height), mc.Location.X, mc.Location.Y, mc.Size.Width, mc.Size.Height, GraphicsUnit.Pixel, ia);
                 return true;
             }
             var cList = new List<Character>();
