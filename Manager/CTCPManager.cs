@@ -8,13 +8,15 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using TatehamaCTCPClient.Buttons;
 using TatehamaCTCPClient.Communications;
 using TatehamaCTCPClient.Forms;
 using TatehamaCTCPClient.Models;
 using TatehamaCTCPClient.Settings;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.Rebar;
 
-namespace TatehamaCTCPClient.Manager {
+namespace TatehamaCTCPClient.Manager
+{
     public class CTCPManager {
         /// <summary>
         /// CTCP画面表示用のPictureBox
@@ -33,7 +35,7 @@ namespace TatehamaCTCPClient.Manager {
 
         private readonly Dictionary<string, CTCPButton> buttons = [];
 
-        private readonly Dictionary<string, CTCPButton> destinationButtons = [];
+        private readonly Dictionary<string, DestinationButton> destinationButtons = [];
 
         private readonly Dictionary<string, Panel> buttonPanels = [];
 
@@ -63,12 +65,6 @@ namespace TatehamaCTCPClient.Manager {
         /// ボタン画像
         /// </summary>
         private Image buttonsImage;
-
-        /// <summary>
-        /// TID画像の元画像（リサイズ前）
-        /// </summary>
-        private Bitmap originalBitmap;
-
         private CharacterSet middleCharSet;
 
         private CharacterSet smallCharSet;
@@ -99,7 +95,11 @@ namespace TatehamaCTCPClient.Manager {
         /// <summary>
         /// TID画像の元画像（リサイズ前）
         /// </summary>
-        public Bitmap OriginalBitmap => originalBitmap;
+        public Bitmap OriginalBitmap { get; private set; }
+
+        public int OriginalWidth { get; private set; }
+
+        public int OriginalHeight { get; private set; }
 
         public ReadOnlyCollection<StationSetting> StationSettings { get; init; }
 
@@ -124,8 +124,8 @@ namespace TatehamaCTCPClient.Manager {
             stationSettings = LoadStationSetting("station.tsv");
             buttonTypes = LoadButtonType("buttons_type.tsv");
             LoadRouteButtons("buttons_route.tsv");
-            LoadSelectionButtons("buttons_selection.tsv");
             LoadDestinationButtons("buttons_destination.tsv");
+            LoadSelectionButtons("buttons_selection.tsv");
             LoadOtherButtons("buttons_others.tsv");
             trainWindows = LoadTrainWindows("trainwindow.tsv");
 
@@ -236,6 +236,7 @@ namespace TatehamaCTCPClient.Manager {
                     p.Parent = pictureBox;
                     p.Cursor = Cursors.Hand;
                     p.BackColor = Color.Transparent;
+                    p.Click += (sender, e) => { b.OnClick(); };
                     buttonPanels.Add(b.Name, p);
                 }
 
@@ -250,6 +251,7 @@ namespace TatehamaCTCPClient.Manager {
                     p.Parent = pictureBox;
                     p.Cursor = Cursors.Hand;
                     p.BackColor = Color.Transparent;
+                    p.Click += (sender, e) => { b.OnClick(); };
                     buttonPanels.Add(b.Name, p);
                 }
 
@@ -319,7 +321,9 @@ namespace TatehamaCTCPClient.Manager {
                 }
             }
 
-            originalBitmap = new Bitmap(pictureBox.Image);
+            OriginalBitmap = new Bitmap(pictureBox.Image);
+            OriginalWidth = OriginalBitmap.Width;
+            OriginalHeight = OriginalBitmap.Height;
             ChangeScale(false);
             window.DetectResize = true;
         }
@@ -382,6 +386,7 @@ namespace TatehamaCTCPClient.Manager {
                 using var sr = new StreamReader($".\\tsv\\{fileName}");
                 sr.ReadLine();
                 var line = sr.ReadLine();
+                RouteButton? b = null;
                 while (line != null) {
                     if (line.StartsWith('#')) {
                         line = sr.ReadLine();
@@ -390,12 +395,26 @@ namespace TatehamaCTCPClient.Manager {
                     var texts = line.Split('\t');
                     line = sr.ReadLine();
 
-
-                    if (texts.Length < 5/*7 || texts.Any(t => t == "")*/) {
+                    var i = 0;
+                    var isButton = true;
+                    for (; i < texts.Length; i++) {
+                        if (texts[i] == "") {
+                            if(i > 4) {
+                                break;
+                            }
+                            isButton = false;
+                        }
+                    }
+                    if (i < 7) {
                         continue;
                     }
-
-                    buttons.Add(texts[0], new CTCPButton(texts[0], int.Parse(texts[1]), int.Parse(texts[2]), buttonTypes[texts[3]], texts[4], "", LCR.Center));
+                    if (isButton) {
+                        b = new RouteButton(texts[0], int.Parse(texts[1]), int.Parse(texts[2]), buttonTypes[texts[3]], texts[4], texts[5], texts[6] == "R" ? LCR.Right : LCR.Left);
+                        buttons.Add(texts[0], b);
+                    }
+                    else {
+                        b?.AddRoute(texts[5], texts[6] == "R" ? LCR.Right : LCR.Left);
+                    }
                 }
             }
             catch {
@@ -407,6 +426,8 @@ namespace TatehamaCTCPClient.Manager {
                 using var sr = new StreamReader($".\\tsv\\{fileName}");
                 sr.ReadLine();
                 var line = sr.ReadLine();
+                SelectionButton? b = null;
+                DestinationButton? db = null;
                 while (line != null) {
                     if (line.StartsWith('#')) {
                         line = sr.ReadLine();
@@ -416,11 +437,39 @@ namespace TatehamaCTCPClient.Manager {
                     line = sr.ReadLine();
 
 
-                    if (texts.Length < 5/*7 || texts.Any(t => t == "")*/) {
+
+                    var i = 0;
+                    var isButton = true;
+                    for (; i < texts.Length; i++) {
+                        if (texts[i] == "") {
+                            if (i > 5) {
+                                break;
+                            }
+                            if(isButton && i > 4) {
+                                break;
+                            }
+                            isButton = false;
+                        }
+                    }
+                    if (i < 8) {
                         continue;
                     }
 
-                    buttons.Add(texts[0], new CTCPButton(texts[0], int.Parse(texts[1]), int.Parse(texts[2]), buttonTypes[texts[3]], texts[4], "", LCR.Center));
+                    if (texts[5].Length > 0) {
+                        db = destinationButtons[texts[5]];
+                    }
+
+                    if(db == null) {
+                        continue;
+                    }
+
+                    if (isButton) {
+                        b = new SelectionButton(texts[0], int.Parse(texts[1]), int.Parse(texts[2]), buttonTypes[texts[3]], texts[4], db, texts[6], texts[7] == "R" ? LCR.Right : LCR.Left);
+                        buttons.Add(texts[0], b);
+                    }
+                    else {
+                        b?.AddRoute(db, texts[6], texts[7] == "R" ? LCR.Right : LCR.Left);
+                    }
                 }
             }
             catch {
@@ -441,11 +490,17 @@ namespace TatehamaCTCPClient.Manager {
                     line = sr.ReadLine();
 
 
-                    if (texts.Length < 5/*7 || texts.Any(t => t == "")*/) {
+                    var i = 0;
+                    for (; i < texts.Length; i++) {
+                        if (texts[i] == "") {
+                            break;
+                        }
+                    }
+                    if (i < 5) {
                         continue;
                     }
 
-                    destinationButtons.Add(texts[0], new CTCPButton(texts[0], int.Parse(texts[1]), int.Parse(texts[2]), buttonTypes[texts[3]], texts[4], "", LCR.Center));
+                    destinationButtons.Add(texts[0], new DestinationButton(texts[0], int.Parse(texts[1]), int.Parse(texts[2]), buttonTypes[texts[3]], texts[4]));
                 }
             }
             catch {
@@ -465,12 +520,40 @@ namespace TatehamaCTCPClient.Manager {
                     var texts = line.Split('\t');
                     line = sr.ReadLine();
 
-
-                    if (texts.Length < 5/*7 || texts.Any(t => t == "")*/) {
-                        continue;
+                    {
+                        var i = 0;
+                        for (; i < texts.Length; i++) {
+                            if (texts[i] == "") {
+                                break;
+                            }
+                        }
+                        if (i < 4) {
+                            continue;
+                        }
                     }
 
-                    buttons.Add(texts[0], new CTCPButton(texts[0], int.Parse(texts[1]), int.Parse(texts[2]), buttonTypes[texts[3]], "", "", LCR.Center));
+                    var buttonType = texts[3];
+
+                    switch (buttonType) {
+                        case "cancel":
+                            buttons.Add(texts[0], new CancelButton(texts[0], int.Parse(texts[1]), int.Parse(texts[2]), buttonTypes[buttonType]));
+                            break;
+                        case "snk_t":
+                            buttons.Add(texts[0], new MaintainingButton(texts[0], int.Parse(texts[1]), int.Parse(texts[2]), buttonTypes[buttonType]));
+                            break;
+                        case "pnk_yd":
+                        case "ylw_yd":
+                        case "wht_yd":
+                            var l = new List<SelectionButton>();
+                            for(var i = 4; i < texts.Length; i++) {
+                                var t = texts[i];
+                                if (t.Length > 0 && buttons.TryGetValue(t, out var b) && b is SelectionButton) {
+                                    l.Add((SelectionButton)b);
+                                }
+                            }
+                            buttons.Add(texts[0], new YudoButton(texts[0], int.Parse(texts[1]), int.Parse(texts[2]), buttonTypes[buttonType], l));
+                            break;
+                    }
                 }
             }
             catch {
@@ -520,26 +603,26 @@ namespace TatehamaCTCPClient.Manager {
 
                 HideButtons();
 
-                lock (originalBitmap)
+                lock (OriginalBitmap)
                     lock (pictureBox) {
 
                         var oldPic = pictureBox.Image;
                         if (oldPic != null) {
                             if (window.CTCPScale < 0) {
-                                var aspectRatio = (double)originalBitmap.Width / originalBitmap.Height;
+                                var aspectRatio = (double)OriginalWidth / OriginalHeight;
                                 if (aspectRatio < (double)pictureBox.Width / pictureBox.Height) {
                                     var width = (int)(pictureBox.Height * aspectRatio);
-                                    pictureBox.Image = new Bitmap(originalBitmap, width, pictureBox.Height);
+                                    pictureBox.Image = new Bitmap(OriginalBitmap, width, pictureBox.Height);
                                     pictureBox.Width = width;
                                 }
                                 else {
                                     var height = (int)(pictureBox.Width / aspectRatio);
-                                    pictureBox.Image = new Bitmap(originalBitmap, pictureBox.Width, height);
+                                    pictureBox.Image = new Bitmap(OriginalBitmap, pictureBox.Width, height);
                                     pictureBox.Height = height;
                                 }
                             }
                             else {
-                                pictureBox.Image = new Bitmap(originalBitmap, originalBitmap.Width * window.CTCPScale / 100, originalBitmap.Height * window.CTCPScale / 100);
+                                pictureBox.Image = new Bitmap(OriginalBitmap, OriginalWidth * window.CTCPScale / 100, OriginalHeight * window.CTCPScale / 100);
                             }
                             oldPic.Dispose();
                         }
@@ -554,7 +637,8 @@ namespace TatehamaCTCPClient.Manager {
                 Debug.WriteLine($"Server send failed: {e.Message}\n{e.StackTrace}");
                 if (!ServerCommunication.Error) {
                     ServerCommunication.Error = true;
-                    window.Invoke(new Action(() => { window.LabelStatusText = "描画エラー"; }));
+                    window.LabelStatusText = "描画エラー";
+                    window.SetStatusSubWindow("×", Color.Red);
                     TaskDialog.ShowDialog(new TaskDialogPage {
                         Caption = "描画エラー | TID - ダイヤ運転会",
                         Heading = "描画エラー",
@@ -571,15 +655,20 @@ namespace TatehamaCTCPClient.Manager {
                 resizing = true;
                 foreach (var bp in buttonPanels.Values) {
                     bp.Location = new Point(-100, -100);
+                    bp.Size = new Size(1, 1);
                 }
             }
         }
 
         public void RelocateButtons() {
             foreach (var bp in buttonPanels.Values) {
-                if (buttons.TryGetValue(bp.Name, out var b) || destinationButtons.TryGetValue(bp.Name, out b)) {
+                if (buttons.TryGetValue(bp.Name, out CTCPButton? b)) {
                     bp.Size = ConvertSizeToScreen(b.Type.Size);
                     bp.Location = ConvertPointToScreen(b.Location);
+                }
+                else if(destinationButtons.TryGetValue(bp.Name, out DestinationButton? db)) {
+                    bp.Size = ConvertSizeToScreen(db.Type.Size);
+                    bp.Location = ConvertPointToScreen(db.Location);
                 }
 
             }
@@ -593,20 +682,18 @@ namespace TatehamaCTCPClient.Manager {
             var dr = window.DetectResize;
             window.DetectResize = false;
             int width, height;
-            lock (originalBitmap) {
-                width = originalBitmap.Width * window.CTCPScale / 100;
-                height = originalBitmap.Height * window.CTCPScale / 100;
+            width = OriginalWidth * window.CTCPScale / 100;
+            height = OriginalHeight * window.CTCPScale / 100;
 
-                if (window.CTCPScale < 0) {
-                    width = originalBitmap.Width * 2;
-                    height = originalBitmap.Height * 2;
-                }
+            if (window.CTCPScale < 0) {
+                width = OriginalWidth * 2;
+                height = OriginalHeight * 2;
+            }
 
-                window.MaximumSize = new Size(Math.Max(width, originalBitmap.Width) + window.Size.Width - window.ClientSize.Width, Math.Max(height, originalBitmap.Height) + window.Panel1.Location.Y + window.Size.Height - window.ClientSize.Height);
+            window.MaximumSize = new Size(Math.Max(width, OriginalWidth) + window.Size.Width - window.ClientSize.Width, Math.Max(height, OriginalHeight) + window.Panel1.Location.Y + window.Size.Height - window.ClientSize.Height);
 
-                if (-window.Location.X > window.Size.Width - 60) {
-                    window.Location = new Point(0, 80);
-                }
+            if (-window.Location.X > window.Size.Width - 60) {
+                window.Location = new Point(0, 80);
             }
 
             lock (pictureBox) {
@@ -697,10 +784,10 @@ namespace TatehamaCTCPClient.Manager {
 
 
         public void CopyImage() {
-            lock (originalBitmap) {
-                var i = new Bitmap(originalBitmap);
+            lock (OriginalBitmap) {
+                var i = new Bitmap(OriginalBitmap);
                 using (var g = Graphics.FromImage(i)) {
-                    g.DrawString((window.Clock + window.TimeOffset).ToString("H:mm:ss"), new Font("ＭＳ ゴシック", 12, GraphicsUnit.Pixel), Brushes.White, originalBitmap.Width - 51, 0);
+                    g.DrawString((window.Clock + window.TimeOffset).ToString("H:mm:ss"), new Font("ＭＳ ゴシック", 12, GraphicsUnit.Pixel), Brushes.White, OriginalWidth - 51, 0);
                 }
                 Clipboard.SetImage(i);
                 i.Dispose();
@@ -709,11 +796,11 @@ namespace TatehamaCTCPClient.Manager {
         }
 
         public void CopyImage(int x, int y, int width, int height) {
-            lock (originalBitmap) {
+            lock (OriginalBitmap) {
                 var i = new Bitmap(width, height + 13);
                 using (var g = Graphics.FromImage(i)) {
                     g.Clear(Color.FromArgb(10, 10, 10));
-                    g.DrawImage(originalBitmap, new Rectangle(0, 13, width, height), x, y, width, height, GraphicsUnit.Pixel);
+                    g.DrawImage(OriginalBitmap, new Rectangle(0, 13, width, height), x, y, width, height, GraphicsUnit.Pixel);
                     g.DrawString((window.Clock + window.TimeOffset).ToString("H:mm:ss"), new Font("ＭＳ ゴシック", 12, GraphicsUnit.Pixel), Brushes.White, width - 51, 0);
                 }
                 Clipboard.SetImage(i);
@@ -746,7 +833,7 @@ namespace TatehamaCTCPClient.Manager {
         }
 
         public Point ConvertPointToOriginal(int x, int y) {
-            return new Point(x * originalBitmap.Width / pictureBox.Width, y * originalBitmap.Height / pictureBox.Height);
+            return new Point(x * OriginalWidth / pictureBox.Width, y * OriginalHeight / pictureBox.Height);
         }
 
         public Point ConvertPointToOriginal(Point p) {
@@ -754,7 +841,7 @@ namespace TatehamaCTCPClient.Manager {
         }
 
         public Point ConvertPointToScreen(int x, int y) {
-            return new Point(x * pictureBox.Width / originalBitmap.Width, y * pictureBox.Height / originalBitmap.Height);
+            return new Point(x * pictureBox.Width / OriginalWidth, y * pictureBox.Height / OriginalHeight);
         }
 
         public Point ConvertPointToScreen(Point p) {
@@ -762,7 +849,7 @@ namespace TatehamaCTCPClient.Manager {
         }
 
         public Size ConvertSizeToOriginal(int x, int y) {
-            return new Size(x * originalBitmap.Width / pictureBox.Width, y * originalBitmap.Height / pictureBox.Height);
+            return new Size(x * OriginalWidth / pictureBox.Width, y * OriginalHeight / pictureBox.Height);
         }
 
         public Size ConvertSizeToOriginal(Size s) {
@@ -770,7 +857,7 @@ namespace TatehamaCTCPClient.Manager {
         }
 
         public Size ConvertSizeToScreen(int x, int y) {
-            return new Size(x * pictureBox.Width / originalBitmap.Width, y * pictureBox.Height / originalBitmap.Height);
+            return new Size(x * pictureBox.Width / OriginalWidth, y * pictureBox.Height / OriginalHeight);
         }
 
         public Size ConvertSizeToScreen(Size s) {
@@ -788,6 +875,13 @@ namespace TatehamaCTCPClient.Manager {
 
         public bool DrawSmallText(Graphics g, string text, int x, int y, int width, int height, ImageAttributes ia, ContentAlignment align = ContentAlignment.MiddleCenter) {
             return smallCharSet.DrawText(g, text, x, y, width, height, ia, align) || xsmallCharSet.DrawText(g, text, x, y, width, height, ia, align);
+        }
+
+        public List<CTCPButton> GetButtonInArea(Point location, Size size) {
+            var l = new List<CTCPButton>();
+            l.AddRange(buttons.Values.Where(b => b.Location.X > location.X - b.Type.Size.Width && b.Location.Y > location.Y - b.Type.Size.Height && b.Location.X < location.X + size.Width && b.Location.Y < location.Y + size.Height));
+            l.AddRange(destinationButtons.Values.Where(b => b.Location.X > location.X - b.Type.Size.Width && b.Location.Y > location.Y - b.Type.Size.Height && b.Location.X < location.X + size.Width && b.Location.Y < location.Y + size.Height));
+            return l;
         }
     }
 }

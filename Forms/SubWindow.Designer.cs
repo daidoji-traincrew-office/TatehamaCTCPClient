@@ -44,6 +44,7 @@ namespace TatehamaCTCPClient.Forms {
             labelClock = new Label();
             labelTopMost = new Label();
             labelScale = new Label();
+            labelStatus = new Label();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
             contextMenuStrip1.SuspendLayout();
             flowLayoutPanel1.SuspendLayout();
@@ -61,6 +62,8 @@ namespace TatehamaCTCPClient.Forms {
             pictureBox1.TabIndex = 9;
             pictureBox1.TabStop = false;
             pictureBox1.MouseDown += PictureBox1_MouseDown;
+            pictureBox1.MouseEnter += picturebox1_Enter;
+            pictureBox1.MouseLeave += picturebox1_Leave;
             pictureBox1.MouseMove += PictureBox1_MouseMove;
             pictureBox1.MouseUp += PictureBox1_MouseUp;
             pictureBox1.MouseWheel += PictureBox1_MouseWheel;
@@ -69,25 +72,25 @@ namespace TatehamaCTCPClient.Forms {
             // 
             contextMenuStrip1.Items.AddRange(new ToolStripItem[] { menuItemCopy, toolStripSeparator1, menuItemMarkupType, toolStripSeparator2, menuItemTopMost, menuItemSilent, menuItemRename, toolStripSeparator3, menuItemVersion });
             contextMenuStrip1.Name = "contextMenuStrip1";
-            contextMenuStrip1.Size = new Size(181, 176);
+            contextMenuStrip1.Size = new Size(163, 154);
             // 
             // menuItemCopy
             // 
             menuItemCopy.Name = "menuItemCopy";
-            menuItemCopy.Size = new Size(180, 22);
+            menuItemCopy.Size = new Size(162, 22);
             menuItemCopy.Text = "CTCP画面をコピー";
             menuItemCopy.Click += menuItemCopy_Click;
             // 
             // toolStripSeparator1
             // 
             toolStripSeparator1.Name = "toolStripSeparator1";
-            toolStripSeparator1.Size = new Size(177, 6);
+            toolStripSeparator1.Size = new Size(159, 6);
             // 
             // menuItemMarkupType
             // 
             menuItemMarkupType.DropDownItems.AddRange(new ToolStripItem[] { menuItemMarkupType1, menuItemMarkupType2, menuItemMarkupType3 });
             menuItemMarkupType.Name = "menuItemMarkupType";
-            menuItemMarkupType.Size = new Size(180, 22);
+            menuItemMarkupType.Size = new Size(162, 22);
             menuItemMarkupType.Text = "強調表示タイプ";
             // 
             // menuItemMarkupType1
@@ -114,38 +117,38 @@ namespace TatehamaCTCPClient.Forms {
             // toolStripSeparator2
             // 
             toolStripSeparator2.Name = "toolStripSeparator2";
-            toolStripSeparator2.Size = new Size(177, 6);
+            toolStripSeparator2.Size = new Size(159, 6);
             // 
             // menuItemTopMost
             // 
             menuItemTopMost.Name = "menuItemTopMost";
-            menuItemTopMost.Size = new Size(180, 22);
+            menuItemTopMost.Size = new Size(162, 22);
             menuItemTopMost.Text = "最前面表示";
             menuItemTopMost.Click += menuItemTopMost_Click;
             // 
             // menuItemSilent
             // 
             menuItemSilent.Name = "menuItemSilent";
-            menuItemSilent.Size = new Size(180, 22);
+            menuItemSilent.Size = new Size(162, 22);
             menuItemSilent.Text = "サイレントモード";
             menuItemSilent.Click += menuItemSilent_Click;
             // 
             // menuItemRename
             // 
             menuItemRename.Name = "menuItemRename";
-            menuItemRename.Size = new Size(180, 22);
+            menuItemRename.Size = new Size(162, 22);
             menuItemRename.Text = "ウィンドウ名の変更";
             menuItemRename.Click += menuItemRename_Click;
             // 
             // toolStripSeparator3
             // 
             toolStripSeparator3.Name = "toolStripSeparator3";
-            toolStripSeparator3.Size = new Size(177, 6);
+            toolStripSeparator3.Size = new Size(159, 6);
             // 
             // menuItemVersion
             // 
             menuItemVersion.Name = "menuItemVersion";
-            menuItemVersion.Size = new Size(180, 22);
+            menuItemVersion.Size = new Size(162, 22);
             menuItemVersion.Text = "バージョン情報";
             menuItemVersion.Click += menuItemVersion_Click;
             // 
@@ -211,12 +214,24 @@ namespace TatehamaCTCPClient.Forms {
             labelScale.TextAlign = ContentAlignment.TopRight;
             labelScale.MouseDown += labelScale_MouseDown;
             // 
+            // labelStatus
+            // 
+            labelStatus.AutoSize = true;
+            labelStatus.BackColor = Color.Transparent;
+            labelStatus.ForeColor = Color.White;
+            labelStatus.Location = new Point(3, 3);
+            labelStatus.Name = "labelStatus";
+            labelStatus.Size = new Size(10, 15);
+            labelStatus.TabIndex = 11;
+            labelStatus.Text = " ";
+            // 
             // SubWindow
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.FromArgb(50, 20, 20);
             ClientSize = new Size(784, 461);
+            Controls.Add(labelStatus);
             Controls.Add(flowLayoutPanel1);
             Controls.Add(pictureBox1);
             Name = "SubWindow";
@@ -255,5 +270,6 @@ namespace TatehamaCTCPClient.Forms {
         private ToolStripMenuItem menuItemMarkupType1;
         private ToolStripMenuItem menuItemMarkupType2;
         private ToolStripMenuItem menuItemMarkupType3;
+        private Label labelStatus;
     }
 }

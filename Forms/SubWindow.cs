@@ -7,10 +7,21 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using TatehamaCTCPClient.Buttons;
 using TatehamaCTCPClient.Manager;
 
 namespace TatehamaCTCPClient.Forms {
     public partial class SubWindow : Form {
+
+        public static string StatusText {
+            get;
+            private set;
+        } = "";
+
+        public static Color StatusColor {
+            get;
+            private set;
+        } = Color.White;
 
         public Point StartLocation {
             get;
@@ -33,6 +44,12 @@ namespace TatehamaCTCPClient.Forms {
         private static int counter = 0;
 
         private Size windowSize;
+
+        private readonly List<CTCPButton> buttons;
+
+        private readonly Dictionary<string, Panel> buttonPanels = [];
+
+        private bool resizing = false;
 
         /// <summary>
         /// WASDキーなど使用時の移動量
@@ -72,6 +89,23 @@ namespace TatehamaCTCPClient.Forms {
             DetectResize = true;
 
             UpdateImage(displayManager.OriginalBitmap);
+
+            var hover = pictureBox1.ClientRectangle.Contains(pictureBox1.PointToClient(Cursor.Position));
+
+            buttons = displayManager.GetButtonInArea(location, size);
+
+            foreach(var b in buttons) {
+                var p = new Panel();
+                pictureBox1.Controls.Add(p);
+                p.Location = hover ? new Point(b.Location.X - StartLocation.X, b.Location.Y - StartLocation.Y) : new Point(-100, -100);
+                p.Name = b.Name;
+                p.Size = b.Type.Size;
+                p.Parent = pictureBox1;
+                p.Cursor = Cursors.Hand;
+                p.BackColor = Color.Transparent;
+                p.Click += (sender, e) => { b.OnClick(); };
+                buttonPanels.Add(b.Name, p);
+            }
         }
 
         public void UpdateImage(Image image) {
@@ -211,6 +245,7 @@ namespace TatehamaCTCPClient.Forms {
         }
 
         private void SubWindow_ResizeBegin(object sender, EventArgs e) {
+            HideButtons();
             var screenSize = Screen.FromControl(this).Bounds;
             screenSize = new Rectangle(screenSize.Location, new Size(screenSize.Width + 20, screenSize.Height + 20));
             var mw = Size.Width - ClientSize.Width + DisplaySize.Width * (screenSize.Height - Size.Height + ClientSize.Height - pictureBox1.Location.Y) / DisplaySize.Height;
@@ -263,6 +298,9 @@ namespace TatehamaCTCPClient.Forms {
             if ((mod & Keys.Shift) == Keys.Shift) {
                 pictureBox1.Cursor = Cursors.Hand;
             }
+            if ((mod & Keys.Control) == Keys.Control) {
+                HideButtons();
+            }
             if (e.KeyData == (Keys.C | Keys.Control)) {
                 CopyImage();
             }
@@ -286,6 +324,10 @@ namespace TatehamaCTCPClient.Forms {
 
         private void SubWindow_KeyUp(object sender, KeyEventArgs e) {
             UpdateMouseCursor();
+            var mod = e.KeyData & Keys.Modifiers;
+            if ((mod & Keys.Control) != Keys.Control && pictureBox1.ClientRectangle.Contains(pictureBox1.PointToClient(Cursor.Position))) {
+                RelocateButtons();
+            }
 
         }
 
@@ -307,6 +349,14 @@ namespace TatehamaCTCPClient.Forms {
 
         private Point ConvertPointToScreen(Point p) {
             return ConvertPointToScreen(p.X, p.Y);
+        }
+
+        public Size ConvertSizeToScreen(int x, int y) {
+            return new Size(x * pictureBox1.Width / DisplaySize.Width, y * pictureBox1.Height / DisplaySize.Height);
+        }
+
+        public Size ConvertSizeToScreen(Size s) {
+            return ConvertSizeToScreen(s.Width, s.Height);
         }
 
         private bool IsInArea(Point point, int areaX, int areaY, Size areaSize, int padding = 0) {
@@ -395,6 +445,56 @@ namespace TatehamaCTCPClient.Forms {
             menuItemMarkupType1.CheckState = type == 0 ? CheckState.Indeterminate : CheckState.Unchecked;
             menuItemMarkupType2.CheckState = type == 1 ? CheckState.Indeterminate : CheckState.Unchecked;
             menuItemMarkupType3.CheckState = type == 2 ? CheckState.Indeterminate : CheckState.Unchecked;
+        }
+
+        public void HideButtons() {
+            if (!resizing) {
+                resizing = true;
+                foreach (var bp in buttonPanels.Values) {
+                    bp.Location = new Point(-100, -100);
+                    bp.Size = new Size(1, 1);
+                }
+            }
+        }
+
+        public void RelocateButtons() {
+            foreach(var b in buttons) {
+                if(buttonPanels.TryGetValue(b.Name, out var bp)) {
+                    bp.Size = ConvertSizeToScreen(b.Type.Size);
+                    bp.Location = ConvertPointToScreen(b.Location);
+                }
+            }
+            resizing = false;
+        }
+
+        private void picturebox1_Enter(object sender, EventArgs e) {
+            if (!ModifierKeys.HasFlag(Keys.Control)) {
+                RelocateButtons();
+            }
+        }
+
+        private void picturebox1_Leave(object sender, EventArgs e) {
+            if (!pictureBox1.ClientRectangle.Contains(pictureBox1.PointToClient(Cursor.Position))) {
+                HideButtons();
+            }
+        }
+
+        public void UpdateStatus() {
+            if (InvokeRequired) {
+                Invoke(() => {
+                    labelStatus.Text = StatusText;
+                    labelStatus.ForeColor = StatusColor;
+                });
+            }
+            else {
+                labelStatus.Text = StatusText;
+                labelStatus.ForeColor = StatusColor;
+            }
+        }
+
+        public static void SetStatus(string text, Color color) {
+            StatusText = text;
+            StatusColor = color;
         }
     }
 }
