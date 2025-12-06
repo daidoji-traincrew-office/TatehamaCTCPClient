@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+﻿
 namespace TatehamaCTCPClient.Models {
 
     /// <summary>
@@ -36,7 +31,7 @@ namespace TatehamaCTCPClient.Models {
         /// CTCてこ情報リスト
         /// </summary>
         /*public List<InterlockingLeverData> CTCLevers { get; set; } = [];*/
-        public List<RouteData> RouteDatas { get; set; }
+        public List<RouteData> RouteDatas { get; set; } = [];
 
         /*
                 /// <summary>
@@ -47,7 +42,7 @@ namespace TatehamaCTCPClient.Models {
         /// <summary>
         /// 集中・駅扱状態
         /// </summary>
-        public Dictionary<string, CenterControlState> CenterControlStates { get; set; }
+        public Dictionary<string, CenterControlState> CenterControlStates { get; set; } = [];
 
         /// <summary>
         /// 列番情報リスト
@@ -58,6 +53,12 @@ namespace TatehamaCTCPClient.Models {
         /// 表示灯情報リスト
         /// </summary>
         public Dictionary<string, bool> Lamps { get; set; } = [];
+
+
+        /// <summary>
+        /// TST時差
+        /// </summary>
+        public int TimeOffset { get; set; } = 14;
     }
 
     public enum CenterControlState {

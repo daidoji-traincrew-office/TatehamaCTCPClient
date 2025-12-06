@@ -1,13 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.ObjectModel;
 using TatehamaCTCPClient.Models;
 
 namespace TatehamaCTCPClient.Buttons {
     public class YudoButton : CTCPButton {
+
+        public bool Active { get; private set; } = false;
+
+        public override LightingType Lighting => Active ? LightingType.LIGHTING : LightingType.NONE;
+
+        public override bool NeedsUpdate => true;
 
         private List<SelectionButton> targets = [];
 
@@ -22,7 +23,7 @@ namespace TatehamaCTCPClient.Buttons {
         }
 
         public override void OnClick() {
-
+            Active = !Active;
         }
     }
 }

@@ -3,7 +3,6 @@ using OpenIddict.Client;
 using System.Diagnostics;
 using System.Drawing.Drawing2D;
 using System.Media;
-using System.Windows.Forms;
 using TatehamaCTCPClient.Communications;
 using TatehamaCTCPClient.Manager;
 using TatehamaCTCPClient.Models;
@@ -143,6 +142,16 @@ namespace TatehamaCTCPClient.Forms {
             set;
         } = false;
 
+        public bool UseServerTime {
+            get;
+            private set;
+        } = true;
+
+        public int ServerTime {
+            get;
+            private set;
+        } = 14;
+
         public bool DetectResize {
             get; set;
         } = false;
@@ -153,6 +162,12 @@ namespace TatehamaCTCPClient.Forms {
         } = false;
 
         public bool Silent { get; private set; } = false;
+
+        private Image PictureBoxImage => displayManager.PictureBoxImage;
+
+        private int PictureBoxWidth => displayManager.PictureBoxWidth;
+
+        private int PictureBoxHeight => displayManager.PictureBoxHeight;
 
         public CTCPWindow(OpenIddictClientService service) {
             this.service = service;
@@ -204,7 +219,9 @@ namespace TatehamaCTCPClient.Forms {
             }
             else {
                 labelScale.ForeColor = Color.LightGreen;
-                labelScale.Text = $"Scale：{(int)((double)pictureBox1.Image.Width / displayManager.OriginalWidth * 100 + 0.5)}%";
+                lock (displayManager.pictureBoxSync) {
+                    labelScale.Text = $"Scale：{(int)((double)PictureBoxImage.Width / displayManager.OriginalWidth * 100 + 0.5)}%";
+                }
             }
 
 
@@ -247,10 +264,10 @@ namespace TatehamaCTCPClient.Forms {
             SetTopMost(topMostSetting);
 
             //デフォルトのサーバへの接続処理
-            /*serverCommunication = new(this, service);
+            serverCommunication = new(this, service);
             serverCommunication.DataUpdated += UpdateServerData;
             LogManager.AddInfoLog($"{(ServerAddress.SignalAddress.Contains("dev") ? "Dev" : "Prod")}サーバに接続します");
-            await TryConnectServer();*/
+            await TryConnectServer();
         }
 
 
@@ -275,6 +292,11 @@ namespace TatehamaCTCPClient.Forms {
                 return;
             }
             DataToCTCP.SetLatest(data);
+
+            ServerTime = data.TimeOffset;
+            while (ServerTime < 0) {
+                ServerTime += 24;
+            }
             /*var tcList = data.TrackCircuitDatas;
             var sList = data.SwitchDatas;
             var dList = data.DirectionDatas;
@@ -286,9 +308,9 @@ namespace TatehamaCTCPClient.Forms {
             updated |= dList != null && UpdateDirectionData(dList);
             updated |= trackManager.UpdateNumberWindow();
 
-            if (updated) {
-                displayManager.UpdateTID();
-            }*/
+            if (updated) {*/
+            displayManager.UpdateCTCP();
+            /*}*/
         }
 
         private async void ClockUpdateLoop() {
@@ -338,19 +360,19 @@ namespace TatehamaCTCPClient.Forms {
                 }
             }*/
 
-            /*if (!UpdateDebug() && displayManager.Started && (ReservedUpdate || (oldFlashState != FlashState) && MarkupType < 2 && (trainDataDict.Values.Any(td => td.Markup) || MarkupDuplication || MarkupFillZero || MarkupNotTrain || MarkupDelayed > 0 || displayManager.Markuped))) {
+            if (/*!UpdateDebug() && */displayManager.Started && (ReservedUpdate/* || (oldFlashState != FlashState) && MarkupType < 2 && (trainDataDict.Values.Any(td => td.Markup) || MarkupDuplication || MarkupFillZero || MarkupNotTrain || MarkupDelayed > 0 || displayManager.Markuped)*/)) {
                 ReservedUpdate = false;
-                displayManager.UpdateTID();
-            }*/
+                displayManager.UpdateCTCP();
+            }
 
 
             if (usingMagnifyingGlass) {
                 var cp1 = pictureBox1.PointToClient(Cursor.Position);
                 var cp2 = PointToClient(Cursor.Position);
 
-                if (cp1.X < 0 || cp1.Y < 0 || cp1.X > pictureBox1.Width || cp1.Y > pictureBox1.Height || cp2.X < 0 || cp2.Y < 0 || cp2.X > ClientSize.Width || cp2.Y > ClientSize.Height) {
-                    var width = pictureBox1.Width - cp1.X + magnifyingGlassSize / 2;
-                    var height = pictureBox1.Height - cp1.Y + magnifyingGlassSize / 2;
+                if (cp1.X < 0 || cp1.Y < 0 || cp1.X > PictureBoxWidth || cp1.Y > PictureBoxHeight || cp2.X < 0 || cp2.Y < 0 || cp2.X > ClientSize.Width || cp2.Y > ClientSize.Height) {
+                    var width = PictureBoxWidth - cp1.X + magnifyingGlassSize / 2;
+                    var height = PictureBoxHeight - cp1.Y + magnifyingGlassSize / 2;
                     var mouseX = cp1.X;
                     var mouseY = cp1.Y;
                     if (width <= 1 || height <= 1) {
@@ -359,7 +381,7 @@ namespace TatehamaCTCPClient.Forms {
                     }
                     else {
                         pictureBox2.Location = new Point(mouseX - magnifyingGlassSize / 2, mouseY - magnifyingGlassSize / 2);
-                        pictureBox2.Size = new Size(Math.Min(magnifyingGlassSize, Math.Max(0, pictureBox1.Width - cp1.X + magnifyingGlassSize / 2)), Math.Min(magnifyingGlassSize, Math.Max(0, pictureBox1.Height - cp1.Y + magnifyingGlassSize / 2)));
+                        pictureBox2.Size = new Size(Math.Min(magnifyingGlassSize, Math.Max(0, PictureBoxWidth - cp1.X + magnifyingGlassSize / 2)), Math.Min(magnifyingGlassSize, Math.Max(0, PictureBoxHeight - cp1.Y + magnifyingGlassSize / 2)));
                     }
 
                     SetMagnifyingGlass(cp1.X, cp1.Y);
@@ -368,6 +390,9 @@ namespace TatehamaCTCPClient.Forms {
 
 
             Clock = RealTime;
+            if (UseServerTime) {
+                TimeOffset = new TimeSpan(ServerTime, 0, 0);
+            }
             var time = Clock + TimeOffset;
             displayManager.SetClockSubWindows(time);
             if (showOffset <= 0) {
@@ -390,7 +415,7 @@ namespace TatehamaCTCPClient.Forms {
                     SetStatusSubWindow("×", Color.Red);
                     Debug.WriteLine($"データ受信不能: {delaySeconds}");
                     if (!Silent) {
-                        TaskDialog.ShowDialog(new TaskDialogPage {
+                        TaskDialog.ShowDialog(this, new TaskDialogPage {
                             Caption = "データ受信不能 | TID - ダイヤ運転会",
                             Heading = "データ受信不能",
                             Icon = TaskDialogIcon.Error,
@@ -413,6 +438,9 @@ namespace TatehamaCTCPClient.Forms {
         }
 
         private void labelClock_MouseDown(object sender, MouseEventArgs e) {
+            if (e.Button == MouseButtons.Middle) {
+                SetUseServerTime(true);
+            }
             if (e.Button != MouseButtons.Left && e.Button != MouseButtons.Right) {
                 return;
             }
@@ -467,6 +495,7 @@ namespace TatehamaCTCPClient.Forms {
                     showOffset = 40;
                 }
             }
+            SetUseServerTime(false);
             TimeOffset = new TimeSpan(hour % 24, min % 60, sec % 60);
             if (showOffset > 0) {
                 labelClock.Text = $"+{TimeOffset.Hours}h{TimeOffset.Minutes}m{TimeOffset.Seconds}s";
@@ -619,7 +648,9 @@ namespace TatehamaCTCPClient.Forms {
             }
             else {
                 labelScale.ForeColor = Color.LightGreen;
-                labelScale.Text = $"Scale：{(int)((double)pictureBox1.Image.Width / displayManager.OriginalWidth * 100 + 0.5)}%";
+                lock (displayManager.pictureBoxSync) {
+                    labelScale.Text = $"Scale：{(int)((double)PictureBoxImage.Width / displayManager.OriginalWidth * 100 + 0.5)}%";
+                }
             }
             ChangeDefaultCursor();
         }
@@ -643,13 +674,17 @@ namespace TatehamaCTCPClient.Forms {
             }
             else {
                 labelScale.ForeColor = Color.LightGreen;
-                displayManager.ChangeScale();
+                lock (displayManager.pictureBoxSync) {
+                    displayManager.ChangeScale();
+                }
+
             }
-            labelScale.Text = $"Scale：{(int)((double)pictureBox1.Image.Width / displayManager.OriginalWidth * 100 + 0.5)}%";
+            labelScale.Text = $"Scale：{(int)((double)PictureBoxImage.Width / displayManager.OriginalWidth * 100 + 0.5)}%";
             ChangeDefaultCursor();
         }
 
         private void SetHourQuick(int hour) {
+            SetUseServerTime(false);
             TimeOffset = new TimeSpan((hour + 24 - Clock.Hour) % 24, TimeOffset.Minutes, TimeOffset.Seconds);
         }
 
@@ -698,13 +733,37 @@ namespace TatehamaCTCPClient.Forms {
             }
         }
 
+        private void menuItemServerTime_Click(object sender, EventArgs e) {
+            SetUseServerTime(!UseServerTime);
+
+        }
+
+        public void SetUseServerTime(bool value) {
+            if (serverCommunication != null) {
+                UseServerTime = value;
+                menuItemServerTime.CheckState = UseServerTime ? CheckState.Checked : CheckState.Unchecked;
+                Color color;
+                if (UseServerTime) {
+                    color = Color.White;
+                }
+                else {
+                    color = Color.Yellow;
+                }
+                labelClock.ForeColor = color;
+                foreach (var w in displayManager.SubWindows) {
+                    w.SetClockColor(color);
+                }
+            }
+        }
+
         private void CTCPWindow_KeyDown(object sender, KeyEventArgs e) {
             var code = e.KeyData & Keys.KeyCode;
             var mod = e.KeyData & Keys.Modifiers;
             /*if ((mod & Keys.Shift) == Keys.Shift) {
                 pictureBox1.Cursor = Cursors.Hand;
             }
-            else */if ((mod & Keys.Control) == Keys.Control) {
+            else */
+            if ((mod & Keys.Control) == Keys.Control) {
                 pictureBox1.Cursor = Cursors.Cross;
                 displayManager.HideButtons();
             }
@@ -718,7 +777,7 @@ namespace TatehamaCTCPClient.Forms {
                     }
                     var end = pictureBox1.PointToClient(Cursor.Position);
                     var center = new Point((start.X + end.X) / 2 - end.X + Cursor.Position.X, (start.Y + end.Y) / 2 - end.Y + Cursor.Position.Y);
-                    end = new Point(end.X > 10 ? (start.X < pictureBox1.Width && end.X < pictureBox1.Width - 10 ? end.X : pictureBox1.Width) : (start.X > 0 ? 0 : end.X), end.Y > 10 ? (start.Y < pictureBox1.Height && end.Y < pictureBox1.Height - 10 ? end.Y : pictureBox1.Height) : (start.Y > 0 ? 0 : end.Y));
+                    end = new Point(end.X > 10 ? (start.X < PictureBoxWidth && end.X < PictureBoxWidth - 10 ? end.X : PictureBoxWidth) : (start.X > 0 ? 0 : end.X), end.Y > 10 ? (start.Y < PictureBoxHeight && end.Y < PictureBoxHeight - 10 ? end.Y : PictureBoxHeight) : (start.Y > 0 ? 0 : end.Y));
                     start = ConvertPointToOriginal(start);
                     end = ConvertPointToOriginal(end);
                     var p = new Point(Math.Min(start.X, end.X), Math.Min(start.Y, end.Y));
@@ -842,7 +901,9 @@ namespace TatehamaCTCPClient.Forms {
                 if (WindowState != FormWindowState.Minimized) {
                     if (CTCPScale == -1 && !FixedScale) {
                         displayManager.ChangeScale(false);
-                        labelScale.Text = $"Scale：{(int)((double)pictureBox1.Image.Width / displayManager.OriginalWidth * 100 + 0.5)}%";
+                        lock (displayManager.pictureBoxSync) {
+                            labelScale.Text = $"Scale：{(int)((double)PictureBoxImage.Width / displayManager.OriginalWidth * 100 + 0.5)}%";
+                        }
                     }
                     else {
                         ChangeDefaultCursor();
@@ -872,13 +933,13 @@ namespace TatehamaCTCPClient.Forms {
         }
 
         private void ChangeDefaultCursor() {
-            defaultCursor = CTCPScale == -1 ? Cursors.Default : (pictureBox1.Width < panel1.Width && pictureBox1.Height < panel1.Height ? Cursors.Default : Cursors.SizeAll);
+            defaultCursor = CTCPScale == -1 ? Cursors.Default : (PictureBoxWidth < panel1.Width && PictureBoxHeight < panel1.Height ? Cursors.Default : Cursors.SizeAll);
             UpdateMouseCursor();
         }
 
         private void CTCPWindow_Closing(object sender, EventArgs e) {
             if (LogManager.Output && LogManager.NeededWarning) {
-                TaskDialog.ShowDialog(new TaskDialogPage {
+                TaskDialog.ShowDialog(this, new TaskDialogPage {
                     Caption = "エラーログ出力 | TID - ダイヤ運転会",
                     Heading = "エラーログ出力",
                     Icon = TaskDialogIcon.Information,
@@ -906,39 +967,40 @@ namespace TatehamaCTCPClient.Forms {
                     if (FixedScale) {
                         SetFixedScale(false);
                     }
-                    lock (pictureBox1.Image) {
-                        var size = Size;
-                        var dp = e.Location;
-                        var point = ConvertPointToOriginal(dp.X, dp.Y);
-                        var rate = (pictureBox1.Image.Width + e.Delta * 0.2) / displayManager.OriginalWidth;
-                        var width = Size.Width - ClientSize.Width + (int)(displayManager.OriginalWidth * rate);
-                        var height = Size.Height - ClientSize.Height + panel1.Location.Y + (int)(displayManager.OriginalHeight * rate);
-                        var screenSize = Screen.FromControl(this).Bounds;
-                        screenSize = new Rectangle(screenSize.Location, new Size(screenSize.Width + 20, screenSize.Height + 20));
-                        if (width <= screenSize.Width && height <= screenSize.Height) {
-                            Size = new Size(width, height);
-                            var np = ConvertPointToScreen(point);
-                            if (size != Size) {
-                                Location = new Point(Location.X + dp.X - np.X, Location.Y + dp.Y - np.Y);
-                            }
+                    var size = Size;
+                    var dp = e.Location;
+                    var point = ConvertPointToOriginal(dp.X, dp.Y);
+                    double rate;
+                    lock (displayManager.pictureBoxSync) {
+                        rate = (PictureBoxImage.Width + e.Delta * 0.2) / displayManager.OriginalWidth;
+                    }
+                    var width = Size.Width - ClientSize.Width + (int)(displayManager.OriginalWidth * rate);
+                    var height = Size.Height - ClientSize.Height + panel1.Location.Y + (int)(displayManager.OriginalHeight * rate);
+                    var screenSize = Screen.FromControl(this).Bounds;
+                    screenSize = new Rectangle(screenSize.Location, new Size(screenSize.Width + 20, screenSize.Height + 20));
+                    if (width <= screenSize.Width && height <= screenSize.Height) {
+                        Size = new Size(width, height);
+                        var np = ConvertPointToScreen(point);
+                        if (size != Size) {
+                            Location = new Point(Location.X + dp.X - np.X, Location.Y + dp.Y - np.Y);
                         }
-                        else if (width > screenSize.Width) {
-                            width = screenSize.Width;
-                            height = Size.Height - ClientSize.Height + panel1.Location.Y + displayManager.OriginalHeight * (screenSize.Width - Size.Width + ClientSize.Width) / displayManager.OriginalWidth;
-                            Size = new Size(width, height);
-                            var np = ConvertPointToScreen(point);
-                            if (size != Size) {
-                                Location = new Point(Location.X + dp.X - np.X, Location.Y + dp.Y - np.Y);
-                            }
+                    }
+                    else if (width > screenSize.Width) {
+                        width = screenSize.Width;
+                        height = Size.Height - ClientSize.Height + panel1.Location.Y + displayManager.OriginalHeight * (screenSize.Width - Size.Width + ClientSize.Width) / displayManager.OriginalWidth;
+                        Size = new Size(width, height);
+                        var np = ConvertPointToScreen(point);
+                        if (size != Size) {
+                            Location = new Point(Location.X + dp.X - np.X, Location.Y + dp.Y - np.Y);
                         }
-                        else {
-                            height = screenSize.Height;
-                            width = Size.Width - ClientSize.Width + displayManager.OriginalWidth * (screenSize.Height - Size.Height + ClientSize.Height - panel1.Location.Y) / displayManager.OriginalHeight;
-                            Size = new Size(width, height);
-                            var np = ConvertPointToScreen(point);
-                            if (size != Size) {
-                                Location = new Point(Location.X + dp.X - np.X, Location.Y + dp.Y - np.Y);
-                            }
+                    }
+                    else {
+                        height = screenSize.Height;
+                        width = Size.Width - ClientSize.Width + displayManager.OriginalWidth * (screenSize.Height - Size.Height + ClientSize.Height - panel1.Location.Y) / displayManager.OriginalHeight;
+                        Size = new Size(width, height);
+                        var np = ConvertPointToScreen(point);
+                        if (size != Size) {
+                            Location = new Point(Location.X + dp.X - np.X, Location.Y + dp.Y - np.Y);
                         }
                     }
                 }
@@ -953,7 +1015,7 @@ namespace TatehamaCTCPClient.Forms {
         }
 
         private void PictureBox1_MouseDown(object sender, MouseEventArgs e) {
-            if (e.Button == MouseButtons.Middle && pictureBox1.Width < displayManager.OriginalWidth) {
+            if (e.Button == MouseButtons.Middle && PictureBoxWidth < displayManager.OriginalWidth) {
                 if (usingMagnifyingGlass) {
                     usingMagnifyingGlass = false;
 
@@ -963,15 +1025,15 @@ namespace TatehamaCTCPClient.Forms {
                 }
                 else {
                     usingMagnifyingGlass = true;
-                    var width = pictureBox1.Width - e.X + magnifyingGlassSize / 2;
-                    var height = pictureBox1.Height - e.Y + magnifyingGlassSize / 2;
+                    var width = PictureBoxWidth - e.X + magnifyingGlassSize / 2;
+                    var height = PictureBoxHeight - e.Y + magnifyingGlassSize / 2;
                     if (width <= 1 || height <= 1) {
                         pictureBox2.Location = new Point(-300, -300);
                         pictureBox2.Size = new Size(240, 240);
                     }
                     else {
                         pictureBox2.Location = new Point(e.X - magnifyingGlassSize / 2, e.Y - magnifyingGlassSize / 2);
-                        pictureBox2.Size = new Size(Math.Min(magnifyingGlassSize, Math.Max(0, pictureBox1.Width - e.X + magnifyingGlassSize / 2)), Math.Min(magnifyingGlassSize, Math.Max(0, pictureBox1.Height - e.Y + magnifyingGlassSize / 2)));
+                        pictureBox2.Size = new Size(Math.Min(magnifyingGlassSize, Math.Max(0, PictureBoxWidth - e.X + magnifyingGlassSize / 2)), Math.Min(magnifyingGlassSize, Math.Max(0, PictureBoxHeight - e.Y + magnifyingGlassSize / 2)));
                     }
 
                     SetMagnifyingGlass(e.X, e.Y);
@@ -998,7 +1060,8 @@ namespace TatehamaCTCPClient.Forms {
                         }
                     }
                 }
-                else */if (ModifierKeys.HasFlag(Keys.Control)) {
+                else */
+                if (ModifierKeys.HasFlag(Keys.Control)) {
                     selectionStarting = e.Location;
                 }
                 else {
@@ -1016,7 +1079,7 @@ namespace TatehamaCTCPClient.Forms {
         }
 
         private void PictureBox2_MouseDown(object sender, MouseEventArgs e) {
-            if (e.Button == MouseButtons.Middle && pictureBox1.Width < displayManager.OriginalWidth) {
+            if (e.Button == MouseButtons.Middle && PictureBoxWidth < displayManager.OriginalWidth) {
                 if (usingMagnifyingGlass) {
                     usingMagnifyingGlass = false;
 
@@ -1043,7 +1106,8 @@ namespace TatehamaCTCPClient.Forms {
                         }
                     }
                 }
-                else */if (ModifierKeys.HasFlag(Keys.Control)) {
+                else */
+                if (ModifierKeys.HasFlag(Keys.Control)) {
                     usingMagnifyingGlass = false;
 
                     pictureBox2.Location = new Point(-300, -300);
@@ -1056,8 +1120,8 @@ namespace TatehamaCTCPClient.Forms {
 
         private void PictureBox1_MouseMove(object sender, MouseEventArgs e) {
             if (usingMagnifyingGlass) {
-                var width = pictureBox1.Width - e.X + magnifyingGlassSize / 2;
-                var height = pictureBox1.Height - e.Y + magnifyingGlassSize / 2;
+                var width = PictureBoxWidth - e.X + magnifyingGlassSize / 2;
+                var height = PictureBoxHeight - e.Y + magnifyingGlassSize / 2;
                 var mouseX = e.X;
                 var mouseY = e.Y;
                 if (width <= 1 || height <= 1) {
@@ -1066,7 +1130,7 @@ namespace TatehamaCTCPClient.Forms {
                 }
                 else {
                     pictureBox2.Location = new Point(mouseX - magnifyingGlassSize / 2, mouseY - magnifyingGlassSize / 2);
-                    pictureBox2.Size = new Size(Math.Min(magnifyingGlassSize, Math.Max(0, pictureBox1.Width - e.X + magnifyingGlassSize / 2)), Math.Min(magnifyingGlassSize, Math.Max(0, pictureBox1.Height - e.Y + magnifyingGlassSize / 2)));
+                    pictureBox2.Size = new Size(Math.Min(magnifyingGlassSize, Math.Max(0, PictureBoxWidth - e.X + magnifyingGlassSize / 2)), Math.Min(magnifyingGlassSize, Math.Max(0, PictureBoxHeight - e.Y + magnifyingGlassSize / 2)));
                 }
 
                 SetMagnifyingGlass(e.X, e.Y);
@@ -1074,15 +1138,20 @@ namespace TatehamaCTCPClient.Forms {
 
             }
             if (mouseLoc.HasValue && !selectionStarting.HasValue && !ModifierKeys.HasFlag(Keys.Shift) && (e.Button & MouseButtons.Left) == MouseButtons.Left) {
-                panel1.AutoScrollPosition = new Point(panel1.HorizontalScroll.Value - e.Location.X + mouseLoc.Value.X, panel1.VerticalScroll.Value - e.Location.Y + mouseLoc.Value.Y);
+                try {
+                    panel1.AutoScrollPosition = new Point(panel1.HorizontalScroll.Value - e.Location.X + mouseLoc.Value.X, panel1.VerticalScroll.Value - e.Location.Y + mouseLoc.Value.Y);
+                }
+                catch (Exception ex) {
+                    Debug.WriteLine(ex.StackTrace);
+                }
             }
             if (selectionStarting.HasValue) {
                 var s = selectionStarting.Value;
-                selectionStarting = new Point(s.X > 16 ? (s.X < pictureBox1.Width - 16 ? s.X : pictureBox1.Width) : 0, s.Y > 16 ? (s.Y < pictureBox1.Height - 16 ? s.Y : pictureBox1.Height) : 0);
+                selectionStarting = new Point(s.X > 16 ? (s.X < PictureBoxWidth - 16 ? s.X : PictureBoxWidth) : 0, s.Y > 16 ? (s.Y < PictureBoxHeight - 16 ? s.Y : PictureBoxHeight) : 0);
                 var start = selectionStarting.Value;
                 var end = e.Location;
                 var center = new Point((start.X + end.X) / 2 - end.X + Cursor.Position.X, (start.Y + end.Y) / 2 - end.Y + Cursor.Position.Y);
-                end = new Point(end.X > 16 ? (start.X >= pictureBox1.Width || end.X < pictureBox1.Width - 16 ? end.X : pictureBox1.Width) : (start.X > 0 ? 0 : end.X), end.Y > 16 ? (start.Y >= pictureBox1.Height || end.Y < pictureBox1.Height - 16 ? end.Y : pictureBox1.Height) : (start.Y > 0 ? 0 : end.Y));
+                end = new Point(end.X > 16 ? (start.X >= PictureBoxWidth || end.X < PictureBoxWidth - 16 ? end.X : PictureBoxWidth) : (start.X > 0 ? 0 : end.X), end.Y > 16 ? (start.Y >= PictureBoxHeight || end.Y < PictureBoxHeight - 16 ? end.Y : PictureBoxHeight) : (start.Y > 0 ? 0 : end.Y));
                 var startOrig = ConvertPointToOriginal(start);
                 var endOrig = ConvertPointToOriginal(end);
                 var pos = new Point(Math.Min(start.X, end.X), Math.Min(start.Y, end.Y));
@@ -1111,8 +1180,8 @@ namespace TatehamaCTCPClient.Forms {
             if (usingMagnifyingGlass) {
 
                 var cp = pictureBox1.PointToClient(Cursor.Position);
-                var width = pictureBox1.Width - cp.X + magnifyingGlassSize / 2;
-                var height = pictureBox1.Height - cp.Y + magnifyingGlassSize / 2;
+                var width = PictureBoxWidth - cp.X + magnifyingGlassSize / 2;
+                var height = PictureBoxHeight - cp.Y + magnifyingGlassSize / 2;
                 var mouseX = cp.X;
                 var mouseY = cp.Y;
                 if (width <= 1 || height <= 1) {
@@ -1121,7 +1190,7 @@ namespace TatehamaCTCPClient.Forms {
                 }
                 else {
                     pictureBox2.Location = new Point(mouseX - magnifyingGlassSize / 2, mouseY - magnifyingGlassSize / 2);
-                    pictureBox2.Size = new Size(Math.Min(magnifyingGlassSize, Math.Max(0, pictureBox1.Width - cp.X + magnifyingGlassSize / 2)), Math.Min(magnifyingGlassSize, Math.Max(0, pictureBox1.Height - cp.Y + magnifyingGlassSize / 2)));
+                    pictureBox2.Size = new Size(Math.Min(magnifyingGlassSize, Math.Max(0, PictureBoxWidth - cp.X + magnifyingGlassSize / 2)), Math.Min(magnifyingGlassSize, Math.Max(0, PictureBoxHeight - cp.Y + magnifyingGlassSize / 2)));
                 }
                 UpdateMouseCursor();
                 SetMagnifyingGlass(cp.X, cp.Y);
@@ -1140,7 +1209,7 @@ namespace TatehamaCTCPClient.Forms {
                     }
                     var end = e.Location;
                     var center = new Point((start.X + end.X) / 2 - end.X + Cursor.Position.X, (start.Y + end.Y) / 2 - end.Y + Cursor.Position.Y);
-                    end = new Point(end.X > 16 ? (start.X >= pictureBox1.Width || end.X < pictureBox1.Width - 16 ? end.X : pictureBox1.Width) : (start.X > 0 ? 0 : end.X), end.Y > 16 ? (start.Y >= pictureBox1.Height || end.Y < pictureBox1.Height - 16 ? end.Y : pictureBox1.Height) : (start.Y > 0 ? 0 : end.Y));
+                    end = new Point(end.X > 16 ? (start.X >= PictureBoxWidth || end.X < PictureBoxWidth - 16 ? end.X : PictureBoxWidth) : (start.X > 0 ? 0 : end.X), end.Y > 16 ? (start.Y >= PictureBoxHeight || end.Y < PictureBoxHeight - 16 ? end.Y : PictureBoxHeight) : (start.Y > 0 ? 0 : end.Y));
                     start = ConvertPointToOriginal(start);
                     end = ConvertPointToOriginal(end);
                     var p = new Point(Math.Min(start.X, end.X), Math.Min(start.Y, end.Y));
@@ -1155,6 +1224,7 @@ namespace TatehamaCTCPClient.Forms {
                         var border = (Size.Width - ClientSize.Width) / 2;
                         sub.Location = new Point(center.X - s.Width / 2 - border, center.Y - s.Height / 2 - Size.Height + ClientSize.Height - panel1.Location.Y / 2 - border);
                         sub.SetTopMost(TopMost);
+                        sub.SetClockColor(UseServerTime ? Color.White : Color.Yellow);
                         displayManager.AddSubWindow(sub);
                     }
                 }
@@ -1164,10 +1234,10 @@ namespace TatehamaCTCPClient.Forms {
         public void SetMagnifyingGlass(int x, int y) {
             if (usingMagnifyingGlass) {
                 lock (pictureBox2) {
-                    var posX = magnifyingGlassSize / 2 - x * displayManager.OriginalWidth / pictureBox1.Width;
-                    var posY = magnifyingGlassSize / 2 - y * displayManager.OriginalHeight / pictureBox1.Height;
-                    posX = posX > magnifyingGlassSize / 2 + 5 ? magnifyingGlassSize / 2 - x : (posX < magnifyingGlassSize / 2 - displayManager.OriginalWidth ? pictureBox1.Width - x + magnifyingGlassSize / 2 - displayManager.OriginalWidth : posX);
-                    posY = posY > magnifyingGlassSize / 2 + 5 ? magnifyingGlassSize / 2 - y : (posY < magnifyingGlassSize / 2 - displayManager.OriginalHeight ? pictureBox1.Height - y + magnifyingGlassSize / 2 - displayManager.OriginalHeight : posY);
+                    var posX = magnifyingGlassSize / 2 - x * displayManager.OriginalWidth / PictureBoxWidth;
+                    var posY = magnifyingGlassSize / 2 - y * displayManager.OriginalHeight / PictureBoxHeight;
+                    posX = posX > magnifyingGlassSize / 2 + 5 ? magnifyingGlassSize / 2 - x : (posX < magnifyingGlassSize / 2 - displayManager.OriginalWidth ? PictureBoxWidth - x + magnifyingGlassSize / 2 - displayManager.OriginalWidth : posX);
+                    posY = posY > magnifyingGlassSize / 2 + 5 ? magnifyingGlassSize / 2 - y : (posY < magnifyingGlassSize / 2 - displayManager.OriginalHeight ? PictureBoxHeight - y + magnifyingGlassSize / 2 - displayManager.OriginalHeight : posY);
 
                     var b = new Bitmap(magnifyingGlassSize, magnifyingGlassSize);
                     var old = pictureBox2.Image;
@@ -1200,7 +1270,7 @@ namespace TatehamaCTCPClient.Forms {
         }
 
         public Point ConvertPointToOriginal(int x, int y) {
-            return new Point(x * displayManager.OriginalWidth / pictureBox1.Width, y * displayManager.OriginalHeight / pictureBox1.Height);
+            return new Point(x * displayManager.OriginalWidth / PictureBoxWidth, y * displayManager.OriginalHeight / PictureBoxHeight);
         }
 
         public Point ConvertPointToOriginal(Point p) {
@@ -1208,7 +1278,7 @@ namespace TatehamaCTCPClient.Forms {
         }
 
         public Point ConvertPointToScreen(int x, int y) {
-            return new Point(x * pictureBox1.Width / displayManager.OriginalWidth, y * pictureBox1.Height / displayManager.OriginalHeight);
+            return new Point(x * PictureBoxWidth / displayManager.OriginalWidth, y * PictureBoxHeight / displayManager.OriginalHeight);
         }
 
         public Point ConvertPointToScreen(Point p) {
@@ -1216,7 +1286,7 @@ namespace TatehamaCTCPClient.Forms {
         }
 
         public Size ConvertSizeToOriginal(int x, int y) {
-            return new Size(x * displayManager.OriginalWidth / pictureBox1.Width, y * displayManager.OriginalHeight / pictureBox1.Height);
+            return new Size(x * displayManager.OriginalWidth / PictureBoxWidth, y * displayManager.OriginalHeight / PictureBoxHeight);
         }
 
         public Size ConvertSizeToOriginal(Size s) {
@@ -1224,7 +1294,7 @@ namespace TatehamaCTCPClient.Forms {
         }
 
         public Size ConvertSizeToScreen(int x, int y) {
-            return new Size(x * pictureBox1.Width / displayManager.OriginalWidth, y * pictureBox1.Height / displayManager.OriginalHeight);
+            return new Size(x * PictureBoxWidth / displayManager.OriginalWidth, y * PictureBoxHeight / displayManager.OriginalHeight);
         }
 
         public Size ConvertSizeToScreen(Size s) {
@@ -1241,7 +1311,8 @@ namespace TatehamaCTCPClient.Forms {
                 pictureBox1.Cursor = Cursors.Hand;
                 pictureBox2.Cursor = Cursors.Hand;
             }
-            else*/ if (ModifierKeys.HasFlag(Keys.Control)) {
+            else*/
+            if (ModifierKeys.HasFlag(Keys.Control)) {
                 pictureBox1.Cursor = Cursors.Cross;
                 pictureBox2.Cursor = Cursors.Cross;
             }
@@ -1249,7 +1320,7 @@ namespace TatehamaCTCPClient.Forms {
                 pictureBox1.Cursor = Cursors.Cross;
                 pictureBox2.Cursor = Cursors.Cross;
             }
-            else if(pictureBox1.Cursor != defaultCursor || pictureBox2.Cursor != Cursors.Cross) {
+            else if (pictureBox1.Cursor != defaultCursor || pictureBox2.Cursor != Cursors.Cross) {
                 pictureBox1.Cursor = defaultCursor;
                 pictureBox2.Cursor = Cursors.Cross;
             }

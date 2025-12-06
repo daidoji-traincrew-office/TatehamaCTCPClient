@@ -1,12 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
+﻿using System.Diagnostics;
 using TatehamaCTCPClient.Buttons;
 using TatehamaCTCPClient.Manager;
 
@@ -45,11 +37,13 @@ namespace TatehamaCTCPClient.Forms {
 
         private Size windowSize;
 
-        private readonly List<CTCPButton> buttons;
+        private readonly List<CTCPButton> buttons = [];
 
-        private readonly Dictionary<string, Panel> buttonPanels = [];
+        private readonly Dictionary<string, PictureBox> buttonPanels = [];
 
         private bool resizing = false;
+
+        public readonly object pictureBoxSync = new object();
 
         /// <summary>
         /// WASDキーなど使用時の移動量
@@ -59,6 +53,22 @@ namespace TatehamaCTCPClient.Forms {
         public bool OpeningDialog {
             get;
             private set;
+        }
+
+        private Image pictureBoxImage = new Bitmap(10, 10);
+
+        public Image PictureBoxImage {
+            get {
+                return pictureBox1.Image;
+            }
+            private set {
+                var oldPic = pictureBox1.Image;
+                var oldPic1 = pictureBoxImage;
+                pictureBox1.Image = value;
+                pictureBoxImage = value;
+                oldPic?.Dispose();
+                oldPic1?.Dispose();
+            }
         }
 
         /// <summary>
@@ -92,25 +102,35 @@ namespace TatehamaCTCPClient.Forms {
 
             var hover = pictureBox1.ClientRectangle.Contains(pictureBox1.PointToClient(Cursor.Position));
 
-            buttons = displayManager.GetButtonInArea(location, size);
+            buttons.AddRange(displayManager.GetButtonInArea(location, size));
 
             foreach(var b in buttons) {
-                var p = new Panel();
+                var p = new PictureBox();
                 pictureBox1.Controls.Add(p);
                 p.Location = hover ? new Point(b.Location.X - StartLocation.X, b.Location.Y - StartLocation.Y) : new Point(-100, -100);
                 p.Name = b.Name;
                 p.Size = b.Type.Size;
                 p.Parent = pictureBox1;
-                p.Cursor = Cursors.Hand;
-                p.BackColor = Color.Transparent;
-                p.Click += (sender, e) => { b.OnClick(); };
+                p.Cursor = b.Enabled ? Cursors.Hand : Cursors.Default;
+                p.BackColor = Color.White;
+                p.Click += b.NeedsUpdate ? (sender, e) => {
+                    if (displayManager.Started) {
+                        b.OnClick();
+                        displayManager.Window.ReservedUpdate = true;
+                    }
+                }
+                : (sender, e) => {
+                    if (displayManager.Started) {
+                        b.OnClick();
+                    }
+                };
                 buttonPanels.Add(b.Name, p);
             }
+            UpdateStatus();
         }
 
         public void UpdateImage(Image image) {
-            lock (pictureBox1) {
-                var old = pictureBox1.Image;
+            lock (pictureBoxSync) {
                 var b = new Bitmap(DisplaySize.Width, DisplaySize.Height);
                 using var g = Graphics.FromImage(b);
                 g.DrawImage(image, new Rectangle(0, 0, DisplaySize.Width, DisplaySize.Height), StartLocation.X, StartLocation.Y, DisplaySize.Width, DisplaySize.Height, GraphicsUnit.Pixel);
@@ -120,8 +140,33 @@ namespace TatehamaCTCPClient.Forms {
                     origOld.Dispose();
                 }
                 if (WindowState != FormWindowState.Minimized) {
-                    pictureBox1.Image = new Bitmap(original, pictureBox1.Width, pictureBox1.Height);
-                    old?.Dispose();
+                    Image imageCopy = new Bitmap(original, pictureBox1.Width, pictureBox1.Height);
+                    PictureBoxImage = new Bitmap(imageCopy);
+
+                    lock (pictureBoxSync) {
+                        try {
+                            foreach (var bt in buttons) {
+                                if (buttonPanels.TryGetValue(bt.Name, out var bp)) {
+                                    var size = ConvertSizeToScreen(bt.Type.Size);
+                                    var loc = ConvertPointToScreen(bt.Location);
+                                    var img = new Bitmap(size.Width, size.Height);
+                                    using Graphics gb = Graphics.FromImage(img);
+                                    gb.DrawImage(imageCopy, new Rectangle(0, 0, size.Width, size.Height), loc.X, loc.Y, size.Width, size.Height, GraphicsUnit.Pixel);
+                                    var old = bp.Image;
+                                    bp.Image = img;
+                                    old?.Dispose();
+                                }
+                            }
+                        }
+                        catch (InvalidOperationException e) {
+                            Debug.WriteLine(e.Source);
+                            Debug.WriteLine(e.Message);
+                            Debug.WriteLine(e.StackTrace);
+                        }
+                        finally {
+                            imageCopy.Dispose();
+                        }
+                    }
                 }
             }
         }
@@ -133,11 +178,11 @@ namespace TatehamaCTCPClient.Forms {
 
         private void PictureBox1_MouseWheel(object sender, MouseEventArgs e) {
             if (ModifierKeys.HasFlag(Keys.Control)) {
-                lock (pictureBox1.Image) {
+                lock (pictureBoxSync) {
                     var size = Size;
                     var dp = e.Location;
                     var point = ConvertPointToOriginal(dp.X, dp.Y);
-                    var rate = (pictureBox1.Image.Width + e.Delta * 0.2) / DisplaySize.Width;
+                    var rate = (PictureBoxImage.Width + e.Delta * 0.2) / DisplaySize.Width;
                     var width = Size.Width - ClientSize.Width + (int)(DisplaySize.Width * rate);
                     var height = Size.Height - ClientSize.Height + pictureBox1.Location.Y + (int)(DisplaySize.Height * rate);
                     var screenSize = Screen.FromControl(this).Bounds;
@@ -216,10 +261,8 @@ namespace TatehamaCTCPClient.Forms {
                 if (Location.X < 0) {
                     Location = new Point(0, Location.Y);
                 }
-                lock (pictureBox1) {
-                    var old = pictureBox1.Image;
-                    pictureBox1.Image = new Bitmap(original, pictureBox1.Width, pictureBox1.Height);
-                    old?.Dispose();
+                lock (pictureBoxSync) {
+                    PictureBoxImage = new Bitmap(original, pictureBox1.Width, pictureBox1.Height);
                 }
 
 
@@ -270,10 +313,8 @@ namespace TatehamaCTCPClient.Forms {
             else {
                 Size = new Size(Size.Width, Size.Height - ClientSize.Height + pictureBox1.Location.Y + (DisplaySize.Height * pictureBox1.Width / DisplaySize.Width));
             }
-            lock (pictureBox1) {
-                var old = pictureBox1.Image;
-                pictureBox1.Image = new Bitmap(original, pictureBox1.Width, pictureBox1.Height);
-                old?.Dispose();
+            lock (pictureBoxSync) {
+                PictureBoxImage = new Bitmap(original, pictureBox1.Width, pictureBox1.Height);
                 var ratio = pictureBox1.Width * 100 / (double)DisplaySize.Width;
                 labelScale.Text = $"Scale：{(int)ratio}%";
                 if (ratio == 100) {
@@ -458,10 +499,20 @@ namespace TatehamaCTCPClient.Forms {
         }
 
         public void RelocateButtons() {
-            foreach(var b in buttons) {
-                if(buttonPanels.TryGetValue(b.Name, out var bp)) {
-                    bp.Size = ConvertSizeToScreen(b.Type.Size);
-                    bp.Location = ConvertPointToScreen(b.Location);
+            lock (pictureBoxSync) {
+                foreach (var b in buttons) {
+                    if (buttonPanels.TryGetValue(b.Name, out var bp)) {
+                        var size = ConvertSizeToScreen(b.Type.Size);
+                        var loc = ConvertPointToScreen(b.Location);
+                        var img = new Bitmap(size.Width, size.Height);
+                        using Graphics g = Graphics.FromImage(img);
+                        g.DrawImage(PictureBoxImage, new Rectangle(0, 0, size.Width, size.Height), loc.X, loc.Y, size.Width, size.Height, GraphicsUnit.Pixel);
+                        var old = bp.Image;
+                        bp.Image = img;
+                        old?.Dispose();
+                        bp.Size = size;
+                        bp.Location = loc;
+                    }
                 }
             }
             resizing = false;
@@ -495,6 +546,10 @@ namespace TatehamaCTCPClient.Forms {
         public static void SetStatus(string text, Color color) {
             StatusText = text;
             StatusColor = color;
+        }
+
+        public void SetClockColor(Color color) {
+            labelClock.ForeColor = color;
         }
     }
 }

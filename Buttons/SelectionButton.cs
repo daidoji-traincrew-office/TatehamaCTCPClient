@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.ObjectModel;
 using TatehamaCTCPClient.Models;
 
 namespace TatehamaCTCPClient.Buttons
@@ -14,15 +9,22 @@ namespace TatehamaCTCPClient.Buttons
 
         public ReadOnlyDictionary<DestinationButton, List<LeverDirectionPair>> Routes { get; init; }
 
-        public SelectionButton(string name, Point location, ButtonType type, string label, DestinationButton destination, string leverName, LCR direction) : base(name, location, type, label) {
+        public override bool Enabled => routes.Count > 0;
+
+        public SelectionButton(string name, Point location, ButtonType type, string label, DestinationButton destination, string leverName, LCR direction) : this(name, location, type, label) {
             var l = new List<LeverDirectionPair> {
                 new(leverName, direction)
             };
             routes.Add(destination, l);
-            Routes = routes.AsReadOnly();
         }
 
         public SelectionButton(string name, int x, int y, ButtonType type, string label, DestinationButton destination, string leverName, LCR direction) : this(name, new(x, y), type, label, destination, leverName, direction) { }
+
+        public SelectionButton(string name, Point location, ButtonType type, string label) : base(name, location, type, label) {
+            Routes = routes.AsReadOnly();
+        }
+
+        public SelectionButton(string name, int x, int y, ButtonType type, string label) : this(name, new(x, y), type, label) { }
 
         public void AddRoute(DestinationButton destination, string leverName, LCR direction) {
             if (routes.TryGetValue(destination, out var l)) {

@@ -1,18 +1,12 @@
 ﻿using Microsoft.AspNetCore.SignalR.Client;
 using OpenIddict.Abstractions;
 using OpenIddict.Client;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Net.WebSockets;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 using TatehamaCTCPClient.Manager;
 using TatehamaCTCPClient.Models;
 using TatehamaCTCPClient.Forms;
-using Microsoft.EntityFrameworkCore.Migrations.Operations;
 
 namespace TatehamaCTCPClient.Communications {
     public class ServerCommunication : IAsyncDisposable {
@@ -123,9 +117,18 @@ namespace TatehamaCTCPClient.Communications {
 
                 _window.LabelStatusText = "サーバ認証失敗（タイムアウト）";
                 _window.SetStatusSubWindow("×", Color.Red);
-                DialogResult result = MessageBox.Show($"サーバ認証中にタイムアウトしました。\n再認証しますか？", "サーバ認証失敗（タイムアウト） | CTCP - ダイヤ運転会",
-                    MessageBoxButtons.YesNo, MessageBoxIcon.Error);
-                if (result == DialogResult.Yes) {
+
+                var result = TaskDialog.ShowDialog(_window, new TaskDialogPage {
+                    Caption = "サーバ認証失敗（タイムアウト） | CTCP - ダイヤ運転会",
+                    Icon = TaskDialogIcon.Error,
+                    Text = "サーバ認証中にタイムアウトしました。\n再認証しますか？",
+                    Buttons = { TaskDialogButton.Yes, TaskDialogButton.No },
+                    DefaultButton = TaskDialogButton.Yes
+                });
+
+                /*DialogResult result = MessageBox.Show($"サーバ認証中にタイムアウトしました。\n再認証しますか？", "サーバ認証失敗（タイムアウト） | CTCP - ダイヤ運転会",
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Error);*/
+                if (result == TaskDialogButton.Yes) {
                     var r = await CheckUserAuthenticationAsync();
                     return r;
                 }
@@ -141,7 +144,7 @@ namespace TatehamaCTCPClient.Communications {
                 _window.LabelStatusText = "サーバ認証失敗（拒否）";
                 _window.SetStatusSubWindow("×", Color.Red);
 
-                TaskDialog.ShowDialog(new TaskDialogPage {
+                TaskDialog.ShowDialog(_window, new TaskDialogPage {
                     Caption = "サーバ認証失敗（拒否） | CTCP - ダイヤ運転会",
                     Heading = "サーバ認証失敗（拒否）",
                     Icon = TaskDialogIcon.Error,
@@ -156,10 +159,20 @@ namespace TatehamaCTCPClient.Communications {
                 Debug.WriteLine(exception);
                 _window.LabelStatusText = "サーバ認証失敗";
                 _window.SetStatusSubWindow("×", Color.Red);
-                DialogResult result =
+
+
+                var result = TaskDialog.ShowDialog(_window, new TaskDialogPage {
+                    Caption = "サーバ認証失敗 | CTCP - ダイヤ運転会",
+                    Icon = TaskDialogIcon.Error,
+                    Text = $"サーバ認証に失敗しました。\n再認証しますか？\n\n{exception.Message}\n{exception.StackTrace})",
+                    Buttons = { TaskDialogButton.Yes, TaskDialogButton.No },
+                    DefaultButton = TaskDialogButton.Yes
+                });
+
+                /*DialogResult result =
                     MessageBox.Show($"サーバ認証に失敗しました。\n再認証しますか？\n\n{exception.Message}\n{exception.StackTrace})",
-                        "サーバ認証失敗 | CTCP - ダイヤ運転会", MessageBoxButtons.YesNo, MessageBoxIcon.Error);
-                if (result == DialogResult.Yes) {
+                        "サーバ認証失敗 | CTCP - ダイヤ運転会", MessageBoxButtons.YesNo, MessageBoxIcon.Error);*/
+                if (result == TaskDialogButton.Yes) {
                     var r = await Authorize();
                     return r;
                 }
@@ -204,7 +217,7 @@ namespace TatehamaCTCPClient.Communications {
             }
 
             _connection = new HubConnectionBuilder()
-                .WithUrl($"{ServerAddress.SignalAddress}/hub/TID?access_token={_token}")
+                .WithUrl($"{ServerAddress.SignalAddress}/hub/CTCP?access_token={_token}")
                 .Build();
             _eventHandlersSet = false;
         }
@@ -328,10 +341,18 @@ namespace TatehamaCTCPClient.Communications {
             Debug.WriteLine("Refresh token is invalid or expired.");
             LogManager.AddWarningLog("トークンが切れました");
 
-            DialogResult dialogResult = MessageBox.Show(
+            var result = TaskDialog.ShowDialog(_window, new TaskDialogPage {
+                Caption = "認証失敗 | CTCP - ダイヤ運転会",
+                Icon = TaskDialogIcon.Error,
+                Text = "トークンが切れました。\n再認証してください。\n※いいえを選択した場合、再認証にはアプリケーション再起動が必要です。",
+                Buttons = { TaskDialogButton.Yes, TaskDialogButton.No },
+                DefaultButton = TaskDialogButton.Yes
+            });
+
+            /*DialogResult dialogResult = MessageBox.Show(
                 "トークンが切れました。\n再認証してください。\n※いいえを選択した場合、再認証にはアプリケーション再起動が必要です。",
-                "認証失敗 | CTCP - ダイヤ運転会", MessageBoxButtons.YesNo, MessageBoxIcon.Error);
-            if (dialogResult == DialogResult.Yes) {
+                "認証失敗 | CTCP - ダイヤ運転会", MessageBoxButtons.YesNo, MessageBoxIcon.Error);*/
+            if (result == TaskDialogButton.Yes) {
                 LogManager.AddInfoLog("再認証を行います");
                 var r = await Authorize();
                 return r;
@@ -378,10 +399,19 @@ namespace TatehamaCTCPClient.Communications {
             catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Forbidden) {
                 LogManager.AddExceptionLog(ex);
                 LogManager.OutputLog();
-                DialogResult dialogResult = MessageBox.Show(
+
+                var result = TaskDialog.ShowDialog(_window, new TaskDialogPage {
+                    Caption = "認証拒否 | CTCP - ダイヤ運転会",
+                    Icon = TaskDialogIcon.Error,
+                    Text = "認証が拒否されました。\n再認証してください。",
+                    Buttons = { TaskDialogButton.Yes, TaskDialogButton.No },
+                    DefaultButton = TaskDialogButton.Yes
+                });
+
+                /*DialogResult dialogResult = MessageBox.Show(
                     "認証が拒否されました。\n再認証してください。",
-                    "認証拒否 | CTCP - ダイヤ運転会", MessageBoxButtons.YesNo, MessageBoxIcon.Error);
-                if (dialogResult == DialogResult.Yes) {
+                    "認証拒否 | CTCP - ダイヤ運転会", MessageBoxButtons.YesNo, MessageBoxIcon.Error);*/
+                if (result == TaskDialogButton.Yes) {
                     var r = await Authorize();
                     return r;
                 }
@@ -449,7 +479,7 @@ namespace TatehamaCTCPClient.Communications {
                     _window.LabelStatusText = "データ受信失敗";
                     _window.SetStatusSubWindow("×", Color.Red);
                     if (!_window.Silent) {
-                        TaskDialog.ShowDialog(new TaskDialogPage {
+                        TaskDialog.ShowDialog(_window, new TaskDialogPage {
                             Caption = "データ受信失敗 | CTCP - ダイヤ運転会",
                             Heading = "データ受信失敗",
                             Icon = TaskDialogIcon.Error,
@@ -471,7 +501,7 @@ namespace TatehamaCTCPClient.Communications {
                     _window.LabelStatusText = "タイムアウト";
                     _window.SetStatusSubWindow("×", Color.Red);
                     if (!_window.Silent) {
-                        TaskDialog.ShowDialog(new TaskDialogPage {
+                        TaskDialog.ShowDialog(_window, new TaskDialogPage {
                             Caption = "タイムアウト | CTCP - ダイヤ運転会",
                             Heading = "タイムアウト",
                             Icon = TaskDialogIcon.Error,
@@ -494,7 +524,7 @@ namespace TatehamaCTCPClient.Communications {
                     _window.LabelStatusText = "未知のエラー";
                     _window.SetStatusSubWindow("×", Color.Red);
                     if (!_window.Silent) {
-                        TaskDialog.ShowDialog(new TaskDialogPage {
+                        TaskDialog.ShowDialog(_window, new TaskDialogPage {
                             Caption = "未知のエラー | CTCP - ダイヤ運転会",
                             Heading = "未知のエラー",
                             Icon = TaskDialogIcon.Error,
@@ -508,6 +538,36 @@ namespace TatehamaCTCPClient.Communications {
             }
         }
 
+        /// <summary>
+        /// 進路を扛上または落下させる
+        /// </summary>
+        /// <param name="TcName">進路名</param>
+        /// <param name="raiseDrop">扛上・落下</param>
+        /// <returns></returns>
+        public async Task SetCtcRelay(string TcName, RaiseDrop raiseDrop) {
+            if (_connection == null) {
+                return;
+            }
+            try {
+                RouteData newRouteData = await _connection.InvokeAsync<RouteData>("SetCtcRelay", TcName, raiseDrop);
+                // 更新されたRouteDataを受け取る
+                var d = DataToCTCP.Latest;
+                for (int i = 0; i < d.RouteDatas.Count; i++) {
+                    if (d.RouteDatas[i].TcName == newRouteData.TcName) {
+                        d.RouteDatas[i] = newRouteData;
+                        break;
+                    }
+                }
+                DataUpdated?.Invoke(d);
+            }
+            catch (Exception ex) {
+                Debug.WriteLine($"Error server receiving: {ex.Message}{ex.StackTrace}");
+            }
+        }
+
+
+
+/*
         /// <summary>
         /// サーバーへ物理てこイベント送信用データをリクエスト
         /// </summary>
@@ -524,7 +584,7 @@ namespace TatehamaCTCPClient.Communications {
                 try {
                     if (data != null) {
                         // 変更があれば更新
-                        /*var lever = _dataManager.DataFromServer
+                        *//*var lever = _dataManager.DataFromServer
                             .PhysicalLevers.FirstOrDefault(l => l.Name == data.Name);
                         foreach (var property in data.GetType().GetProperties()) {
                             var newValue = property.GetValue(data);
@@ -532,10 +592,10 @@ namespace TatehamaCTCPClient.Communications {
                             if (newValue != null && !newValue.Equals(oldValue)) {
                                 property.SetValue(lever, newValue);
                             }
-                        }*/
+                        }*//*
 
                         // コントロール更新処理
-                        /*_dataUpdateViewModel.UpdateControl(_dataManager.DataFromServer);*/
+                        *//*_dataUpdateViewModel.UpdateControl(_dataManager.DataFromServer);*//*
                     }
                     else {
                         Debug.WriteLine("Failed to receive Data.");
@@ -548,6 +608,6 @@ namespace TatehamaCTCPClient.Communications {
             catch (Exception exception) {
                 Debug.WriteLine($"Failed to send event data to server: {exception.Message}");
             }
-        }
+        }*/
     }
 }

@@ -1,16 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using TatehamaCTCPClient.Models;
+﻿using TatehamaCTCPClient.Models;
 
 namespace TatehamaCTCPClient.Buttons
 {
     /// <summary>
     /// 仮 そのうち抽象クラスにするかも
     /// </summary>
-    public class CTCPButton {
+    public abstract class CTCPButton {
         public string Name { get; init; }
 
         public Point Location { get; init; }
@@ -18,6 +13,13 @@ namespace TatehamaCTCPClient.Buttons
         public ButtonType Type { get; init; }
 
         public string Label { get; init; }
+
+        public virtual LightingType Lighting => LightingType.NONE;
+
+        public virtual bool NeedsUpdate => false;
+
+        public virtual bool Enabled => true;
+
 
         public CTCPButton(string name, Point location, ButtonType type, string label) {
             Name = name;
@@ -34,6 +36,12 @@ namespace TatehamaCTCPClient.Buttons
     }
 
     public class CancelButton : CTCPButton {
+
+        public static bool Active { get; private set; } = false;
+
+        public override LightingType Lighting => Active ? LightingType.LIGHTING : LightingType.NONE;
+
+        public override bool NeedsUpdate => true;
         public CancelButton(string name, Point location, ButtonType type) : base(name, location, type, "") {
         }
 
@@ -41,11 +49,17 @@ namespace TatehamaCTCPClient.Buttons
         }
 
         public override void OnClick() {
-
+            Active = !Active;
         }
     }
 
     public class MaintainingButton : CTCPButton {
+
+        public static bool Active { get; private set; } = false;
+
+        public override LightingType Lighting => Active ? LightingType.LIGHTING : LightingType.NONE;
+
+        public override bool NeedsUpdate => true;
         public MaintainingButton(string name, Point location, ButtonType type) : base(name, location, type, "") {
         }
 
@@ -53,7 +67,7 @@ namespace TatehamaCTCPClient.Buttons
         }
 
         public override void OnClick() {
-
+            Active = !Active;
         }
     }
 
@@ -62,5 +76,12 @@ namespace TatehamaCTCPClient.Buttons
         public string LeverName { get; init; } = leverName;
 
         public LCR Direction { get; init; } = direction;
+    }
+
+    public enum LightingType {
+        NONE,
+        BLINKING_SLOW,
+        BLINKING_FAST,
+        LIGHTING
     }
 }

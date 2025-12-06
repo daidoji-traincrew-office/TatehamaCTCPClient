@@ -1,13 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-
+﻿
 namespace TatehamaCTCPClient.Forms {
     public partial class SubWindowName : Form {
 
@@ -32,7 +23,7 @@ namespace TatehamaCTCPClient.Forms {
         private void DecideName() {
             var name = textBox1.Text;
             if (name.Length <= 0) {
-                TaskDialog.ShowDialog(new TaskDialogPage {
+                TaskDialog.ShowDialog(this, new TaskDialogPage {
                     Caption = "使用できないウィンドウ名 | TID - ダイヤ運転会",
                     Heading = "使用できないウィンドウ名",
                     Icon = TaskDialogIcon.Warning,
@@ -41,7 +32,7 @@ namespace TatehamaCTCPClient.Forms {
                 });
             }
             else if (name == "全線TID") {
-                TaskDialog.ShowDialog(new TaskDialogPage {
+                TaskDialog.ShowDialog(this, new TaskDialogPage {
                     Caption = "使用できないウィンドウ名 | TID - ダイヤ運転会",
                     Heading = "使用できないウィンドウ名",
                     Icon = TaskDialogIcon.Warning,
