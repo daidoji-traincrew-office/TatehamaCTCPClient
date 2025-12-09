@@ -17,6 +17,8 @@ namespace TatehamaCTCPClient.Buttons
 
         public bool IsWaiting { get; private set; } = false;
 
+        public bool IsYudo { get; private set; } = false;
+
         /*public DestinationButton? CurrentRoute { get; private set; } = null;*/
 
         public override LightingType Lighting {
@@ -39,6 +41,9 @@ namespace TatehamaCTCPClient.Buttons
                     var tcName = route.FirstOrDefault();
                     if (tcName == null) {
                         continue;
+                    }
+                    if (IsYudo) {
+                        tcName += "Z";
                     }
                     var r = new List<RouteData>(DataToCTCP.Latest.RouteDatas).FirstOrDefault(r => r.TcName == tcName);
                     if (r == null || r.RouteState == null) {
@@ -108,6 +113,7 @@ namespace TatehamaCTCPClient.Buttons
                 }
                 var c = 0;
                 foreach (var k in routes.Keys) {
+                    Debug.WriteLine($"{Name} {k.Name}");
                     if (k.SetCurrentRoute(this)) {
                         Debug.WriteLine($"{Name} {k.Name}");
                         c++;
@@ -150,6 +156,9 @@ namespace TatehamaCTCPClient.Buttons
                 var r = route.FirstOrDefault();
                 if(r == null) {
                     continue;
+                }
+                if (IsYudo) {
+                    r += "Z";
                 }
                 _ = c.SetCtcRelay(r, RaiseDrop.Drop);
             }

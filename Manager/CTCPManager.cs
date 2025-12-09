@@ -505,6 +505,7 @@ namespace TatehamaCTCPClient.Manager
                 var line = sr.ReadLine();
                 SelectionButton? b = null;
                 DestinationButton? db = null;
+                StationSetting? station = null;
                 while (line != null) {
                     if (line.StartsWith('#')) {
                         line = sr.ReadLine();
@@ -532,7 +533,6 @@ namespace TatehamaCTCPClient.Manager
                         continue;
                     }
 
-                    StationSetting? station = null;
                     if (texts[0].Length > 0) {
                         station = stationSettings.FirstOrDefault(s => texts[0].Contains(s.Code));
                     }
@@ -578,6 +578,7 @@ namespace TatehamaCTCPClient.Manager
                 sr.ReadLine();
                 var line = sr.ReadLine();
                 DestinationButton? b = null;
+                StationSetting? station = null;
                 while (line != null) {
                     if (line.StartsWith('#')) {
                         line = sr.ReadLine();
@@ -605,7 +606,6 @@ namespace TatehamaCTCPClient.Manager
                     }
 
 
-                    StationSetting? station = null;
                     if (texts[0].Length > 0) {
                         station = stationSettings.FirstOrDefault(s => texts[0].Contains(s.Code));
                     }
