@@ -51,19 +51,23 @@ namespace TatehamaCTCPClient.Buttons
         public override void OnClick() {
             Active = !Active;
         }
+
+        public static void MakeInactive() {
+            Active = false;
+        }
     }
 
-    public class MaintainingButton : CTCPButton {
+    public class HikipperButton : CTCPButton {
 
         public static bool Active { get; private set; } = false;
 
         public override LightingType Lighting => Active ? LightingType.LIGHTING : LightingType.NONE;
 
         public override bool NeedsUpdate => true;
-        public MaintainingButton(string name, Point location, ButtonType type) : base(name, location, type, "") {
+        public HikipperButton(string name, Point location, ButtonType type) : base(name, location, type, "") {
         }
 
-        public MaintainingButton(string name, int x, int y, ButtonType type) : base(name, x, y, type, "") {
+        public HikipperButton(string name, int x, int y, ButtonType type) : base(name, x, y, type, "") {
         }
 
         public override void OnClick() {

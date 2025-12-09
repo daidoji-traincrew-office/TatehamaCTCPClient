@@ -1,34 +1,71 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
+using TatehamaCTCPClient.Communications;
 using TatehamaCTCPClient.Models;
+using TatehamaCTCPClient.Settings;
 
 namespace TatehamaCTCPClient.Buttons
 {
     public class RouteButton : CTCPButton {
 
-        private readonly List<LeverDirectionPair> routes = [];
+        public string Route { get; private set; }
 
-        public ReadOnlyCollection<LeverDirectionPair> Routes { get; init; }
+        public StationSetting Station { get; init; }
 
-        public override bool Enabled => routes.Count > 0;
+        public override LightingType Lighting {
+            get {
+                if(Route.Length <= 0) {
+                    return LightingType.NONE;
+                }
+                var r = new List<RouteData>(DataToCTCP.Latest.RouteDatas).FirstOrDefault(r => r.TcName == Route);
+                if (r == null || r.RouteState == null) {
+                    return LightingType.NONE;
+                }
+                var b = r.RouteState.IsCtcRelayRaised == RaiseDrop.Raise;
+                var blinking = b;
+                var lighting = b && r.RouteState.IsSignalControlRaised == RaiseDrop.Raise;
+                return blinking ? (lighting ? LightingType.LIGHTING : LightingType.BLINKING_FAST) : LightingType.NONE;
 
-        public RouteButton(string name, Point location, ButtonType type, string label, string leverName, LCR direction) : this(name, location, type, label) {
-            routes.Add(new(leverName, direction));
+            }
         }
 
-        public RouteButton(string name, int x, int y, ButtonType type, string label, string leverName, LCR direction) : this(name, new(x, y), type, label, leverName, direction) { }
+        public override bool Enabled => Route.Length > 0;
 
-        public RouteButton(string name, Point location, ButtonType type, string label) : base(name, location, type, label) {
-            Routes = routes.AsReadOnly();
+        public RouteButton(string name, Point location, ButtonType type, string label, StationSetting station, string leverName = "") : base(name, location, type, label) {
+            Route = leverName;
+            Station = station;
         }
 
-        public RouteButton(string name, int x, int y, ButtonType type, string label) : this(name, new(x, y), type, label) { }
+        public RouteButton(string name, int x, int y, ButtonType type, string label, StationSetting station, string leverName = "") : this(name, new(x, y), type, label, station, leverName) { }
 
-        public void AddRoute(string leverName, LCR direction) {
-            routes.Add(new LeverDirectionPair(leverName, direction));
+        public void AddRoute(string leverName) {
+            if(Route.Length <= 0) {
+                Route = leverName;
+            }
         }
 
         public override void OnClick() {
-
+            var c = ServerCommunication.Instance;
+            if (c == null) {
+                return;
+            }
+            if (CancelButton.Active) {
+                if(Lighting == LightingType.NONE) {
+                    return;
+                }
+                _ = c.SetCtcRelay(Route, RaiseDrop.Drop);
+                CancelButton.MakeInactive();
+            }
+            else {
+                if (!Station.Active || !DataToCTCP.Latest.CenterControlStates.TryGetValue(Station.LeverName, out var state) || state == CenterControlState.StationControl) {
+                    return;
+                }
+                if (Lighting != LightingType.NONE) {
+                    return;
+                }
+                _ = c.SetCtcRelay(Route, RaiseDrop.Raise);
+            }
         }
     }
 }

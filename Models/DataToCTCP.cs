@@ -7,6 +7,7 @@ namespace TatehamaCTCPClient.Models {
     public class DataToCTCP {
 
         public static DataToCTCP Latest { get; private set; } = new DataToCTCP();
+
         public static DataToCTCP Previous { get; private set; } = new DataToCTCP();
 
         public static void SetLatest(DataToCTCP data) {

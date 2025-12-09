@@ -130,6 +130,14 @@ namespace TatehamaCTCPClient.Forms {
 
         private bool windowMinimized = false;
 
+        private float blinkInterval = 0.5f;
+
+        private float blinkState = 0f;
+
+        public bool BlinkStateFast => blinkInterval <= 0 || blinkState % blinkInterval > blinkInterval / 2;
+
+        public bool BlinkStateSlow => blinkInterval <= 0 || blinkState > blinkInterval;
+
         private Point? selectionStarting = null;
 
         public int MarkupType {
@@ -219,7 +227,7 @@ namespace TatehamaCTCPClient.Forms {
             }
             else {
                 labelScale.ForeColor = Color.LightGreen;
-                lock (displayManager.pictureBoxSync) {
+                lock (displayManager.syncPictureBox) {
                     labelScale.Text = $"Scale：{(int)((double)PictureBoxImage.Width / displayManager.OriginalWidth * 100 + 0.5)}%";
                 }
             }
@@ -349,18 +357,18 @@ namespace TatehamaCTCPClient.Forms {
                 showOffset--;
             }
 
-            /*var oldFlashState = FlashState;*/
+            var oldFlashState = BlinkStateFast;
             var now = DateTime.Now;
-            /*var deltaSeconds = (now - RealTime).TotalSeconds;*/
+            var deltaSeconds = (now - RealTime).TotalSeconds;
             RealTime = now;
-            /*if (flashInterval > 0) {
-                flashState -= (float)deltaSeconds;
-                while (flashState <= 0) {
-                    flashState += flashInterval * 2;
+            if (blinkInterval > 0) {
+                blinkState -= (float)deltaSeconds;
+                while (blinkState <= 0) {
+                    blinkState += blinkInterval * 2;
                 }
-            }*/
+            }
 
-            if (/*!UpdateDebug() && */displayManager.Started && (ReservedUpdate/* || (oldFlashState != FlashState) && MarkupType < 2 && (trainDataDict.Values.Any(td => td.Markup) || MarkupDuplication || MarkupFillZero || MarkupNotTrain || MarkupDelayed > 0 || displayManager.Markuped)*/)) {
+            if (/*!UpdateDebug() && */displayManager.Started && (ReservedUpdate || (oldFlashState != BlinkStateFast) /*&& MarkupType < 2 && (trainDataDict.Values.Any(td => td.Markup) || MarkupDuplication || MarkupFillZero || MarkupNotTrain || MarkupDelayed > 0 || displayManager.Markuped)*/)) {
                 ReservedUpdate = false;
                 displayManager.UpdateCTCP();
             }
@@ -648,7 +656,7 @@ namespace TatehamaCTCPClient.Forms {
             }
             else {
                 labelScale.ForeColor = Color.LightGreen;
-                lock (displayManager.pictureBoxSync) {
+                lock (displayManager.syncPictureBox) {
                     labelScale.Text = $"Scale：{(int)((double)PictureBoxImage.Width / displayManager.OriginalWidth * 100 + 0.5)}%";
                 }
             }
@@ -674,7 +682,7 @@ namespace TatehamaCTCPClient.Forms {
             }
             else {
                 labelScale.ForeColor = Color.LightGreen;
-                lock (displayManager.pictureBoxSync) {
+                lock (displayManager.syncPictureBox) {
                     displayManager.ChangeScale();
                 }
 
@@ -901,7 +909,7 @@ namespace TatehamaCTCPClient.Forms {
                 if (WindowState != FormWindowState.Minimized) {
                     if (CTCPScale == -1 && !FixedScale) {
                         displayManager.ChangeScale(false);
-                        lock (displayManager.pictureBoxSync) {
+                        lock (displayManager.syncPictureBox) {
                             labelScale.Text = $"Scale：{(int)((double)PictureBoxImage.Width / displayManager.OriginalWidth * 100 + 0.5)}%";
                         }
                     }
@@ -971,7 +979,7 @@ namespace TatehamaCTCPClient.Forms {
                     var dp = e.Location;
                     var point = ConvertPointToOriginal(dp.X, dp.Y);
                     double rate;
-                    lock (displayManager.pictureBoxSync) {
+                    lock (displayManager.syncPictureBox) {
                         rate = (PictureBoxImage.Width + e.Delta * 0.2) / displayManager.OriginalWidth;
                     }
                     var width = Size.Width - ClientSize.Width + (int)(displayManager.OriginalWidth * rate);

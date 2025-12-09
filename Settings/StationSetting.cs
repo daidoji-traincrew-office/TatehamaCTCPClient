@@ -9,5 +9,7 @@ namespace TatehamaCTCPClient.Settings {
         public string LeverName { get; init; } = leverName;
 
         public Point Location { get; init; } = location;
+
+        public bool Active { get; private set; } = true;
     }
 }

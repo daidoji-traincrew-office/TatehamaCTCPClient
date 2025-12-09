@@ -26,6 +26,8 @@ namespace TatehamaCTCPClient.Communications {
 
         private static bool error = false;
 
+        public static ServerCommunication? Instance { get; private set; }
+
 
         public static bool connected { get; set; } = false;
 
@@ -46,6 +48,9 @@ namespace TatehamaCTCPClient.Communications {
         public ServerCommunication(CTCPWindow window, OpenIddictClientService service) {
             _window = window;
             _service = service;
+            if(Instance == null) {
+                Instance = this;
+            }
         }
 
         /// <summary>
@@ -549,11 +554,13 @@ namespace TatehamaCTCPClient.Communications {
                 return;
             }
             try {
-                RouteData newRouteData = await _connection.InvokeAsync<RouteData>("SetCtcRelay", TcName, raiseDrop);
+                Debug.WriteLine($"{TcName}: {raiseDrop}");
                 // 更新されたRouteDataを受け取る
                 var d = DataToCTCP.Latest;
                 for (int i = 0; i < d.RouteDatas.Count; i++) {
-                    if (d.RouteDatas[i].TcName == newRouteData.TcName) {
+                    var r = d.RouteDatas[i];
+                    if (r.TcName == TcName && r.RouteState != null && r.RouteState.IsCtcRelayRaised != raiseDrop) {
+                        RouteData newRouteData = await _connection.InvokeAsync<RouteData>("SetCtcRelay", TcName, raiseDrop);
                         d.RouteDatas[i] = newRouteData;
                         break;
                     }

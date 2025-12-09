@@ -5,6 +5,8 @@ namespace TatehamaCTCPClient.Models {
     public class CharacterSet {
         public static Image CharacterImage { get; private set; } = Image.FromFile(".\\png\\characters.png");
 
+        public static readonly object syncCharacterImage = new object();
+
         private Dictionary<char, Character> characters = [];
 
         private Dictionary<string, MultiCharacter> multiCharacters = [];
@@ -71,7 +73,9 @@ namespace TatehamaCTCPClient.Models {
                         x += width - mc.Size.Width;
                         break;
                 }
-                g.DrawImage(CharacterImage, new Rectangle(x, y, mc.Size.Width, mc.Size.Height), mc.Location.X, mc.Location.Y, mc.Size.Width, mc.Size.Height, GraphicsUnit.Pixel, ia);
+                lock (syncCharacterImage) {
+                    g.DrawImage(CharacterImage, new Rectangle(x, y, mc.Size.Width, mc.Size.Height), mc.Location.X, mc.Location.Y, mc.Size.Width, mc.Size.Height, GraphicsUnit.Pixel, ia);
+                }
                 return true;
             }
             var cList = new List<Character>();
@@ -107,7 +111,9 @@ namespace TatehamaCTCPClient.Models {
                     break;
             }
             foreach (var c in cList) {
-                g.DrawImage(CharacterImage, new Rectangle(x, y + h - c.Size.Height, c.Size.Width, c.Size.Height), c.Location.X, c.Location.Y, c.Size.Width, c.Size.Height, GraphicsUnit.Pixel, ia);
+                lock (syncCharacterImage) {
+                    g.DrawImage(CharacterImage, new Rectangle(x, y + h - c.Size.Height, c.Size.Width, c.Size.Height), c.Location.X, c.Location.Y, c.Size.Width, c.Size.Height, GraphicsUnit.Pixel, ia);
+                }
                 x += c.Size.Width + 1;
             }
 
