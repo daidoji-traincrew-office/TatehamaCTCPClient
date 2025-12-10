@@ -1,6 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Drawing.Imaging;
+using System.Media;
 using System.Text.RegularExpressions;
 using TatehamaCTCPClient.Buttons;
 using TatehamaCTCPClient.Communications;
@@ -67,6 +68,10 @@ namespace TatehamaCTCPClient.Manager
         private CharacterSet smallCharSet;
 
         private CharacterSet xsmallCharSet;
+
+        private SoundPlayer? pressButtonSound = null;
+
+        private SoundPlayer? releaseButtonSound = null;
 
         private bool resizing = false;
 
@@ -217,6 +222,18 @@ namespace TatehamaCTCPClient.Manager
             catch {
             }
 
+
+
+
+            if (File.Exists(".\\sound\\pressButton.wav")) {
+                pressButtonSound = new SoundPlayer(".\\sound\\pressButton.wav");
+            }
+
+            if (File.Exists(".\\sound\\releaseButton.wav")) {
+                releaseButtonSound = new SoundPlayer(".\\sound\\releaseButton.wav");
+            }
+
+
             window.Panel1.Size = new Size(window.ClientSize.Width, window.ClientSize.Height - window.Panel1.Location.Y);
 
             var width = backgroundDefault.Width * window.CTCPScale / 100;
@@ -294,6 +311,12 @@ namespace TatehamaCTCPClient.Manager
                             b.OnClick();
                         }
                     };
+                    p.MouseDown += (sender, e) => {
+                        PlayPressButtonSound();
+                    };
+                    p.MouseUp += (sender, e) => {
+                        PlayReleaseButtonSound();
+                    };
                     buttonPanels.Add(b.Name, p);
                 }
 
@@ -316,6 +339,12 @@ namespace TatehamaCTCPClient.Manager
                         if (Started) {
                             b.OnClick();
                         }
+                    };
+                    p.MouseDown += (sender, e) => {
+                        PlayPressButtonSound();
+                    };
+                    p.MouseUp += (sender, e) => {
+                        PlayReleaseButtonSound();
                     };
                     buttonPanels.Add(b.Name, p);
                 }
@@ -1202,6 +1231,18 @@ namespace TatehamaCTCPClient.Manager
             l.AddRange(buttons.Values.Where(b => b.Location.X > location.X - b.Type.Size.Width && b.Location.Y > location.Y - b.Type.Size.Height && b.Location.X < location.X + size.Width && b.Location.Y < location.Y + size.Height));
             l.AddRange(destinationButtons.Values.Where(b => b.Location.X > location.X - b.Type.Size.Width && b.Location.Y > location.Y - b.Type.Size.Height && b.Location.X < location.X + size.Width && b.Location.Y < location.Y + size.Height));
             return l;
+        }
+
+        public void PlayPressButtonSound() {
+            if(pressButtonSound != null) {
+                pressButtonSound.Play();
+            }
+        }
+
+        public void PlayReleaseButtonSound() {
+            if (releaseButtonSound != null) {
+                releaseButtonSound.Play();
+            }
         }
     }
 }

@@ -22,9 +22,8 @@ namespace TatehamaCTCPClient.Buttons
                 if (r == null || r.RouteState == null) {
                     return LightingType.NONE;
                 }
-                var b = r.RouteState.IsCtcRelayRaised == RaiseDrop.Raise;
-                var blinking = b;
-                var lighting = b && r.RouteState.IsSignalControlRaised == RaiseDrop.Raise;
+                var blinking = r.RouteState.IsCtcRelayRaised == RaiseDrop.Raise;
+                var lighting = r.RouteState.IsSignalControlRaised == RaiseDrop.Raise;
                 return blinking ? (lighting ? LightingType.LIGHTING : LightingType.BLINKING_FAST) : LightingType.NONE;
 
             }
