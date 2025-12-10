@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Xml.Linq;
 using TatehamaCTCPClient.Communications;
 using TatehamaCTCPClient.Models;
 using TatehamaCTCPClient.Settings;
@@ -13,6 +14,10 @@ namespace TatehamaCTCPClient.Buttons
 
         public ReadOnlyDictionary<DestinationButton, List<string>> Routes { get; init; }
 
+        private readonly Dictionary<DestinationButton, List<string>> yudoRoutes = [];
+
+        public ReadOnlyDictionary<DestinationButton, List<string>> YudoRoutes { get; init; }
+
         public StationSetting Station { get; init; }
 
         public bool IsWaiting { get; private set; } = false;
@@ -23,27 +28,20 @@ namespace TatehamaCTCPClient.Buttons
 
         public override LightingType Lighting {
             get {
-
-                if (routes.Count <= 0) {
+                var d = IsYudo ? yudoRoutes : routes;
+                if (d.Count <= 0) {
                     return LightingType.NONE;
                 }
                 if (IsWaiting) {
                     return LightingType.BLINKING_SLOW;
                 }
-                /*var cr = CurrentRoute;
-                if (cr == null) { 
-                    return LightingType.NONE;
-                }*/
                 
                 var blinking = false;
                 var lighting = false;
-                foreach (var route in Routes.Values) {
+                foreach (var route in d.Values) {
                     var tcName = route.FirstOrDefault();
                     if (tcName == null) {
                         continue;
-                    }
-                    if (IsYudo) {
-                        tcName += "Z";
                     }
                     var r = new List<RouteData>(DataToCTCP.Latest.RouteDatas).FirstOrDefault(r => r.TcName == tcName);
                     if (r == null || r.RouteState == null) {
@@ -59,46 +57,58 @@ namespace TatehamaCTCPClient.Buttons
 
         public override bool Enabled => routes.Count > 0;
 
-        public SelectionButton(string name, Point location, ButtonType type, string label, StationSetting station, DestinationButton destination, string leverName) : this(name, location, type, label, station) {
+        public SelectionButton(string name, Point location, ButtonType type, string label, StationSetting station, DestinationButton destination, string routeName, string yudoRouteName = "") : this(name, location, type, label, station) {
             var l = new List<string> {
-                leverName
+                routeName
             };
             routes.Add(destination, l);
+            if(yudoRouteName.Length <= 0) {
+                return;
+            }
+            var y = new List<string> {
+                yudoRouteName
+            };
+            yudoRoutes.Add(destination, y);
         }
 
-        public SelectionButton(string name, int x, int y, ButtonType type, string label, StationSetting station, DestinationButton destination, string leverName) : this(name, new(x, y), type, label, station, destination, leverName) { }
+        public SelectionButton(string name, int x, int y, ButtonType type, string label, StationSetting station, DestinationButton destination, string routeName, string yudoRouteName = "") : this(name, new(x, y), type, label, station, destination, routeName, yudoRouteName) { }
 
         public SelectionButton(string name, Point location, ButtonType type, string label, StationSetting station) : base(name, location, type, label) {
             Routes = routes.AsReadOnly();
+            YudoRoutes = yudoRoutes.AsReadOnly();
             Station = station;
         }
 
         public SelectionButton(string name, int x, int y, ButtonType type, string label, StationSetting station) : this(name, new(x, y), type, label, station) { }
 
-        public void AddRoute(DestinationButton destination, string leverName) {
+        public void AddRoute(DestinationButton destination, string routeName, string yudoRouteName = "") {
             if (routes.TryGetValue(destination, out var l)) {
-                l.Add(leverName);
+                l.Add(routeName);
             }
             else {
-                l = [leverName];
+                l = [routeName];
                 routes.Add(destination, l);
+            }
+            if (yudoRouteName.Length <= 0) {
+                return;
+            }
+            if (yudoRoutes.TryGetValue(destination, out var y)) {
+                y.Add(yudoRouteName);
+            }
+            else {
+                y = [yudoRouteName];
+                yudoRoutes.Add(destination, y);
             }
         }
 
         public override void OnClick() {
 
             if (CancelButton.Active) {
-                if (IsWaiting) {
-                    IsWaiting = false;
-                    foreach (var k in routes.Keys) {
-                        k.Cancel();
+                if (!CancelWaiting()) {
+                    if(Lighting == LightingType.NONE) {
+                        return;
                     }
-                }
-                else if (Lighting != LightingType.NONE) {
                     CancelRoute();
-                }
-                else {
-                    return;
                 }
 
                 CancelButton.MakeInactive();
@@ -107,11 +117,12 @@ namespace TatehamaCTCPClient.Buttons
                 if (!Station.Active || !DataToCTCP.Latest.CenterControlStates.TryGetValue(Station.LeverName, out var state) || state == CenterControlState.StationControl) {
                     return;
                 }
-                if (routes.Count <= 0) {
+                var d = IsYudo ? yudoRoutes : routes;
+                if (d.Count <= 0) {
                     return;
                 }
                 var c = 0;
-                foreach (var k in routes.Keys) {
+                foreach (var k in d.Keys) {
                     Debug.WriteLine($"{Name} {k.Name}");
                     if (k.SetCurrentRoute(this)) {
                         Debug.WriteLine($"{Name} {k.Name}");
@@ -125,7 +136,8 @@ namespace TatehamaCTCPClient.Buttons
         }
 
         public void SetRoute(DestinationButton db) {
-            if(!IsWaiting || !routes.ContainsKey(db)) {
+            var d = IsYudo ? yudoRoutes : routes;
+            if (!IsWaiting || !d.ContainsKey(db)) {
                 return;
             }
             IsWaiting = false;
@@ -134,15 +146,16 @@ namespace TatehamaCTCPClient.Buttons
             if (c == null) {
                 return;
             }
-            foreach (var k in routes.Keys) { 
-                if(k != db) {
-                    k.Cancel();
+            foreach (var k in d.Keys) { 
+                if(k == db) {
+                    foreach (var route in d[db]) {
+                        var r = route;
+                        _ = c.SetCtcRelay(r, RaiseDrop.Raise);
+                    }
                 }
-            }
-
-            foreach (var route in Routes[db]) {
-
-                _ = c.SetCtcRelay(route, RaiseDrop.Raise);
+                else {
+                    k.Cancel(this);
+                }
             }
         }
 
@@ -151,15 +164,30 @@ namespace TatehamaCTCPClient.Buttons
             if (c == null) {
                 return;
             }
-            foreach (var route in Routes.Values) {
+            foreach (var route in (IsYudo ? yudoRoutes : routes).Values) {
                 var r = route.FirstOrDefault();
                 if(r == null) {
                     continue;
                 }
-                if (IsYudo) {
-                    r += "Z";
-                }
                 _ = c.SetCtcRelay(r, RaiseDrop.Drop);
+            }
+        }
+
+        public bool CancelWaiting() {
+            if (IsWaiting) {
+                IsWaiting = false;
+                foreach (var k in (IsYudo ? yudoRoutes : routes).Keys) {
+                    k.Cancel(this);
+                }
+                return true;
+            }
+            return false;
+        }
+
+        public void SwitchYudo(bool isYudo) {
+            if(isYudo != IsYudo) {
+                CancelWaiting();
+                IsYudo = isYudo;
             }
         }
     }

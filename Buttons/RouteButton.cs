@@ -31,16 +31,16 @@ namespace TatehamaCTCPClient.Buttons
 
         public override bool Enabled => Route.Length > 0;
 
-        public RouteButton(string name, Point location, ButtonType type, string label, StationSetting station, string leverName = "") : base(name, location, type, label) {
-            Route = leverName;
+        public RouteButton(string name, Point location, ButtonType type, string label, StationSetting station, string routeName = "") : base(name, location, type, label) {
+            Route = routeName;
             Station = station;
         }
 
-        public RouteButton(string name, int x, int y, ButtonType type, string label, StationSetting station, string leverName = "") : this(name, new(x, y), type, label, station, leverName) { }
+        public RouteButton(string name, int x, int y, ButtonType type, string label, StationSetting station, string routeName = "") : this(name, new(x, y), type, label, station, routeName) { }
 
-        public void AddRoute(string leverName) {
+        public void AddRoute(string routeName) {
             if(Route.Length <= 0) {
-                Route = leverName;
+                Route = routeName;
             }
         }
 

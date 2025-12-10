@@ -588,12 +588,14 @@ namespace TatehamaCTCPClient.Manager
                         continue;
                     }
 
+                    var y = texts.Length < 8 ? "" : texts[7];
+
                     if (isButton) {
-                        b = new SelectionButton(texts[0], int.Parse(texts[1]), int.Parse(texts[2]), buttonTypes[texts[3]], texts[4], station, db, texts[6]);
+                        b = new SelectionButton(texts[0], int.Parse(texts[1]), int.Parse(texts[2]), buttonTypes[texts[3]], texts[4], station, db, texts[6], y);
                         buttons.Add(texts[0], b);
                     }
                     else {
-                        b?.AddRoute(db, texts[6]);
+                        b?.AddRoute(db, texts[6], y);
                     }
                 }
             }

@@ -42,11 +42,11 @@ namespace TatehamaCTCPClient.Buttons
             }
         }
 
-        public DestinationButton(string name, Point location, ButtonType type, string label, StationSetting station, string leverName) : this(name, location, type, label, station) {
-            routes.Add(leverName);
+        public DestinationButton(string name, Point location, ButtonType type, string label, StationSetting station, string routeName) : this(name, location, type, label, station) {
+            routes.Add(routeName);
         }
 
-        public DestinationButton(string name, int x, int y, ButtonType type, string label, StationSetting station, string leverName) : this(name, new(x, y), type, label, station, leverName) { }
+        public DestinationButton(string name, int x, int y, ButtonType type, string label, StationSetting station, string routeName) : this(name, new(x, y), type, label, station, routeName) { }
 
         public DestinationButton(string name, Point location, ButtonType type, string label, StationSetting station) : base(name, location, type, label) {
             Station = station;
@@ -55,8 +55,8 @@ namespace TatehamaCTCPClient.Buttons
 
         public DestinationButton(string name, int x, int y, ButtonType type, string label, StationSetting station) : this(name, new(x, y), type, label, station) { }
 
-        public void AddRoute(string leverName) {
-            routes.Add(leverName);
+        public void AddRoute(string routeName) {
+            routes.Add(routeName);
         }
 
         public override void OnClick() {
@@ -93,9 +93,11 @@ namespace TatehamaCTCPClient.Buttons
         }
 
 
-        public void Cancel() {
-            Debug.WriteLine($"cancel {Name}");
-            CurrentRoute = null;
+        public void Cancel(SelectionButton b) {
+            if(CurrentRoute == b) {
+                Debug.WriteLine($"cancel {Name}");
+                CurrentRoute = null;
+            }
         }
     }
 }

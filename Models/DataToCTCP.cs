@@ -1,4 +1,6 @@
 ﻿
+using System.Diagnostics;
+
 namespace TatehamaCTCPClient.Models {
 
     /// <summary>

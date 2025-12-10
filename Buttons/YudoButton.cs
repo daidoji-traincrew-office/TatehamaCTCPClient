@@ -24,6 +24,9 @@ namespace TatehamaCTCPClient.Buttons {
 
         public override void OnClick() {
             Active = !Active;
+            foreach(var b in targets) {
+                b.SwitchYudo(Active);
+            }
         }
     }
 }
