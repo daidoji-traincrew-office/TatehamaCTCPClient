@@ -1,7 +1,7 @@
 ﻿
 namespace TatehamaCTCPClient.Models {
     public class RouteData {
-        public string TcName { get; set; }
+        public string TcName { get; set; } = string.Empty;
         public RouteType RouteType { get; set; }
         public ulong? RootId { get; set; }
         public RouteData? Root { get; set; }

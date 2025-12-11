@@ -10,13 +10,13 @@ namespace TatehamaCTCPClient.Buttons
 {
     public class SelectionButton : CTCPButton {
 
-        private readonly Dictionary<DestinationButton, List<string>> routes = [];
+        private readonly Dictionary<DestinationButton, List<Route>> routes = [];
 
-        public ReadOnlyDictionary<DestinationButton, List<string>> Routes { get; init; }
+        public ReadOnlyDictionary<DestinationButton, List<Route>> Routes { get; init; }
 
-        private readonly Dictionary<DestinationButton, List<string>> yudoRoutes = [];
+        private readonly Dictionary<DestinationButton, List<Route>> yudoRoutes = [];
 
-        public ReadOnlyDictionary<DestinationButton, List<string>> YudoRoutes { get; init; }
+        public ReadOnlyDictionary<DestinationButton, List<Route>> YudoRoutes { get; init; }
 
         public StationSetting Station { get; init; }
 
@@ -36,12 +36,12 @@ namespace TatehamaCTCPClient.Buttons
                 
                 var blinking = false;
                 var lighting = false;
-                foreach (var route in d.Values) {
-                    var tcName = route.FirstOrDefault();
-                    if (tcName == null) {
+                foreach (var routeList in d.Values) {
+                    var route = routeList.FirstOrDefault();
+                    if (route == null) {
                         continue;
                     }
-                    var r = new List<RouteData>(DataToCTCP.Latest.RouteDatas).FirstOrDefault(r => r.TcName == tcName);
+                    var r = new List<RouteData>(DataToCTCP.Latest.RouteDatas).FirstOrDefault(r => r.TcName == route.RouteName);
                     if (r == null || r.RouteState == null) {
                         return LightingType.NONE;
                     }
@@ -55,21 +55,21 @@ namespace TatehamaCTCPClient.Buttons
 
         public override bool Enabled => routes.Count > 0;
 
-        public SelectionButton(string name, Point location, ButtonType type, string label, StationSetting station, DestinationButton destination, string routeName, string yudoRouteName = "") : this(name, location, type, label, station) {
-            var l = new List<string> {
-                routeName
+        public SelectionButton(string name, Point location, ButtonType type, string label, StationSetting station, DestinationButton destination, Route route, Route? yudoRoute = null) : this(name, location, type, label, station) {
+            var l = new List<Route> {
+                route
             };
             routes.Add(destination, l);
-            if(yudoRouteName.Length <= 0) {
+            if(yudoRoute == null) {
                 return;
             }
-            var y = new List<string> {
-                yudoRouteName
+            var y = new List<Route> {
+                yudoRoute
             };
             yudoRoutes.Add(destination, y);
         }
 
-        public SelectionButton(string name, int x, int y, ButtonType type, string label, StationSetting station, DestinationButton destination, string routeName, string yudoRouteName = "") : this(name, new(x, y), type, label, station, destination, routeName, yudoRouteName) { }
+        public SelectionButton(string name, int x, int y, ButtonType type, string label, StationSetting station, DestinationButton destination, Route route, Route? yudoRoute = null) : this(name, new(x, y), type, label, station, destination, route, yudoRoute) { }
 
         public SelectionButton(string name, Point location, ButtonType type, string label, StationSetting station) : base(name, location, type, label) {
             Routes = routes.AsReadOnly();
@@ -79,22 +79,22 @@ namespace TatehamaCTCPClient.Buttons
 
         public SelectionButton(string name, int x, int y, ButtonType type, string label, StationSetting station) : this(name, new(x, y), type, label, station) { }
 
-        public void AddRoute(DestinationButton destination, string routeName, string yudoRouteName = "") {
+        public void AddRoute(DestinationButton destination, Route route, Route? yudoRoute = null) {
             if (routes.TryGetValue(destination, out var l)) {
-                l.Add(routeName);
+                l.Add(route);
             }
             else {
-                l = [routeName];
+                l = [route];
                 routes.Add(destination, l);
             }
-            if (yudoRouteName.Length <= 0) {
+            if (yudoRoute == null) {
                 return;
             }
             if (yudoRoutes.TryGetValue(destination, out var y)) {
-                y.Add(yudoRouteName);
+                y.Add(yudoRoute);
             }
             else {
-                y = [yudoRouteName];
+                y = [yudoRoute];
                 yudoRoutes.Add(destination, y);
             }
         }
@@ -110,6 +110,7 @@ namespace TatehamaCTCPClient.Buttons
                 }
 
                 CancelButton.MakeInactive();
+                HikipperButton.MakeInactive();
             }
             else {
                 if (!Station.Active || !DataToCTCP.Latest.CenterControlStates.TryGetValue(Station.LeverName, out var state) || state == CenterControlState.StationControl) {
@@ -148,8 +149,10 @@ namespace TatehamaCTCPClient.Buttons
                 if(k == db) {
                     foreach (var route in d[db]) {
                         var r = route;
-                        _ = c.SetCtcRelay(r, RaiseDrop.Raise);
+                        r.SetHikipper(HikipperButton.Active);
+                        _ = c.SetCtcRelay(r.RouteName, RaiseDrop.Raise);
                     }
+                    HikipperButton.MakeInactive();
                 }
                 else {
                     k.Cancel(this);
@@ -167,7 +170,8 @@ namespace TatehamaCTCPClient.Buttons
                 if(r == null) {
                     continue;
                 }
-                _ = c.SetCtcRelay(r, RaiseDrop.Drop);
+                r.SetHikipper(false);
+                _ = c.SetCtcRelay(r.RouteName, RaiseDrop.Drop);
             }
         }
 

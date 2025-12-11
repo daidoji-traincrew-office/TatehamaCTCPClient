@@ -9,16 +9,16 @@ namespace TatehamaCTCPClient.Buttons
 {
     public class RouteButton : CTCPButton {
 
-        public string Route { get; private set; }
+        public Route? Route { get; private set; }
 
         public StationSetting Station { get; init; }
 
         public override LightingType Lighting {
             get {
-                if(Route.Length <= 0) {
+                if(Route == null) {
                     return LightingType.NONE;
                 }
-                var r = new List<RouteData>(DataToCTCP.Latest.RouteDatas).FirstOrDefault(r => r.TcName == Route);
+                var r = new List<RouteData>(DataToCTCP.Latest.RouteDatas).FirstOrDefault(r => r.TcName == Route.RouteName);
                 if (r == null || r.RouteState == null) {
                     return LightingType.NONE;
                 }
@@ -29,19 +29,17 @@ namespace TatehamaCTCPClient.Buttons
             }
         }
 
-        public override bool Enabled => Route.Length > 0;
+        public override bool Enabled => Route != null;
 
-        public RouteButton(string name, Point location, ButtonType type, string label, StationSetting station, string routeName = "") : base(name, location, type, label) {
-            Route = routeName;
+        public RouteButton(string name, Point location, ButtonType type, string label, StationSetting station, Route? route = null) : base(name, location, type, label) {
+            Route = route;
             Station = station;
         }
 
-        public RouteButton(string name, int x, int y, ButtonType type, string label, StationSetting station, string routeName = "") : this(name, new(x, y), type, label, station, routeName) { }
+        public RouteButton(string name, int x, int y, ButtonType type, string label, StationSetting station, Route? route = null) : this(name, new(x, y), type, label, station, route) { }
 
-        public void AddRoute(string routeName) {
-            if(Route.Length <= 0) {
-                Route = routeName;
-            }
+        public void AddRoute(Route route) {
+            Route ??= route;
         }
 
         public override void OnClick() {
@@ -50,20 +48,24 @@ namespace TatehamaCTCPClient.Buttons
                 return;
             }
             if (CancelButton.Active) {
-                if(Lighting == LightingType.NONE) {
+                if(Route == null || Lighting == LightingType.NONE) {
                     return;
                 }
-                _ = c.SetCtcRelay(Route, RaiseDrop.Drop);
+                Route.SetHikipper(false);
+                _ = c.SetCtcRelay(Route.RouteName, RaiseDrop.Drop);
                 CancelButton.MakeInactive();
+                HikipperButton.MakeInactive();
             }
             else {
                 if (!Station.Active || !DataToCTCP.Latest.CenterControlStates.TryGetValue(Station.LeverName, out var state) || state == CenterControlState.StationControl) {
                     return;
                 }
-                if (Lighting != LightingType.NONE) {
+                if (Route == null || Lighting != LightingType.NONE) {
                     return;
                 }
-                _ = c.SetCtcRelay(Route, RaiseDrop.Raise);
+                Route.SetHikipper(HikipperButton.Active);
+                HikipperButton.MakeInactive();
+                _ = c.SetCtcRelay(Route.RouteName, RaiseDrop.Raise);
             }
         }
     }

@@ -35,7 +35,7 @@ namespace TatehamaCTCPClient.Manager
 
         private readonly Dictionary<string, TrainWindow> trainWindows;
 
-        private readonly Dictionary<string, List<string>> routes = [];
+        private readonly Dictionary<string, List<Route>> routes = [];
 
         /// <summary>
         /// 列車番号の色
@@ -149,6 +149,8 @@ namespace TatehamaCTCPClient.Manager
 
         public ReadOnlyCollection<StationSetting> StationSettings { get; init; }
 
+        public ReadOnlyDictionary<string, List<Route>> Routes { get; init; }
+
         public ReadOnlyCollection<SubWindow> SubWindows { get; init; }
 
         public CTCPWindow Window => window;
@@ -167,17 +169,20 @@ namespace TatehamaCTCPClient.Manager
             this.pictureBox = pictureBox;
             this.window = window;
 
+
             stationSettings = LoadStationSetting("station.tsv");
+            routes = LoadRoutes("routes.tsv");
             buttonTypes = LoadButtonType("buttons_type.tsv");
             LoadRouteButtons("buttons_route.tsv");
             LoadDestinationButtons("buttons_destination.tsv");
             LoadSelectionButtons("buttons_selection.tsv");
             LoadOtherButtons("buttons_others.tsv");
             trainWindows = LoadTrainWindows("trainwindow.tsv");
-            routes = LoadRoutes("routes.tsv");
 
             StationSettings = stationSettings.AsReadOnly();
             SubWindows = subWindows.AsReadOnly();
+            Routes = routes.AsReadOnly();
+
 
             backgroundDefault = Image.FromFile(".\\png\\Background-1.png");
             backgroundImage = Image.FromFile(".\\png\\Background.png");
@@ -511,18 +516,22 @@ namespace TatehamaCTCPClient.Manager
                         continue;
                     }
 
-                    if (i == 5) {
+                    var routeName = i == 5 ? "" : texts[5];
+                    var route = routeName.Length > 0 ? routes.Values.SelectMany(r => r).FirstOrDefault(r => r.RouteName == routeName) : null;
+
+                    if (routeName.Length <= 0 || route == null) {
                         b = new RouteButton(texts[0], int.Parse(texts[1]), int.Parse(texts[2]), buttonTypes[texts[3]], texts[4], station);
                         buttons.Add(texts[0], b);
                         continue;
-
                     }
+
+
                     if (isButton) {
-                        b = new RouteButton(texts[0], int.Parse(texts[1]), int.Parse(texts[2]), buttonTypes[texts[3]], texts[4], station, texts[5]);
+                        b = new RouteButton(texts[0], int.Parse(texts[1]), int.Parse(texts[2]), buttonTypes[texts[3]], texts[4], station, route);
                         buttons.Add(texts[0], b);
                     }
                     else {
-                        b?.AddRoute(texts[5]);
+                        b?.AddRoute(route);
                     }
                 }
             }
@@ -573,7 +582,10 @@ namespace TatehamaCTCPClient.Manager
                         continue;
                     }
 
-                    if (i == 5) {
+                    var routeName = i == 5 ? "" : texts[6];
+                    var route = routeName.Length > 0 ? routes.Values.SelectMany(r => r).FirstOrDefault(r => r.RouteName == routeName) : null;
+
+                    if (routeName.Length <= 0 || route == null) {
                         b = new SelectionButton(texts[0], int.Parse(texts[1]), int.Parse(texts[2]), buttonTypes[texts[3]], texts[4], station);
                         buttons.Add(texts[0], b);
                         continue;
@@ -591,14 +603,15 @@ namespace TatehamaCTCPClient.Manager
                         continue;
                     }
 
-                    var y = texts.Length < 8 ? "" : texts[7];
+                    var yudoRouteName = texts.Length < 8 ? "" : texts[7];
+                    var yudoRoute = routeName.Length > 0 ? routes.Values.SelectMany(r => r).FirstOrDefault(r => r.RouteName == yudoRouteName) : null;
 
                     if (isButton) {
-                        b = new SelectionButton(texts[0], int.Parse(texts[1]), int.Parse(texts[2]), buttonTypes[texts[3]], texts[4], station, db, texts[6], y);
+                        b = new SelectionButton(texts[0], int.Parse(texts[1]), int.Parse(texts[2]), buttonTypes[texts[3]], texts[4], station, db, route, yudoRoute);
                         buttons.Add(texts[0], b);
                     }
                     else {
-                        b?.AddRoute(db, texts[6], y);
+                        b?.AddRoute(db, route, yudoRoute);
                     }
                 }
             }
@@ -648,8 +661,11 @@ namespace TatehamaCTCPClient.Manager
                         continue;
                     }
 
+                    var routeName = i == 5 ? "" : texts[5];
+                    var route = routeName.Length > 0 ? routes.Values.SelectMany(r => r).FirstOrDefault(r => r.RouteName == routeName) : null;
 
-                    if (i == 5) {
+
+                    if (routeName.Length <= 0 || route == null) {
                         b = new DestinationButton(texts[0], int.Parse(texts[1]), int.Parse(texts[2]), buttonTypes[texts[3]], texts[4], station);
                         destinationButtons.Add(texts[0], b);
                         continue;
@@ -657,11 +673,11 @@ namespace TatehamaCTCPClient.Manager
 
 
                     if (isButton) {
-                        b = new DestinationButton(texts[0], int.Parse(texts[1]), int.Parse(texts[2]), buttonTypes[texts[3]], texts[4], station, texts[5]);
+                        b = new DestinationButton(texts[0], int.Parse(texts[1]), int.Parse(texts[2]), buttonTypes[texts[3]], texts[4], station, route);
                         destinationButtons.Add(texts[0], b);
                     }
                     else {
-                        b?.AddRoute(texts[5]);
+                        b?.AddRoute(route);
                     }
                 }
             }
@@ -757,8 +773,8 @@ namespace TatehamaCTCPClient.Manager
             }
             return list;
         }
-        private Dictionary<string, List<string>> LoadRoutes(string fileName) {
-            Dictionary<string, List<string>> list = [];
+        private Dictionary<string, List<Route>> LoadRoutes(string fileName) {
+            Dictionary<string, List<Route>> list = [];
             try {
                 using var sr = new StreamReader($".\\tsv\\{fileName}");
                 sr.ReadLine();
@@ -774,10 +790,17 @@ namespace TatehamaCTCPClient.Manager
                     if (texts.Length < 2 || texts.Any(t => t.Length <= 0)) {
                         continue;
                     }
+                    StationSetting? station = null;
+                    if (texts[0].Length > 0) {
+                        station = stationSettings.FirstOrDefault(s => texts[0].Contains(s.Code));
+                    }
 
+                    if (station == null) {
+                        continue;
+                    }
                     var track = texts[1];
-                    var route = texts[0];
-                    if (!list.TryAdd(track, new List<string>() { route })){
+                    var route = new Route(texts[0], track, station);
+                    if (!list.TryAdd(track, new List<Route>() { route })){
                         list[track].Add(route);
                     }
 
@@ -1269,15 +1292,11 @@ namespace TatehamaCTCPClient.Manager
         }
 
         public void PlayPressButtonSound() {
-            if(pressButtonSound != null) {
-                pressButtonSound.Play();
-            }
+            pressButtonSound?.Play();
         }
 
         public void PlayReleaseButtonSound() {
-            if (releaseButtonSound != null) {
-                releaseButtonSound.Play();
-            }
+            releaseButtonSound?.Play();
         }
     }
 }

@@ -17,6 +17,19 @@ namespace TatehamaCTCPClient.Models {
             Latest = data;
         }
 
+        public static List<TrackCircuitData> GetDifferenceTrack() {
+            var l = new List<TrackCircuitData>();
+            var latest = Latest;
+            var previous = Previous;
+            foreach(var tl in latest.TrackCircuits) {
+                var tp = previous.TrackCircuits.FirstOrDefault(tp => tp.Name == tl.Name);
+                if (tp != null && tp.On == false && tl.On == true) {
+                    l.Add(tl);
+                }
+            }
+            return l;
+        }
+
 
         /// <summary>
         /// 軌道回路情報リスト

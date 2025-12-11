@@ -71,7 +71,17 @@ namespace TatehamaCTCPClient.Buttons
         }
 
         public override void OnClick() {
-            Active = !Active;
+            if (CancelButton.Active) {
+                Active = false;
+                CancelButton.MakeInactive();
+            }
+            else {
+                Active = !Active;
+            }
+        }
+
+        public static void MakeInactive() {
+            Active = false;
         }
     }
 

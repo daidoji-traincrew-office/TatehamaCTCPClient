@@ -8,9 +8,9 @@ namespace TatehamaCTCPClient.Buttons
 {
     public class DestinationButton : CTCPButton {
 
-        private readonly List<string> routes = [];
+        private readonly List<Route> routes = [];
 
-        public ReadOnlyCollection<string> Routes { get; init; }
+        public ReadOnlyCollection<Route> Routes { get; init; }
 
         public StationSetting Station { get; init; }
 
@@ -31,7 +31,7 @@ namespace TatehamaCTCPClient.Buttons
                 var blinking = false;
                 var lighting = false;
                 foreach (var route in Routes) {
-                    var r = new List<RouteData>(DataToCTCP.Latest.RouteDatas).FirstOrDefault(r => r.TcName == route);
+                    var r = new List<RouteData>(DataToCTCP.Latest.RouteDatas).FirstOrDefault(r => r.TcName == route.RouteName);
                     if (r == null || r.RouteState == null) {
                         continue;
                     }
@@ -42,11 +42,11 @@ namespace TatehamaCTCPClient.Buttons
             }
         }
 
-        public DestinationButton(string name, Point location, ButtonType type, string label, StationSetting station, string routeName) : this(name, location, type, label, station) {
-            routes.Add(routeName);
+        public DestinationButton(string name, Point location, ButtonType type, string label, StationSetting station, Route route) : this(name, location, type, label, station) {
+            routes.Add(route);
         }
 
-        public DestinationButton(string name, int x, int y, ButtonType type, string label, StationSetting station, string routeName) : this(name, new(x, y), type, label, station, routeName) { }
+        public DestinationButton(string name, int x, int y, ButtonType type, string label, StationSetting station, Route route) : this(name, new(x, y), type, label, station, route) { }
 
         public DestinationButton(string name, Point location, ButtonType type, string label, StationSetting station) : base(name, location, type, label) {
             Station = station;
@@ -55,23 +55,23 @@ namespace TatehamaCTCPClient.Buttons
 
         public DestinationButton(string name, int x, int y, ButtonType type, string label, StationSetting station) : this(name, new(x, y), type, label, station) { }
 
-        public void AddRoute(string routeName) {
-            routes.Add(routeName);
+        public void AddRoute(Route route) {
+            routes.Add(route);
         }
 
         public override void OnClick() {
             if (CancelButton.Active) {
                 if (!IsWaiting) {
-                    /*CurrentRoute.CancelRoute();*/
                     var c = ServerCommunication.Instance;
                     if (c == null) {
                         return;
                     }
-                    Debug.WriteLine("cancel2");
                     foreach (var route in routes) {
-                        _ = c.SetCtcRelay(route, RaiseDrop.Drop);
+                        route.SetHikipper(false);
+                        _ = c.SetCtcRelay(route.RouteName, RaiseDrop.Drop);
                     }
                     CancelButton.MakeInactive();
+                    HikipperButton.MakeInactive();
                 }
             }
             else if(IsWaiting) {

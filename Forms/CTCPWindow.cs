@@ -1,8 +1,10 @@
 ﻿using Dapplo.Microsoft.Extensions.Hosting.WinForms;
 using OpenIddict.Client;
+using System;
 using System.Diagnostics;
 using System.Drawing.Drawing2D;
 using System.Media;
+using System.Text.RegularExpressions;
 using TatehamaCTCPClient.Communications;
 using TatehamaCTCPClient.Manager;
 using TatehamaCTCPClient.Models;
@@ -305,6 +307,27 @@ namespace TatehamaCTCPClient.Forms {
             while (ServerTime < 0) {
                 ServerTime += 24;
             }
+
+            if(serverCommunication != null) {
+
+                foreach (var t in DataToCTCP.GetDifferenceTrack()) {
+                    var isTrain = int.TryParse(Regex.Replace(t.Last, @"[^0-9]", ""), out var numBody);  // 列番本体（数字部分）
+                    if (!isTrain) {
+                        continue;
+                    }
+                    if(!displayManager.Routes.TryGetValue(t.Name, out var routes)) {
+                        continue;
+                    }
+                    var direction = numBody % 2 == 1 ? "L" : "R";
+                    foreach (var r in displayManager.Routes[t.Name]) {
+                        if (!r.Station.Active || r.IsHikipper || !r.RouteName.Contains(direction)) {
+                            continue;
+                        }
+                        _ = serverCommunication.SetCtcRelay(r.RouteName, RaiseDrop.Drop);
+                    }
+                }
+            }
+
             /*var tcList = data.TrackCircuitDatas;
             var sList = data.SwitchDatas;
             var dList = data.DirectionDatas;
@@ -424,7 +447,7 @@ namespace TatehamaCTCPClient.Forms {
                     Debug.WriteLine($"データ受信不能: {delaySeconds}");
                     if (!Silent) {
                         TaskDialog.ShowDialog(this, new TaskDialogPage {
-                            Caption = "データ受信不能 | TID - ダイヤ運転会",
+                            Caption = "データ受信不能 | CTCP - ダイヤ運転会",
                             Heading = "データ受信不能",
                             Icon = TaskDialogIcon.Error,
                             Text = "サーバ側からのデータ受信が10秒以上ありませんでした。\n復旧を試みますが、しばらく経っても復旧しない場合はアプリケーションの再起動をおすすめします。"

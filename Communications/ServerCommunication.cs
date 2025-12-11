@@ -529,12 +529,24 @@ namespace TatehamaCTCPClient.Communications {
                     _window.LabelStatusText = "未知のエラー";
                     _window.SetStatusSubWindow("×", Color.Red);
                     if (!_window.Silent) {
-                        TaskDialog.ShowDialog(_window, new TaskDialogPage {
-                            Caption = "未知のエラー | CTCP - ダイヤ運転会",
-                            Heading = "未知のエラー",
-                            Icon = TaskDialogIcon.Error,
-                            Text = "未知のエラーです。\nCTCP製作者に状況を報告願います。"
-                        });
+                        if (_window.InvokeRequired) {
+                            _window.Invoke(() => {
+                                TaskDialog.ShowDialog(_window, new TaskDialogPage {
+                                    Caption = "未知のエラー | CTCP - ダイヤ運転会",
+                                    Heading = "未知のエラー",
+                                    Icon = TaskDialogIcon.Error,
+                                    Text = "未知のエラーです。\nCTCP製作者に状況を報告願います。"
+                                });
+                            });
+                        }
+                        else {
+                            TaskDialog.ShowDialog(_window, new TaskDialogPage {
+                                Caption = "未知のエラー | CTCP - ダイヤ運転会",
+                                Heading = "未知のエラー",
+                                Icon = TaskDialogIcon.Error,
+                                Text = "未知のエラーです。\nCTCP製作者に状況を報告願います。"
+                            });
+                        }
                     }
                     else {
                         _window.PlayWarningSound();

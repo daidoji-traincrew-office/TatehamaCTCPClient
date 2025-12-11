@@ -124,6 +124,12 @@ namespace TatehamaCTCPClient.Forms {
                         b.OnClick();
                     }
                 };
+                p.MouseDown += (sender, e) => {
+                    displayManager.PlayPressButtonSound();
+                };
+                p.MouseUp += (sender, e) => {
+                    displayManager.PlayReleaseButtonSound();
+                };
                 buttonPanels.Add(b.Name, p);
             }
             UpdateStatus();
