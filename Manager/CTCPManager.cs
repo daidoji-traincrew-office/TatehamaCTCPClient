@@ -35,6 +35,8 @@ namespace TatehamaCTCPClient.Manager
 
         private readonly Dictionary<string, TrainWindow> trainWindows;
 
+        private readonly Dictionary<string, List<string>> routes = [];
+
         /// <summary>
         /// 列車番号の色
         /// </summary>
@@ -172,6 +174,7 @@ namespace TatehamaCTCPClient.Manager
             LoadSelectionButtons("buttons_selection.tsv");
             LoadOtherButtons("buttons_others.tsv");
             trainWindows = LoadTrainWindows("trainwindow.tsv");
+            routes = LoadRoutes("routes.tsv");
 
             StationSettings = stationSettings.AsReadOnly();
             SubWindows = subWindows.AsReadOnly();
@@ -746,6 +749,36 @@ namespace TatehamaCTCPClient.Manager
                     else {
                         t = new TrainWindow(texts[0], int.Parse(texts[1]), int.Parse(texts[2]), texts[3]);
                         list.Add(texts[0], t);
+                    }
+
+                }
+            }
+            catch {
+            }
+            return list;
+        }
+        private Dictionary<string, List<string>> LoadRoutes(string fileName) {
+            Dictionary<string, List<string>> list = [];
+            try {
+                using var sr = new StreamReader($".\\tsv\\{fileName}");
+                sr.ReadLine();
+                var line = sr.ReadLine();
+                while (line != null) {
+                    if (line.StartsWith('#')) {
+                        line = sr.ReadLine();
+                        continue;
+                    }
+                    var texts = line.Split('\t');
+                    line = sr.ReadLine();
+
+                    if (texts.Length < 2 || texts.Any(t => t.Length <= 0)) {
+                        continue;
+                    }
+
+                    var track = texts[1];
+                    var route = texts[0];
+                    if (!list.TryAdd(track, new List<string>() { route })){
+                        list[track].Add(route);
                     }
 
                 }
