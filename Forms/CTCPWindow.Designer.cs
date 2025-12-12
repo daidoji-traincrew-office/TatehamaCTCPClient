@@ -53,6 +53,7 @@
             labelScale = new Label();
             labelTopMost = new Label();
             labelClock = new Label();
+            menuItemNavigationWindow = new ToolStripMenuItem();
             panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pictureBox3).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pictureBox2).BeginInit();
@@ -114,9 +115,9 @@
             // 
             // contextMenuStrip1
             // 
-            contextMenuStrip1.Items.AddRange(new ToolStripItem[] { menuItemCopy, toolStripSeparator1, menuItemMarkupType, toolStripSeparator2, menuItemScale, menuItemTopMost, menuItemSilent, menuItemQuickTimeSetting, toolStripSeparator4, menuItemVersion });
+            contextMenuStrip1.Items.AddRange(new ToolStripItem[] { menuItemCopy, toolStripSeparator1, menuItemMarkupType, toolStripSeparator2, menuItemScale, menuItemTopMost, menuItemSilent, menuItemQuickTimeSetting, menuItemNavigationWindow, toolStripSeparator4, menuItemVersion });
             contextMenuStrip1.Name = "contextMenuStrip1";
-            contextMenuStrip1.Size = new Size(181, 198);
+            contextMenuStrip1.Size = new Size(181, 220);
             // 
             // menuItemCopy
             // 
@@ -329,6 +330,13 @@
             labelClock.TextAlign = ContentAlignment.TopRight;
             labelClock.MouseDown += labelClock_MouseDown;
             // 
+            // menuItemNavigationWindow
+            // 
+            menuItemNavigationWindow.Name = "menuItemNavigationWindow";
+            menuItemNavigationWindow.Size = new Size(180, 22);
+            menuItemNavigationWindow.Text = "ナビゲーションウィンドウ";
+            menuItemNavigationWindow.Click += menuItemNavigationWindow_Click;
+            // 
             // CTCPWindow
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -391,5 +399,6 @@
         private ToolStripMenuItem menuItemMarkupType3;
         private ToolStripMenuItem menuItemServerTime;
         private ToolStripSeparator toolStripSeparator5;
+        private ToolStripMenuItem menuItemNavigationWindow;
     }
 }

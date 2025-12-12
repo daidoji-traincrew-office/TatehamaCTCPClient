@@ -10,6 +10,10 @@ namespace TatehamaCTCPClient.Settings {
 
         public Point Location { get; init; } = location;
 
-        public bool Active { get; private set; } = true;
+        public bool Active { get; private set; } = false;
+
+        public void SetActive(bool v) {
+            Active = v;
+        }
     }
 }

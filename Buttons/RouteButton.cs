@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using TatehamaCTCPClient.Communications;
 using TatehamaCTCPClient.Models;
 using TatehamaCTCPClient.Settings;

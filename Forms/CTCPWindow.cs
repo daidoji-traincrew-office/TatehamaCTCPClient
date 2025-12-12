@@ -1,6 +1,5 @@
 ﻿using Dapplo.Microsoft.Extensions.Hosting.WinForms;
 using OpenIddict.Client;
-using System;
 using System.Diagnostics;
 using System.Drawing.Drawing2D;
 using System.Media;
@@ -251,6 +250,7 @@ namespace TatehamaCTCPClient.Forms {
                 menu.Click += (sender, e) => { SetHourQuick(time); };
             }
 
+
         }
 
         private void AddScale(int scale) {
@@ -277,6 +277,7 @@ namespace TatehamaCTCPClient.Forms {
             serverCommunication = new(this, service);
             serverCommunication.DataUpdated += UpdateServerData;
             LogManager.AddInfoLog($"{(ServerAddress.SignalAddress.Contains("dev") ? "Dev" : "Prod")}サーバに接続します");
+
             await TryConnectServer();
         }
 
@@ -290,6 +291,7 @@ namespace TatehamaCTCPClient.Forms {
             if (serverCommunication != null) {
                 await serverCommunication.Authorize();
             }
+            OpenNavigationWindow();
         }
 
 
@@ -308,14 +310,14 @@ namespace TatehamaCTCPClient.Forms {
                 ServerTime += 24;
             }
 
-            if(serverCommunication != null) {
+            if (serverCommunication != null) {
 
                 foreach (var t in DataToCTCP.GetDifferenceTrack()) {
                     var isTrain = int.TryParse(Regex.Replace(t.Last, @"[^0-9]", ""), out var numBody);  // 列番本体（数字部分）
                     if (!isTrain) {
                         continue;
                     }
-                    if(!displayManager.Routes.TryGetValue(t.Name, out var routes)) {
+                    if (!displayManager.Routes.TryGetValue(t.Name, out var routes)) {
                         continue;
                     }
                     var direction = numBody % 2 == 1 ? "L" : "R";
@@ -539,6 +541,9 @@ namespace TatehamaCTCPClient.Forms {
 
         private void SetTopMost(bool topMost) {
             TopMost = topMost;
+            if (NavigationWindow.Instance != null) {
+                NavigationWindow.Instance.TopMost = topMost;
+            }
             menuItemTopMost.CheckState = topMost ? CheckState.Checked : CheckState.Unchecked;
             labelTopMost.Text = $"最前面：{(topMost ? "ON" : "OFF")}";
             labelTopMost.ForeColor = topMost ? Color.Yellow : Color.Gray;
@@ -1363,6 +1368,20 @@ namespace TatehamaCTCPClient.Forms {
             foreach (var w in displayManager.SubWindows) {
                 w.UpdateStatus();
             }
+        }
+
+        public void OpenNavigationWindow() {
+            if (NavigationWindow.Instance != null) {
+                NavigationWindow.Instance.Activate();
+                return;
+            }
+            var w = new NavigationWindow(displayManager);
+            w.Show();
+            w.TopMost = TopMost;
+        }
+
+        private void menuItemNavigationWindow_Click(object sender, EventArgs e) {
+            OpenNavigationWindow();
         }
     }
 }
