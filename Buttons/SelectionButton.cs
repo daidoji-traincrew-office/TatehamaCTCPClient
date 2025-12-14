@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Xml.Linq;
 using TatehamaCTCPClient.Communications;
 using TatehamaCTCPClient.Models;
 using TatehamaCTCPClient.Settings;
@@ -191,6 +189,32 @@ namespace TatehamaCTCPClient.Buttons
                 CancelWaiting();
                 IsYudo = isYudo;
             }
+        }
+
+        protected override LightingType CalculationLighting() {
+            var d = IsYudo ? yudoRoutes : routes;
+            if (d.Count <= 0) {
+                return LightingType.NONE;
+            }
+            if (IsWaiting) {
+                return LightingType.BLINKING_SLOW;
+            }
+
+            var blinking = false;
+            var lighting = false;
+            foreach (var routeList in d.Values) {
+                var route = routeList.FirstOrDefault();
+                if (route == null) {
+                    continue;
+                }
+                var r = new List<RouteData>(DataToCTCP.Latest.RouteDatas).FirstOrDefault(r => r.TcName == route.RouteName);
+                if (r == null || r.RouteState == null) {
+                    return LightingType.NONE;
+                }
+                blinking |= r.RouteState.IsCtcRelayRaised == RaiseDrop.Raise;
+                lighting |= r.RouteState.IsSignalControlRaised == RaiseDrop.Raise;
+            }
+            return lighting ? LightingType.LIGHTING : (blinking ? LightingType.BLINKING_FAST : LightingType.NONE);
         }
     }
 }

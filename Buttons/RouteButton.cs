@@ -66,5 +66,18 @@ namespace TatehamaCTCPClient.Buttons
                 _ = c.SetCtcRelay(Route.RouteName, RaiseDrop.Raise);
             }
         }
+
+        protected override LightingType CalculationLighting() {
+            if (Route == null) {
+                return LightingType.NONE;
+            }
+            var r = new List<RouteData>(DataToCTCP.Latest.RouteDatas).FirstOrDefault(r => r.TcName == Route.RouteName);
+            if (r == null || r.RouteState == null) {
+                return LightingType.NONE;
+            }
+            var blinking = r.RouteState.IsCtcRelayRaised == RaiseDrop.Raise;
+            var lighting = r.RouteState.IsSignalControlRaised == RaiseDrop.Raise;
+            return lighting ? LightingType.LIGHTING : (blinking ? LightingType.BLINKING_FAST : LightingType.NONE);
+        }
     }
 }

@@ -33,6 +33,12 @@ namespace TatehamaCTCPClient.Buttons
         public virtual void OnClick() {
 
         }
+
+        public bool RecalculationLighting() {
+            return true;
+        }
+
+        protected abstract LightingType CalculationLighting();
     }
 
     public class CancelButton : CTCPButton {
@@ -54,6 +60,10 @@ namespace TatehamaCTCPClient.Buttons
 
         public static void MakeInactive() {
             Active = false;
+        }
+
+        protected override LightingType CalculationLighting() {
+            return Active ? LightingType.LIGHTING : LightingType.NONE;
         }
     }
 
@@ -82,6 +92,10 @@ namespace TatehamaCTCPClient.Buttons
 
         public static void MakeInactive() {
             Active = false;
+        }
+
+        protected override LightingType CalculationLighting() {
+            return Active ? LightingType.LIGHTING : LightingType.NONE;
         }
     }
 

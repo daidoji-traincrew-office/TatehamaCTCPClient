@@ -940,8 +940,9 @@ namespace TatehamaCTCPClient.Manager
 
             window.SetMagnifyingGlass();
 
-            lock (syncPictureBox) {
-                try {
+            if (!resizing) {
+                lock (syncPictureBox) {
+                    try {
                         foreach (var bp in buttonPanels.Values) {
                             if (buttons.TryGetValue(bp.Name, out CTCPButton? b)) {
                                 var size = ConvertSizeToScreen(b.Type.Size);
@@ -975,6 +976,7 @@ namespace TatehamaCTCPClient.Manager
                         image.Dispose();
                     }
                 }
+            }
 
             Started = true;
 

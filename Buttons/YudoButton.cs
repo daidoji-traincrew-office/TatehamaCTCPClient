@@ -28,5 +28,9 @@ namespace TatehamaCTCPClient.Buttons {
                 b.SwitchYudo(Active);
             }
         }
+
+        protected override LightingType CalculationLighting() {
+            return Active ? LightingType.LIGHTING : LightingType.NONE;
+        }
     }
 }
