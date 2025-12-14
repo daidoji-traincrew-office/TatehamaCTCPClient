@@ -382,7 +382,8 @@ namespace TatehamaCTCPClient.Forms {
                 showOffset--;
             }
 
-            var oldFlashState = BlinkStateFast;
+            var oldBlinkStateFast = BlinkStateFast;
+            var oldBlinkStateSlow = BlinkStateSlow;
             var now = DateTime.Now;
             var deltaSeconds = (now - RealTime).TotalSeconds;
             RealTime = now;
@@ -393,9 +394,9 @@ namespace TatehamaCTCPClient.Forms {
                 }
             }
 
-            if (/*!UpdateDebug() && */displayManager.Started && (ReservedUpdate || (oldFlashState != BlinkStateFast) /*&& MarkupType < 2 && (trainDataDict.Values.Any(td => td.Markup) || MarkupDuplication || MarkupFillZero || MarkupNotTrain || MarkupDelayed > 0 || displayManager.Markuped)*/)) {
+            if (/*!UpdateDebug() && */displayManager.Started && (ReservedUpdate || (oldBlinkStateFast != BlinkStateFast) /*&& MarkupType < 2 && (trainDataDict.Values.Any(td => td.Markup) || MarkupDuplication || MarkupFillZero || MarkupNotTrain || MarkupDelayed > 0 || displayManager.Markuped)*/)) {
                 ReservedUpdate = false;
-                displayManager.UpdateCTCP();
+                displayManager.UpdateCTCP(oldBlinkStateFast != BlinkStateFast, oldBlinkStateSlow != BlinkStateSlow);
             }
 
 

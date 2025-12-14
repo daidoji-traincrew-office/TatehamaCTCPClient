@@ -18,7 +18,7 @@ namespace TatehamaCTCPClient.Buttons
 
         public bool IsWaiting => CurrentRoute != null;
 
-        public override LightingType Lighting {
+        /*public override LightingType Lighting {
             get {
                 if (IsWaiting) {
                     return LightingType.BLINKING_SLOW;
@@ -40,7 +40,7 @@ namespace TatehamaCTCPClient.Buttons
                 }
                 return lighting ? LightingType.LIGHTING : (blinking ? LightingType.BLINKING_FAST : LightingType.NONE);
             }
-        }
+        }*/
 
         public DestinationButton(string name, Point location, ButtonType type, string label, StationSetting station, Route route) : this(name, location, type, label, station) {
             routes.Add(route);

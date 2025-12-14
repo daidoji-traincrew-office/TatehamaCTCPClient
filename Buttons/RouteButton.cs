@@ -11,7 +11,7 @@ namespace TatehamaCTCPClient.Buttons
 
         public StationSetting Station { get; init; }
 
-        public override LightingType Lighting {
+        /*public override LightingType Lighting {
             get {
                 if(Route == null) {
                     return LightingType.NONE;
@@ -25,7 +25,7 @@ namespace TatehamaCTCPClient.Buttons
                 return lighting ? LightingType.LIGHTING : (blinking ? LightingType.BLINKING_FAST : LightingType.NONE);
 
             }
-        }
+        }*/
 
         public override bool Enabled => Route != null;
 

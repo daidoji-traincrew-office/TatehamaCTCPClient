@@ -811,7 +811,7 @@ namespace TatehamaCTCPClient.Manager
             return list;
         }
 
-        public void UpdateCTCP() {
+        public void UpdateCTCP(bool updatedBlinkStateFast = false, bool updatedBlinkStateSlow = false) {
 
             var data = DataToCTCP.Latest;
 
@@ -886,7 +886,15 @@ namespace TatehamaCTCPClient.Manager
             var iaB = new ImageAttributes();
             iaB.SetRemapTable([new ColorMap { OldColor = Color.White, NewColor = Color.FromArgb(0x28, 0x28, 0x28) }]);
 
+            var buttonList = new List<CTCPButton>();
+
             foreach (var b in buttons.Values) {
+                if (b.UpdateLighting()) {
+                    buttonList.Add(b);
+                }
+                else if(updatedBlinkStateFast && b.Lighting == LightingType.BLINKING_FAST || updatedBlinkStateSlow && b.Lighting == LightingType.BLINKING_SLOW) {
+                    buttonList.Add(b);
+                }
                 if(b.Lighting == LightingType.LIGHTING || blinkFast && b.Lighting == LightingType.BLINKING_FAST || blinkSlow && b.Lighting == LightingType.BLINKING_SLOW) {
                     lock (syncButtonsImage) {
                         g.DrawImage(buttonsImage, new Rectangle(b.Location.X, b.Location.Y, b.Type.Size.Width, b.Type.Size.Height), b.Type.Location.X, b.Type.Location.Y + b.Type.Size.Height + 1, b.Type.Size.Width, b.Type.Size.Height, GraphicsUnit.Pixel, new());
@@ -898,6 +906,12 @@ namespace TatehamaCTCPClient.Manager
             }
 
             foreach (var b in destinationButtons.Values) {
+                if (b.UpdateLighting()) {
+                    buttonList.Add(b);
+                }
+                else if (updatedBlinkStateFast && b.Lighting == LightingType.BLINKING_FAST || updatedBlinkStateSlow && b.Lighting == LightingType.BLINKING_SLOW) {
+                    buttonList.Add(b);
+                }
                 if (b.Lighting == LightingType.LIGHTING || blinkFast && b.Lighting == LightingType.BLINKING_FAST || blinkSlow && b.Lighting == LightingType.BLINKING_SLOW) {
                     lock (syncButtonsImage) {
                         g.DrawImage(buttonsImage, new Rectangle(b.Location.X, b.Location.Y, b.Type.Size.Width, b.Type.Size.Height), b.Type.Location.X, b.Type.Location.Y + b.Type.Size.Height + 1, b.Type.Size.Width, b.Type.Size.Height, GraphicsUnit.Pixel, new());
@@ -943,7 +957,19 @@ namespace TatehamaCTCPClient.Manager
             if (!resizing) {
                 lock (syncPictureBox) {
                     try {
-                        foreach (var bp in buttonPanels.Values) {
+                        foreach(var b in buttonList) {
+                            if (buttonPanels.TryGetValue(b.Name, out PictureBox? bp)) {
+                                var size = ConvertSizeToScreen(b.Type.Size);
+                                var loc = ConvertPointToScreen(b.Location);
+                                var img = new Bitmap(size.Width, size.Height);
+                                using Graphics gp = Graphics.FromImage(img);
+                                gp.DrawImage(image, new Rectangle(0, 0, size.Width, size.Height), loc.X, loc.Y, size.Width, size.Height, GraphicsUnit.Pixel);
+                                var old = bp.Image;
+                                bp.Image = img;
+                                old?.Dispose();
+                            }
+                        }
+                        /*foreach (var bp in buttonPanels.Values) {
                             if (buttons.TryGetValue(bp.Name, out CTCPButton? b)) {
                                 var size = ConvertSizeToScreen(b.Type.Size);
                                 var loc = ConvertPointToScreen(b.Location);
@@ -964,8 +990,7 @@ namespace TatehamaCTCPClient.Manager
                                 bp.Image = img;
                                 old?.Dispose();
                             }
-
-                        }
+                        }*/
                     }
                     catch (InvalidOperationException e) {
                         Debug.WriteLine(e.Source);

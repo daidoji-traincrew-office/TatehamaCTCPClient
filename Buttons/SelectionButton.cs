@@ -22,7 +22,7 @@ namespace TatehamaCTCPClient.Buttons
 
         public bool IsYudo { get; private set; } = false;
 
-        public override LightingType Lighting {
+        /*public override LightingType Lighting {
             get {
                 var d = IsYudo ? yudoRoutes : routes;
                 if (d.Count <= 0) {
@@ -49,7 +49,7 @@ namespace TatehamaCTCPClient.Buttons
                 return lighting ? LightingType.LIGHTING : (blinking ? LightingType.BLINKING_FAST : LightingType.NONE);
 
             }
-        }
+        }*/
 
         public override bool Enabled => routes.Count > 0;
 

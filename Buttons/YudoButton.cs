@@ -6,7 +6,7 @@ namespace TatehamaCTCPClient.Buttons {
 
         public bool Active { get; private set; } = false;
 
-        public override LightingType Lighting => Active ? LightingType.LIGHTING : LightingType.NONE;
+        /*public override LightingType Lighting => Active ? LightingType.LIGHTING : LightingType.NONE;*/
 
         public override bool NeedsUpdate => true;
 

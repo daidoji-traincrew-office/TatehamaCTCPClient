@@ -14,7 +14,7 @@ namespace TatehamaCTCPClient.Buttons
 
         public string Label { get; init; }
 
-        public virtual LightingType Lighting => LightingType.NONE;
+        public LightingType Lighting { get; private set; } = LightingType.NONE;
 
         public virtual bool NeedsUpdate => false;
 
@@ -34,8 +34,13 @@ namespace TatehamaCTCPClient.Buttons
 
         }
 
-        public bool RecalculationLighting() {
-            return true;
+        public bool UpdateLighting() {
+            var old = Lighting;
+            Lighting = CalculationLighting();
+            if (old != Lighting) {
+                return true;
+            }
+            return false;
         }
 
         protected abstract LightingType CalculationLighting();
@@ -45,7 +50,7 @@ namespace TatehamaCTCPClient.Buttons
 
         public static bool Active { get; private set; } = false;
 
-        public override LightingType Lighting => Active ? LightingType.LIGHTING : LightingType.NONE;
+        /*public override LightingType Lighting => Active ? LightingType.LIGHTING : LightingType.NONE;*/
 
         public override bool NeedsUpdate => true;
         public CancelButton(string name, Point location, ButtonType type) : base(name, location, type, "") {
@@ -71,7 +76,7 @@ namespace TatehamaCTCPClient.Buttons
 
         public static bool Active { get; private set; } = false;
 
-        public override LightingType Lighting => Active ? LightingType.LIGHTING : LightingType.NONE;
+        /*public override LightingType Lighting => Active ? LightingType.LIGHTING : LightingType.NONE;*/
 
         public override bool NeedsUpdate => true;
         public HikipperButton(string name, Point location, ButtonType type) : base(name, location, type, "") {
