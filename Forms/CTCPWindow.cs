@@ -311,21 +311,30 @@ namespace TatehamaCTCPClient.Forms {
             }
 
             if (serverCommunication != null) {
-
-                foreach (var t in DataToCTCP.GetDifferenceTrack()) {
+                var routes = displayManager.Routes;
+                var routeDatas = new List<RouteData>(DataToCTCP.Latest.RouteDatas);
+                foreach (var t in DataToCTCP.Latest.TrackCircuits.Where(t => t.On && routes.ContainsKey(t.Name))/*GetDifferenceTrack()*/) {
                     var isTrain = int.TryParse(Regex.Replace(t.Last, @"[^0-9]", ""), out var numBody);  // 列番本体（数字部分）
                     if (!isTrain) {
                         continue;
                     }
-                    if (!displayManager.Routes.TryGetValue(t.Name, out var routes)) {
+                    /*if (!displayManager.Routes.TryGetValue(t.Name, out var routes)) {
                         continue;
-                    }
+                    }*/
                     var direction = numBody % 2 == 1 ? "L" : "R";
-                    foreach (var r in displayManager.Routes[t.Name]) {
+                    foreach (var r in routes[t.Name]) {
                         if (!r.Station.Active || r.IsHikipper || !r.RouteName.Contains(direction)) {
                             continue;
                         }
-                        _ = serverCommunication.SetCtcRelay(r.RouteName, RaiseDrop.Drop);
+                        if (routeDatas.Any(rd => {
+                            if(rd.TcName != r.RouteName) {
+                                return false;
+                            }
+                            var rs = rd.RouteState;
+                            return rs != null && rs.IsCtcRelayRaised == RaiseDrop.Raise && rs.IsRouteLockRaised == RaiseDrop.Drop && rs.IsApproachLockMRRaised == RaiseDrop.Raise;
+                        })) {
+                            _ = serverCommunication.SetCtcRelay(r.RouteName, RaiseDrop.Drop);
+                        }
                     }
                 }
             }

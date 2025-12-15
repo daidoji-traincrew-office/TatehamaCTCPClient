@@ -78,7 +78,10 @@ namespace TatehamaCTCPClient.Forms {
                 c.Size = new Size(23, 35);
                 c.Checked = s.Active;
                 c.CheckedChanged += (sender, e) => {
-                    selectedStationIndex = -1;
+                    if(selectedStationIndex >= 0) {
+                        panelStations[selectedStationIndex].BackColor = checkBoxStations[selectedStationIndex].Checked ? Color.LightBlue : SystemColors.ControlLight;
+                        selectedStationIndex = -1;
+                    }
                     s.SetActive(c.Checked);
                     p.BackColor = s.Active ? Color.LightBlue : SystemColors.ControlLight;
                 };
