@@ -124,14 +124,14 @@ namespace TatehamaCTCPClient.Communications {
                 _window.SetStatusSubWindow("×", Color.Red);
 
                 var result = TaskDialog.ShowDialog(_window, new TaskDialogPage {
-                    Caption = "サーバ認証失敗（タイムアウト） | CTCP - ダイヤ運転会",
+                    Caption = $"サーバ認証失敗（タイムアウト） | {_window.SystemNameLong} - ダイヤ運転会",
                     Icon = TaskDialogIcon.Error,
                     Text = "サーバ認証中にタイムアウトしました。\n再認証しますか？",
                     Buttons = { TaskDialogButton.Yes, TaskDialogButton.No },
                     DefaultButton = TaskDialogButton.Yes
                 });
 
-                /*DialogResult result = MessageBox.Show($"サーバ認証中にタイムアウトしました。\n再認証しますか？", "サーバ認証失敗（タイムアウト） | CTCP - ダイヤ運転会",
+                /*DialogResult result = MessageBox.Show($"サーバ認証中にタイムアウトしました。\n再認証しますか？", $"サーバ認証失敗（タイムアウト） | {_window.SystemName} - ダイヤ運転会",
                     MessageBoxButtons.YesNo, MessageBoxIcon.Error);*/
                 if (result == TaskDialogButton.Yes) {
                     var r = await CheckUserAuthenticationAsync();
@@ -150,7 +150,7 @@ namespace TatehamaCTCPClient.Communications {
                 _window.SetStatusSubWindow("×", Color.Red);
 
                 TaskDialog.ShowDialog(_window, new TaskDialogPage {
-                    Caption = "サーバ認証失敗（拒否） | CTCP - ダイヤ運転会",
+                    Caption = $"サーバ認証失敗（拒否） | {_window.SystemNameLong} - ダイヤ運転会",
                     Heading = "サーバ認証失敗（拒否）",
                     Icon = TaskDialogIcon.Error,
                     Text = "サーバ認証は拒否されました。\n入鋏されていない可能性があります。\n入鋏を受け、必要な権限を取得してください。\n再試行する場合はアプリケーションを再起動してください。"
@@ -167,7 +167,7 @@ namespace TatehamaCTCPClient.Communications {
 
 
                 var result = TaskDialog.ShowDialog(_window, new TaskDialogPage {
-                    Caption = "サーバ認証失敗 | CTCP - ダイヤ運転会",
+                    Caption = $"サーバ認証失敗 | {_window.SystemNameLong} - ダイヤ運転会",
                     Icon = TaskDialogIcon.Error,
                     Text = $"サーバ認証に失敗しました。\n再認証しますか？\n\n{exception.Message}\n{exception.StackTrace})",
                     Buttons = { TaskDialogButton.Yes, TaskDialogButton.No },
@@ -176,7 +176,7 @@ namespace TatehamaCTCPClient.Communications {
 
                 /*DialogResult result =
                     MessageBox.Show($"サーバ認証に失敗しました。\n再認証しますか？\n\n{exception.Message}\n{exception.StackTrace})",
-                        "サーバ認証失敗 | CTCP - ダイヤ運転会", MessageBoxButtons.YesNo, MessageBoxIcon.Error);*/
+                        $"サーバ認証失敗 | {_window.SystemName} - ダイヤ運転会", MessageBoxButtons.YesNo, MessageBoxIcon.Error);*/
                 if (result == TaskDialogButton.Yes) {
                     var r = await Authorize();
                     return r;
@@ -347,7 +347,7 @@ namespace TatehamaCTCPClient.Communications {
             LogManager.AddWarningLog("トークンが切れました");
 
             var result = TaskDialog.ShowDialog(_window, new TaskDialogPage {
-                Caption = "認証失敗 | CTCP - ダイヤ運転会",
+                Caption = $"認証失敗 | {_window.SystemNameLong} - ダイヤ運転会",
                 Icon = TaskDialogIcon.Error,
                 Text = "トークンが切れました。\n再認証してください。\n※いいえを選択した場合、再認証にはアプリケーション再起動が必要です。",
                 Buttons = { TaskDialogButton.Yes, TaskDialogButton.No },
@@ -356,7 +356,7 @@ namespace TatehamaCTCPClient.Communications {
 
             /*DialogResult dialogResult = MessageBox.Show(
                 "トークンが切れました。\n再認証してください。\n※いいえを選択した場合、再認証にはアプリケーション再起動が必要です。",
-                "認証失敗 | CTCP - ダイヤ運転会", MessageBoxButtons.YesNo, MessageBoxIcon.Error);*/
+                $"認証失敗 | {_window.SystemName} - ダイヤ運転会", MessageBoxButtons.YesNo, MessageBoxIcon.Error);*/
             if (result == TaskDialogButton.Yes) {
                 LogManager.AddInfoLog("再認証を行います");
                 var r = await Authorize();
@@ -406,7 +406,7 @@ namespace TatehamaCTCPClient.Communications {
                 LogManager.OutputLog();
 
                 var result = TaskDialog.ShowDialog(_window, new TaskDialogPage {
-                    Caption = "認証拒否 | CTCP - ダイヤ運転会",
+                    Caption = $"認証拒否 | {_window.SystemNameLong} - ダイヤ運転会",
                     Icon = TaskDialogIcon.Error,
                     Text = "認証が拒否されました。\n再認証してください。",
                     Buttons = { TaskDialogButton.Yes, TaskDialogButton.No },
@@ -415,7 +415,7 @@ namespace TatehamaCTCPClient.Communications {
 
                 /*DialogResult dialogResult = MessageBox.Show(
                     "認証が拒否されました。\n再認証してください。",
-                    "認証拒否 | CTCP - ダイヤ運転会", MessageBoxButtons.YesNo, MessageBoxIcon.Error);*/
+                    $"認証拒否 | {_window.SystemName} - ダイヤ運転会", MessageBoxButtons.YesNo, MessageBoxIcon.Error);*/
                 if (result == TaskDialogButton.Yes) {
                     var r = await Authorize();
                     return r;
@@ -485,7 +485,7 @@ namespace TatehamaCTCPClient.Communications {
                     _window.SetStatusSubWindow("×", Color.Red);
                     if (!_window.Silent) {
                         TaskDialog.ShowDialog(_window, new TaskDialogPage {
-                            Caption = "データ受信失敗 | CTCP - ダイヤ運転会",
+                            Caption = $"データ受信失敗 | {_window.SystemNameLong} - ダイヤ運転会",
                             Heading = "データ受信失敗",
                             Icon = TaskDialogIcon.Error,
                             Text =
@@ -507,7 +507,7 @@ namespace TatehamaCTCPClient.Communications {
                     _window.SetStatusSubWindow("×", Color.Red);
                     if (!_window.Silent) {
                         TaskDialog.ShowDialog(_window, new TaskDialogPage {
-                            Caption = "タイムアウト | CTCP - ダイヤ運転会",
+                            Caption = $"タイムアウト | {_window.SystemNameLong} - ダイヤ運転会",
                             Heading = "タイムアウト",
                             Icon = TaskDialogIcon.Error,
                             Text = "サーバとの通信がタイムアウトしました。\n復旧を試みますが、しばらく経っても復旧しない場合はアプリケーションの再起動をお願いします。"
@@ -532,7 +532,7 @@ namespace TatehamaCTCPClient.Communications {
                         if (_window.InvokeRequired) {
                             _window.Invoke(() => {
                                 TaskDialog.ShowDialog(_window, new TaskDialogPage {
-                                    Caption = "未知のエラー | CTCP - ダイヤ運転会",
+                                    Caption = $"未知のエラー | {_window.SystemNameLong} - ダイヤ運転会",
                                     Heading = "未知のエラー",
                                     Icon = TaskDialogIcon.Error,
                                     Text = "未知のエラーです。\nCTCP製作者に状況を報告願います。"
@@ -541,7 +541,7 @@ namespace TatehamaCTCPClient.Communications {
                         }
                         else {
                             TaskDialog.ShowDialog(_window, new TaskDialogPage {
-                                Caption = "未知のエラー | CTCP - ダイヤ運転会",
+                                Caption = $"未知のエラー | {_window.SystemNameLong} - ダイヤ運転会",
                                 Heading = "未知のエラー",
                                 Icon = TaskDialogIcon.Error,
                                 Text = "未知のエラーです。\nCTCP製作者に状況を報告願います。"

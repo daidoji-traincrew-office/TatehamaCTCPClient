@@ -45,6 +45,8 @@ namespace TatehamaCTCPClient.Forms {
             labelTopMost = new Label();
             labelScale = new Label();
             labelStatus = new Label();
+            menuItemMarkupTypeAuto = new ToolStripMenuItem();
+            toolStripSeparator4 = new ToolStripSeparator();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
             contextMenuStrip1.SuspendLayout();
             flowLayoutPanel1.SuspendLayout();
@@ -88,7 +90,7 @@ namespace TatehamaCTCPClient.Forms {
             // 
             // menuItemMarkupType
             // 
-            menuItemMarkupType.DropDownItems.AddRange(new ToolStripItem[] { menuItemMarkupType1, menuItemMarkupType2, menuItemMarkupType3 });
+            menuItemMarkupType.DropDownItems.AddRange(new ToolStripItem[] { menuItemMarkupTypeAuto, toolStripSeparator4, menuItemMarkupType1, menuItemMarkupType2, menuItemMarkupType3 });
             menuItemMarkupType.Name = "menuItemMarkupType";
             menuItemMarkupType.Size = new Size(162, 22);
             menuItemMarkupType.Text = "強調表示タイプ";
@@ -225,6 +227,18 @@ namespace TatehamaCTCPClient.Forms {
             labelStatus.TabIndex = 11;
             labelStatus.Text = " ";
             // 
+            // menuItemMarkupTypeAuto
+            // 
+            menuItemMarkupTypeAuto.Name = "menuItemMarkupTypeAuto";
+            menuItemMarkupTypeAuto.Size = new Size(191, 22);
+            menuItemMarkupTypeAuto.Text = "自動";
+            menuItemMarkupTypeAuto.Click += menuItemMarkupTypeAuto_Click;
+            // 
+            // toolStripSeparator4
+            // 
+            toolStripSeparator4.Name = "toolStripSeparator4";
+            toolStripSeparator4.Size = new Size(188, 6);
+            // 
             // SubWindow
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -271,5 +285,7 @@ namespace TatehamaCTCPClient.Forms {
         private ToolStripMenuItem menuItemMarkupType2;
         private ToolStripMenuItem menuItemMarkupType3;
         private Label labelStatus;
+        private ToolStripMenuItem menuItemMarkupTypeAuto;
+        private ToolStripSeparator toolStripSeparator4;
     }
 }

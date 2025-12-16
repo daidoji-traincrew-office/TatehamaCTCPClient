@@ -24,7 +24,7 @@ namespace TatehamaCTCPClient.Forms {
             var name = textBox1.Text;
             if (name.Length <= 0) {
                 TaskDialog.ShowDialog(this, new TaskDialogPage {
-                    Caption = "使用できないウィンドウ名 | TID - ダイヤ運転会",
+                    Caption = $"使用できないウィンドウ名 | {window.DisplayManager.Window.SystemNameLong} - ダイヤ運転会",
                     Heading = "使用できないウィンドウ名",
                     Icon = TaskDialogIcon.Warning,
                     Text =
@@ -33,7 +33,7 @@ namespace TatehamaCTCPClient.Forms {
             }
             else if (name == "全線TID") {
                 TaskDialog.ShowDialog(this, new TaskDialogPage {
-                    Caption = "使用できないウィンドウ名 | TID - ダイヤ運転会",
+                    Caption = $"使用できないウィンドウ名 | {window.DisplayManager.Window.SystemNameLong} - ダイヤ運転会",
                     Heading = "使用できないウィンドウ名",
                     Icon = TaskDialogIcon.Warning,
                     Text =

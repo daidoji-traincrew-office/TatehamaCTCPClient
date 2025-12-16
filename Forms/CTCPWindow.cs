@@ -3,6 +3,7 @@ using OpenIddict.Client;
 using System.Diagnostics;
 using System.Drawing.Drawing2D;
 using System.Media;
+using System.Text;
 using System.Text.RegularExpressions;
 using TatehamaCTCPClient.Buttons;
 using TatehamaCTCPClient.Communications;
@@ -66,6 +67,16 @@ namespace TatehamaCTCPClient.Forms {
             get;
             private set;
         } = new(14, 0, 0);
+
+        public string SystemName {
+            get;
+            private set;
+        } = "CTCP";
+
+        public string SystemNameLong {
+            get;
+            private set;
+        } = "CTCP";
 
         /// <summary>
         /// 時差を表示するか（0は表示せずそれ以外は0までのカウントダウン）
@@ -147,7 +158,7 @@ namespace TatehamaCTCPClient.Forms {
         public int MarkupType {
             get;
             private set;
-        } = 0;
+        } = -1;
 
         public bool ReservedUpdate {
             get;
@@ -188,6 +199,43 @@ namespace TatehamaCTCPClient.Forms {
 
             pictureBox2.Parent = pictureBox1;
             pictureBox3.Parent = pictureBox1;
+
+            var loaded = false;
+
+            var docuPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal) + @"\TRAIN CREW Tool\TatehamaCTCPClient\";
+            var lg = LoadSetting($"{docuPath}setting.txt"); ;
+            loaded |= lg;
+            if (lg) {
+                LogManager.AddInfoLog("グローバル設定ファイルを読み込みました");
+            }
+            var ll = LoadSetting(".\\setting.txt");
+            loaded |= ll;
+            if (ll) {
+                LogManager.AddInfoLog("ローカル設定ファイルを読み込みました");
+            }
+
+            if (!loaded) {
+                /*if (!Directory.Exists(".\\setting\\")) {
+                    Directory.CreateDirectory(".\\setting\\");
+                }*/
+                using (StreamWriter w = new(".\\setting.txt", false, new UTF8Encoding(false))) {
+                    w.Write($"#このファイルは {docuPath} に配置しても動作します。\nsystemName=CTCP\ntopMost=true\nscaleList=50,75,90,100,110,125,150,175,200\ninitialScale=100\ntimeOffset=14\nzoomSize=240\nsilent=false\nflashInterval=0.5\nmarkupType=-1\nhideNumber=false");
+                }
+                LogManager.AddInfoLog("ローカル設定ファイルを作成しました");
+
+                TaskDialog.ShowDialog(new TaskDialogPage {
+                    Caption = "設定ファイル作成 | CTCP - ダイヤ運転会",
+                    Heading = "設定ファイルが作成されました",
+                    Icon = TaskDialogIcon.Information,
+                    Text = $"exeと同じフォルダ内に設定ファイルを作成しました。\n設定ファイルを編集することで起動時の設定などが変更できます。",
+                    SizeToContent = true
+                });
+            }
+
+            if(SystemName != "CTCP") {
+                SystemNameLong = $"{SystemName}システム(CTCP)";
+            }
+            Text = $"全線CTCP | {SystemNameLong} - ダイヤ運転会";
 
 
             if (File.Exists(".\\sound\\warning.wav")) {
@@ -268,6 +316,94 @@ namespace TatehamaCTCPClient.Forms {
             };
         }
 
+        private bool LoadSetting(string path) {
+
+            try {
+                if (!File.Exists(path)) {
+                    return false;
+                }
+                using var sr = new StreamReader(path);
+                var line = sr.ReadLine();
+                while (line != null) {
+                    var texts = line.Replace(" ", "").Split('=');
+                    line = sr.ReadLine();
+
+                    if (texts.Length < 2 || texts.Any(t => t == "")) {
+                        continue;
+                    }
+                    var v = texts[1].Replace(" ", "").ToLower();
+
+                    switch (texts[0]) {
+                        case "systemName":
+                            SystemName = texts[1].Replace(" ", "");
+                            break;
+                        case "topMost":
+                            topMostSetting = v == "true";
+                            break;
+                        case "scaleList":
+                            var scaleList = new List<int>();
+                            foreach (var str in texts[1].Split(',')) {
+                                if (!int.TryParse(str, out var scale) || scale <= 0 || scale > 500) {
+                                    continue;
+                                }
+                                scaleList.Add(scale);
+                            }
+                            if (scaleList.Count > 0) {
+                                scaleArray = scaleList.ToArray();
+                            }
+                            break;
+                        case "initialScale":
+                        case "scale":
+                            foreach (var m in scaleMenuDict.Values) {
+                                m.CheckState = CheckState.Unchecked;
+                            }
+                            menuItemScaleFit.CheckState = CheckState.Unchecked;
+
+                            if (v == "fit") {
+                                initialScale = -1;
+                                break;
+                            }
+                            if (int.TryParse(texts[1], out var s)) {
+                                initialScale = s;
+                            }
+                            break;
+                        case "timeOffset":
+                            if (int.TryParse(texts[1], out var hours)) {
+                                TimeOffset = new TimeSpan(((hours % 24) + 24) % 24, 0, 0);
+                            }
+                            break;
+                        case "zoomSize":
+                            if (int.TryParse(texts[1], out var size) && size >= 20) {
+                                magnifyingGlassSize = size;
+                            }
+                            break;
+                        case "silent":
+                            SetSilent(v == "true");
+                            break;
+                        case "flashInterval":
+                        case "blinkInterval":
+                            if (float.TryParse(texts[1], out var interval) && interval >= 0) {
+                                blinkInterval = interval;
+                            }
+                            break;
+                        case "markupType":
+                            if (int.TryParse(texts[1], out var mt)) {
+                                SetMarkupType(mt);
+                            }
+                            break;
+                        case "hideNumber":
+                            /*HideNumber = v == "true" || v == "lock";
+                            LockHideNumber = v == "lock";
+                            menuItemHideNumber.CheckState = HideNumber ? CheckState.Checked : CheckState.Unchecked;*/
+                            break;
+                    }
+                }
+            }
+            catch {
+            }
+            return true;
+        }
+
 
         private async void TIDWindow_Load(object? sender, EventArgs? e) {
             _ = Task.Run(ClockUpdateLoop);
@@ -330,7 +466,7 @@ namespace TatehamaCTCPClient.Forms {
                             continue;
                         }
                         if (routeDatas.Any(rd => {
-                            if(rd.TcName != r.RouteName) {
+                            if (rd.TcName != r.RouteName) {
                                 return false;
                             }
                             var rs = rd.RouteState;
@@ -462,7 +598,7 @@ namespace TatehamaCTCPClient.Forms {
                     Debug.WriteLine($"データ受信不能: {delaySeconds}");
                     if (!Silent) {
                         TaskDialog.ShowDialog(this, new TaskDialogPage {
-                            Caption = "データ受信不能 | CTCP - ダイヤ運転会",
+                            Caption = $"データ受信不能 | {SystemNameLong} - ダイヤ運転会",
                             Heading = "データ受信不能",
                             Icon = TaskDialogIcon.Error,
                             Text = "サーバ側からのデータ受信が10秒以上ありませんでした。\n復旧を試みますが、しばらく経っても復旧しない場合はアプリケーションの再起動をおすすめします。"
@@ -768,9 +904,14 @@ namespace TatehamaCTCPClient.Forms {
             SetMarkupType(2);
         }
 
+        private void menuItemMarkupTypeAuto_Click(object sender, EventArgs e) {
+            SetMarkupType(-1);
+        }
+
         public void SetMarkupType(int type) {
 
-            MarkupType = type < 3 ? (type >= 0 ? type : 0) : 2;
+            MarkupType = type < 3 ? type : 2;
+            menuItemMarkupTypeAuto.CheckState = type < 0 ? CheckState.Indeterminate : CheckState.Unchecked;
             menuItemMarkupType1.CheckState = type == 0 ? CheckState.Indeterminate : CheckState.Unchecked;
             menuItemMarkupType2.CheckState = type == 1 ? CheckState.Indeterminate : CheckState.Unchecked;
             menuItemMarkupType3.CheckState = type == 2 ? CheckState.Indeterminate : CheckState.Unchecked;
@@ -989,7 +1130,7 @@ namespace TatehamaCTCPClient.Forms {
         private void CTCPWindow_Closing(object sender, EventArgs e) {
             if (LogManager.Output && LogManager.NeededWarning) {
                 TaskDialog.ShowDialog(this, new TaskDialogPage {
-                    Caption = "エラーログ出力 | TID - ダイヤ運転会",
+                    Caption = $"エラーログ出力 | {SystemNameLong} - ダイヤ運転会",
                     Heading = "エラーログ出力",
                     Icon = TaskDialogIcon.Information,
                     Text =
@@ -1206,7 +1347,7 @@ namespace TatehamaCTCPClient.Forms {
                         displayManager.AddSubWindow(sub);
                     }
                 }
-                if(pressingButton != null) {
+                if (pressingButton != null) {
                     pressingButton = null;
                     displayManager.PlayReleaseButtonSound();
                 }

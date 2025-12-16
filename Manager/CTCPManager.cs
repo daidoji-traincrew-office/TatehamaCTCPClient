@@ -1047,7 +1047,7 @@ namespace TatehamaCTCPClient.Manager
                     window.LabelStatusText = "描画エラー";
                     window.SetStatusSubWindow("×", Color.Red);
                     TaskDialog.ShowDialog(window, new TaskDialogPage {
-                        Caption = "描画エラー | TID - ダイヤ運転会",
+                        Caption = $"描画エラー | {window.SystemNameLong} - ダイヤ運転会",
                         Heading = "描画エラー",
                         Icon = TaskDialogIcon.Error,
                         Text = "TID画面の描画に失敗しました。\nTID製作者に状況を報告願います。"
@@ -1221,6 +1221,7 @@ namespace TatehamaCTCPClient.Manager
             lock (OriginalBitmap) {
                 var i = new Bitmap(OriginalBitmap);
                 using (var g = Graphics.FromImage(i)) {
+                    g.DrawString(window.SystemName, new Font("ＭＳ ゴシック", 12, GraphicsUnit.Pixel), Brushes.White, 0, 0);
                     g.DrawString((window.Clock + window.TimeOffset).ToString("H:mm:ss"), new Font("ＭＳ ゴシック", 12, GraphicsUnit.Pixel), Brushes.White, OriginalWidth - 51, 0);
                 }
                 Clipboard.SetImage(i);
@@ -1235,6 +1236,7 @@ namespace TatehamaCTCPClient.Manager
                 using (var g = Graphics.FromImage(i)) {
                     g.Clear(Color.FromArgb(10, 10, 10));
                     g.DrawImage(OriginalBitmap, new Rectangle(0, 13, width, height), x, y, width, height, GraphicsUnit.Pixel);
+                    g.DrawString(window.SystemName, new Font("ＭＳ ゴシック", 12, GraphicsUnit.Pixel), Brushes.White, 0, 0);
                     g.DrawString((window.Clock + window.TimeOffset).ToString("H:mm:ss"), new Font("ＭＳ ゴシック", 12, GraphicsUnit.Pixel), Brushes.White, width - 51, 0);
                 }
                 Clipboard.SetImage(i);

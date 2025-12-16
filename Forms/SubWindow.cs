@@ -71,6 +71,8 @@ namespace TatehamaCTCPClient.Forms {
             }
         }
 
+        public CTCPManager DisplayManager => displayManager;
+
         /// <summary>
         /// マウス位置（ドラッグ操作対応用）
         /// </summary>
@@ -82,7 +84,7 @@ namespace TatehamaCTCPClient.Forms {
             this.displayManager = displayManager;
             InitializeComponent();
 
-            Text = $"サブモニタ{++counter} | TID - ダイヤ運転会";
+            Text = $"サブモニタ{++counter} | {displayManager.Window.SystemNameLong} - ダイヤ運転会";
 
             Size = new Size(Size.Width - ClientSize.Width + DisplaySize.Width, Size.Height - ClientSize.Height + pictureBox1.Location.Y + DisplaySize.Height);
             MinimumSize = new Size(Size.Width - ClientSize.Width + DisplaySize.Width / 2, Size.Height - ClientSize.Height + pictureBox1.Location.Y + DisplaySize.Height / 2);
@@ -104,7 +106,7 @@ namespace TatehamaCTCPClient.Forms {
 
             buttons.AddRange(displayManager.GetButtonInArea(location, size));
 
-            foreach(var b in buttons) {
+            foreach (var b in buttons) {
                 var p = new PictureBox();
                 pictureBox1.Controls.Add(p);
                 p.Location = hover ? new Point(b.Location.X - StartLocation.X, b.Location.Y - StartLocation.Y) : new Point(-100, -100);
@@ -236,7 +238,7 @@ namespace TatehamaCTCPClient.Forms {
                     }
                 }
                 else {*/
-                    mouseLoc = Cursor.Position;
+                mouseLoc = Cursor.Position;
                 /*}*/
             }
         }
@@ -450,7 +452,7 @@ namespace TatehamaCTCPClient.Forms {
         }
 
         public void SetWindowName(string name) {
-            Text = $"{name} | TID - ダイヤ運転会";
+            Text = $"{name} | {displayManager.Window.SystemNameLong} - ダイヤ運転会";
         }
 
         private void menuItemRename_Click(object sender, EventArgs e) {
@@ -488,7 +490,12 @@ namespace TatehamaCTCPClient.Forms {
             displayManager.Window.SetMarkupType(2);
         }
 
+        private void menuItemMarkupTypeAuto_Click(object sender, EventArgs e) {
+            displayManager.Window.SetMarkupType(-1);
+        }
+
         public void SetMarkupType(int type) {
+            menuItemMarkupTypeAuto.CheckState = type < 0 ? CheckState.Indeterminate : CheckState.Unchecked;
             menuItemMarkupType1.CheckState = type == 0 ? CheckState.Indeterminate : CheckState.Unchecked;
             menuItemMarkupType2.CheckState = type == 1 ? CheckState.Indeterminate : CheckState.Unchecked;
             menuItemMarkupType3.CheckState = type == 2 ? CheckState.Indeterminate : CheckState.Unchecked;

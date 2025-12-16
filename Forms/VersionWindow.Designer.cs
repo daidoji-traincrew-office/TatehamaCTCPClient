@@ -108,7 +108,7 @@
             Name = "VersionWindow";
             ShowInTaskbar = false;
             StartPosition = FormStartPosition.CenterParent;
-            Text = "バージョン情報 | TID - ダイヤ運転会";
+            Text = "バージョン情報 | CTCP - ダイヤ運転会";
             tableLayoutPanel1.ResumeLayout(false);
             tableLayoutPanel1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)icon).EndInit();

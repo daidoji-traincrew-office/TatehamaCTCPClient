@@ -72,7 +72,7 @@
             MinimumSize = new Size(200, 200);
             Name = "NavigationWindow";
             StartPosition = FormStartPosition.CenterParent;
-            Text = "ナビゲーション | CTCP - ダイヤ運転会";
+            Text = $"ナビゲーション | CTCP - ダイヤ運転会";
             FormClosing += NavigationWindow_Closing;
             tabControl1.ResumeLayout(false);
             tabPage1.ResumeLayout(false);
