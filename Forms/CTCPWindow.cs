@@ -470,7 +470,7 @@ namespace TatehamaCTCPClient.Forms {
                                 return false;
                             }
                             var rs = rd.RouteState;
-                            return rs != null && rs.IsCtcRelayRaised == RaiseDrop.Raise && rs.IsRouteLockRaised == RaiseDrop.Drop && rs.IsApproachLockMRRaised == RaiseDrop.Raise;
+                            return rs != null && rs.IsCtcRelayRaised == RaiseDrop.Raise && (r.ForcedDrop || rs.IsRouteLockRaised == RaiseDrop.Drop && rs.IsApproachLockMRRaised == RaiseDrop.Raise);
                         })) {
                             _ = serverCommunication.SetCtcRelay(r.RouteName, RaiseDrop.Drop);
                         }

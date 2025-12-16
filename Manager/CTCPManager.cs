@@ -451,7 +451,8 @@ namespace TatehamaCTCPClient.Manager
                     list.Add(new StationSetting(texts[0], texts[1], texts[2], new Point(int.Parse(texts[3]), int.Parse(texts[4]))));
                 }
             }
-            catch {
+            catch (Exception ex) {
+                Debug.WriteLine(ex);
             }
             return list;
         }
@@ -478,7 +479,8 @@ namespace TatehamaCTCPClient.Manager
                     list.Add(texts[0], new ButtonType(texts[0], int.Parse(texts[1]), int.Parse(texts[2]), int.Parse(texts[3]), int.Parse(texts[4]), int.Parse(texts[6]), int.Parse(texts[7]), int.Parse(texts[8]), int.Parse(texts[9])));
                 }
             }
-            catch {
+            catch (Exception ex) {
+                Debug.WriteLine(ex);
             }
             return list;
         }
@@ -535,7 +537,8 @@ namespace TatehamaCTCPClient.Manager
                     }
                 }
             }
-            catch {
+            catch (Exception ex) {
+                Debug.WriteLine(ex);
             }
         }
 
@@ -615,7 +618,8 @@ namespace TatehamaCTCPClient.Manager
                     }
                 }
             }
-            catch {
+            catch (Exception ex) {
+                Debug.WriteLine(ex);
             }
         }
 
@@ -664,7 +668,6 @@ namespace TatehamaCTCPClient.Manager
                     var routeName = i == 5 ? "" : texts[5];
                     var route = routeName.Length > 0 ? routes.Values.SelectMany(r => r).FirstOrDefault(r => r.RouteName == routeName) : null;
 
-
                     if (routeName.Length <= 0 || route == null) {
                         b = new DestinationButton(texts[0], int.Parse(texts[1]), int.Parse(texts[2]), buttonTypes[texts[3]], texts[4], station);
                         destinationButtons.Add(texts[0], b);
@@ -681,7 +684,8 @@ namespace TatehamaCTCPClient.Manager
                     }
                 }
             }
-            catch {
+            catch (Exception ex) {
+                Debug.WriteLine(ex);
             }
         }
 
@@ -734,7 +738,8 @@ namespace TatehamaCTCPClient.Manager
                     }
                 }
             }
-            catch {
+            catch (Exception ex) {
+                Debug.WriteLine(ex);
             }
         }
 
@@ -787,7 +792,13 @@ namespace TatehamaCTCPClient.Manager
                     var texts = line.Split('\t');
                     line = sr.ReadLine();
 
-                    if (texts.Length < 2 || texts.Any(t => t.Length <= 0)) {
+                    var i = 0;
+                    for (; i < texts.Length; i++) {
+                        if (texts[i] == "") {
+                            break;
+                        }
+                    }
+                    if (i < 2) {
                         continue;
                     }
                     StationSetting? station = null;
@@ -799,14 +810,16 @@ namespace TatehamaCTCPClient.Manager
                         continue;
                     }
                     var track = texts[1];
-                    var route = new Route(texts[0], track, station);
+                    var forcedDrop = i > 2 ? texts[2] == "true" : false;
+                    var route = new Route(texts[0], track, station, forcedDrop);
                     if (!list.TryAdd(track, new List<Route>() { route })){
                         list[track].Add(route);
                     }
 
                 }
             }
-            catch {
+            catch(Exception ex) {
+                Debug.WriteLine(ex);
             }
             return list;
         }
