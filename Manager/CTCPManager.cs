@@ -1318,6 +1318,20 @@ namespace TatehamaCTCPClient.Manager
             return l;
         }
 
+        public CTCPButton? GetButtonInPoint(Point location) {
+            foreach(var b in buttons.Values) {
+                if(IsInArea(location, b.Location.X, b.Location.Y, b.Type.Size)) {
+                    return b;
+                }
+            }
+            foreach (var b in destinationButtons.Values) {
+                if (IsInArea(location, b.Location.X, b.Location.Y, b.Type.Size)) {
+                    return b;
+                }
+            }
+            return null;
+        }
+
         public void PlayPressButtonSound() {
             pressButtonSound?.Play();
         }

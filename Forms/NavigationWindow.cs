@@ -40,6 +40,7 @@ namespace TatehamaCTCPClient.Forms {
                 p.Location = new Point(8, label1.Location.Y + label1.Size.Height + 5 + i * 36);
                 p.Name = $"panel{s.Code}";
                 p.Size = new Size(360, 35);
+                p.Cursor = Cursors.Hand;
                 p.TabIndex = 0;
                 l.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
                 l.BackColor = Color.Transparent;

@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Drawing.Drawing2D;
 using System.Media;
 using System.Text.RegularExpressions;
+using TatehamaCTCPClient.Buttons;
 using TatehamaCTCPClient.Communications;
 using TatehamaCTCPClient.Manager;
 using TatehamaCTCPClient.Models;
@@ -140,6 +141,8 @@ namespace TatehamaCTCPClient.Forms {
         public bool BlinkStateSlow => blinkInterval <= 0 || blinkState > blinkInterval;
 
         private Point? selectionStarting = null;
+
+        private CTCPButton? pressingButton = null;
 
         public int MarkupType {
             get;
@@ -1142,17 +1145,6 @@ namespace TatehamaCTCPClient.Forms {
                 UpdateMouseCursor();
             }
             if ((e.Button & MouseButtons.Left) == MouseButtons.Left) {
-                /*if (ModifierKeys.HasFlag(Keys.Shift)) {
-                    foreach (var w in displayManager.NumberWindowDict.Values) {
-                        var t = w.Train;
-                        if (t != null && IsInArea(pictureBox1.PointToClient(Cursor.Position), w.PosX, w.PosY, w.GetSize(), 1) && trainDataDict.TryGetValue(t, out var td)) {
-                            td.Markup = !td.Markup;
-                            trainMenuDict[t].CheckState = td.Markup ? CheckState.Checked : CheckState.Unchecked;
-                            ReservedUpdate = true;
-                        }
-                    }
-                }
-                else */
                 if (ModifierKeys.HasFlag(Keys.Control)) {
                     usingMagnifyingGlass = false;
 
@@ -1160,6 +1152,63 @@ namespace TatehamaCTCPClient.Forms {
                     pictureBox2.Size = new Size(240, 240);
                     UpdateMouseCursor();
                     selectionStarting = pictureBox1.PointToClient(Cursor.Position);
+                }
+                else {
+                    var b = displayManager.GetButtonInPoint(pictureBox1.PointToClient(Cursor.Position));
+                    if (b != null) {
+                        pressingButton = b;
+                        displayManager.PlayPressButtonSound();
+                    }
+                }
+            }
+        }
+
+        private void PictureBox2_Click(object sender, EventArgs e) {
+            var b = pressingButton;
+            if (b != null && IsInArea(pictureBox1.PointToClient(Cursor.Position), b.Location.X, b.Location.Y, b.Type.Size)) {
+                if (displayManager.Started) {
+                    b.OnClick();
+                    if (b.NeedsUpdate) {
+                        ReservedUpdate = true;
+                    }
+                }
+            }
+        }
+
+        private void PictureBox2_MouseUp(object sender, MouseEventArgs e) {
+            if ((e.Button & MouseButtons.Left) == MouseButtons.Left) {
+                mouseLoc = null;
+                if (selectionStarting.HasValue) {
+                    var start = selectionStarting.Value;
+                    selectionStarting = null;
+                    lock (pictureBox3) {
+                        pictureBox3.Location = new Point(-300, -300);
+                        pictureBox3.Size = new Size(100, 100);
+                    }
+                    var end = pictureBox1.PointToClient(Cursor.Position);
+                    var center = new Point((start.X + end.X) / 2 - end.X + Cursor.Position.X, (start.Y + end.Y) / 2 - end.Y + Cursor.Position.Y);
+                    end = new Point(end.X > 16 ? (start.X >= PictureBoxWidth || end.X < PictureBoxWidth - 16 ? end.X : PictureBoxWidth) : (start.X > 0 ? 0 : end.X), end.Y > 16 ? (start.Y >= PictureBoxHeight || end.Y < PictureBoxHeight - 16 ? end.Y : PictureBoxHeight) : (start.Y > 0 ? 0 : end.Y));
+                    start = ConvertPointToOriginal(start);
+                    end = ConvertPointToOriginal(end);
+                    var p = new Point(Math.Min(start.X, end.X), Math.Min(start.Y, end.Y));
+                    var s = new Size(Math.Abs(start.X - end.X), Math.Abs(start.Y - end.Y));
+                    var screenSize = Screen.FromControl(this).Bounds;
+                    screenSize = new Rectangle(screenSize.Location, new Size(screenSize.Width + 20, screenSize.Height + 20));
+                    if (s.Width > 120 && s.Width <= screenSize.Width && s.Height > 100 && s.Height <= screenSize.Height - pictureBox1.Location.Y) {
+                        var sub = new SubWindow(p, s, displayManager);
+                        sub.Icon = Icon;
+                        pictureBox1.Cursor = defaultCursor;
+                        sub.Show();
+                        var border = (Size.Width - ClientSize.Width) / 2;
+                        sub.Location = new Point(center.X - s.Width / 2 - border, center.Y - s.Height / 2 - Size.Height + ClientSize.Height - panel1.Location.Y / 2 - border);
+                        sub.SetTopMost(TopMost);
+                        sub.SetClockColor(UseServerTime ? Color.White : Color.Yellow);
+                        displayManager.AddSubWindow(sub);
+                    }
+                }
+                if(pressingButton != null) {
+                    pressingButton = null;
+                    displayManager.PlayReleaseButtonSound();
                 }
             }
         }
@@ -1240,6 +1289,35 @@ namespace TatehamaCTCPClient.Forms {
                 }
                 UpdateMouseCursor();
                 SetMagnifyingGlass(cp.X, cp.Y);
+            }
+            else if (selectionStarting.HasValue) {
+                var s = selectionStarting.Value;
+                selectionStarting = new Point(s.X > 16 ? (s.X < PictureBoxWidth - 16 ? s.X : PictureBoxWidth) : 0, s.Y > 16 ? (s.Y < PictureBoxHeight - 16 ? s.Y : PictureBoxHeight) : 0);
+                var start = selectionStarting.Value;
+                var end = pictureBox1.PointToClient(Cursor.Position);
+                var center = new Point((start.X + end.X) / 2 - end.X + Cursor.Position.X, (start.Y + end.Y) / 2 - end.Y + Cursor.Position.Y);
+                end = new Point(end.X > 16 ? (start.X >= PictureBoxWidth || end.X < PictureBoxWidth - 16 ? end.X : PictureBoxWidth) : (start.X > 0 ? 0 : end.X), end.Y > 16 ? (start.Y >= PictureBoxHeight || end.Y < PictureBoxHeight - 16 ? end.Y : PictureBoxHeight) : (start.Y > 0 ? 0 : end.Y));
+                var startOrig = ConvertPointToOriginal(start);
+                var endOrig = ConvertPointToOriginal(end);
+                var pos = new Point(Math.Min(start.X, end.X), Math.Min(start.Y, end.Y));
+                var size = new Size(Math.Abs(start.X - end.X), Math.Abs(start.Y - end.Y));
+                var sizeOrig = new Size(Math.Abs(startOrig.X - endOrig.X), Math.Abs(startOrig.Y - endOrig.Y));
+                if (size.Width > 1 && size.Height > 1) {
+                    lock (pictureBox3) {
+                        var screenSize = Screen.FromControl(this).Bounds;
+                        screenSize = new Rectangle(screenSize.Location, new Size(screenSize.Width + 20, screenSize.Height + 20));
+                        var old = pictureBox3.Image;
+                        var b = new Bitmap(size.Width, size.Height);
+                        using var g = Graphics.FromImage(b);
+                        g.Clear(Color.Transparent);
+                        g.DrawRectangle(sizeOrig.Width > 120 && sizeOrig.Width <= screenSize.Width && sizeOrig.Height > 100 && sizeOrig.Height <= screenSize.Height ? Pens.LimeGreen : Pens.DarkRed, 0, 0, size.Width - 1, size.Height - 1);
+                        pictureBox3.Image = b;
+                        pictureBox3.Location = pos;
+                        pictureBox3.Size = size;
+                        old?.Dispose();
+                    }
+                }
+
             }
         }
 

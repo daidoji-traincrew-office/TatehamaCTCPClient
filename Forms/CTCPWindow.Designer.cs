@@ -95,6 +95,8 @@
             pictureBox2.TabIndex = 6;
             pictureBox2.TabStop = false;
             pictureBox2.MouseDown += PictureBox2_MouseDown;
+            pictureBox2.MouseUp += PictureBox2_MouseUp;
+            pictureBox2.Click += PictureBox2_Click;
             pictureBox2.MouseMove += PictureBox2_MouseMove;
             // 
             // pictureBox1
