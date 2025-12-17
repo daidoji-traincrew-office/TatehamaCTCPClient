@@ -959,7 +959,7 @@ namespace TatehamaCTCPClient.Manager
                     OriginalBitmap = newPic;
                 lock (subWindows) {
                     foreach (var sw in subWindows) {
-                        sw.UpdateImage(OriginalBitmap);
+                        sw.UpdateImage(OriginalBitmap, buttonList);
                     }
                     }
                     oldOriginal.Dispose();

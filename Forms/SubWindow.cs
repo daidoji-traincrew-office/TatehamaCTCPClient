@@ -138,6 +138,10 @@ namespace TatehamaCTCPClient.Forms {
         }
 
         public void UpdateImage(Image image) {
+            UpdateImage(image, []);
+        }
+
+        public void UpdateImage(Image image, List<CTCPButton> buttonList) {
             lock (pictureBoxSync) {
                 var b = new Bitmap(DisplaySize.Width, DisplaySize.Height);
                 using var g = Graphics.FromImage(b);
@@ -151,28 +155,30 @@ namespace TatehamaCTCPClient.Forms {
                     Image imageCopy = new Bitmap(original, pictureBox1.Width, pictureBox1.Height);
                     PictureBoxImage = new Bitmap(imageCopy);
 
-                    lock (pictureBoxSync) {
-                        try {
-                            foreach (var bt in buttons) {
-                                if (buttonPanels.TryGetValue(bt.Name, out var bp)) {
-                                    var size = ConvertSizeToScreen(bt.Type.Size);
-                                    var loc = ConvertPointToScreen(bt.Location);
-                                    var img = new Bitmap(size.Width, size.Height);
-                                    using Graphics gb = Graphics.FromImage(img);
-                                    gb.DrawImage(imageCopy, new Rectangle(0, 0, size.Width, size.Height), loc.X, loc.Y, size.Width, size.Height, GraphicsUnit.Pixel);
-                                    var old = bp.Image;
-                                    bp.Image = img;
-                                    old?.Dispose();
+                    if (!resizing) {
+                        lock (pictureBoxSync) {
+                            try {
+                                foreach (var bt in buttons) {
+                                    if ((buttonList.Count <= 0 || buttonList.Contains(bt)) && buttonPanels.TryGetValue(bt.Name, out var bp)) {
+                                        var size = ConvertSizeToScreen(bt.Type.Size);
+                                        var loc = ConvertPointToScreen(bt.Location);
+                                        var img = new Bitmap(size.Width, size.Height);
+                                        using Graphics gb = Graphics.FromImage(img);
+                                        gb.DrawImage(imageCopy, new Rectangle(0, 0, size.Width, size.Height), loc.X, loc.Y, size.Width, size.Height, GraphicsUnit.Pixel);
+                                        var old = bp.Image;
+                                        bp.Image = img;
+                                        old?.Dispose();
+                                    }
                                 }
                             }
-                        }
-                        catch (InvalidOperationException e) {
-                            Debug.WriteLine(e.Source);
-                            Debug.WriteLine(e.Message);
-                            Debug.WriteLine(e.StackTrace);
-                        }
-                        finally {
-                            imageCopy.Dispose();
+                            catch (InvalidOperationException e) {
+                                Debug.WriteLine(e.Source);
+                                Debug.WriteLine(e.Message);
+                                Debug.WriteLine(e.StackTrace);
+                            }
+                            finally {
+                                imageCopy.Dispose();
+                            }
                         }
                     }
                 }

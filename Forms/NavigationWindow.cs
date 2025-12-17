@@ -18,6 +18,7 @@ namespace TatehamaCTCPClient.Forms {
             Instance = this;
             InitializeComponent();
             this.displayManager = displayManager;
+            Text = $"ナビゲーション | {displayManager.Window.SystemNameLong} - ダイヤ運転会";
             PlaceStations();
         }
 
