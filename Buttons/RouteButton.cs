@@ -40,14 +40,14 @@ namespace TatehamaCTCPClient.Buttons
             Route ??= route;
         }
 
-        public override void OnClick() {
+        public override bool OnClick() {
             var c = ServerCommunication.Instance;
             if (c == null) {
-                return;
+                return false;
             }
             if (CancelButton.Active) {
                 if(Route == null || Lighting == LightingType.NONE) {
-                    return;
+                    return false;
                 }
                 Route.SetHikipper(false);
                 _ = c.SetCtcRelay(Route.RouteName, RaiseDrop.Drop);
@@ -56,15 +56,16 @@ namespace TatehamaCTCPClient.Buttons
             }
             else {
                 if (!Station.Active || !DataToCTCP.Latest.CenterControlStates.TryGetValue(Station.LeverName, out var state) || state == CenterControlState.StationControl) {
-                    return;
+                    return false;
                 }
                 if (Route == null || Lighting != LightingType.NONE) {
-                    return;
+                    return false;
                 }
                 Route.SetHikipper(HikipperButton.Active);
                 HikipperButton.MakeInactive();
                 _ = c.SetCtcRelay(Route.RouteName, RaiseDrop.Raise);
             }
+            return true;
         }
 
         protected override LightingType CalculationLighting() {

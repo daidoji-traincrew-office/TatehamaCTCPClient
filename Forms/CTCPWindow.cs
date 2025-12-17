@@ -448,6 +448,7 @@ namespace TatehamaCTCPClient.Forms {
             while (ServerTime < 0) {
                 ServerTime += 24;
             }
+            var updated = !displayManager.Started/*true*/;
 
             if (serverCommunication != null) {
                 var routes = displayManager.Routes;
@@ -473,10 +474,12 @@ namespace TatehamaCTCPClient.Forms {
                             return rs != null && rs.IsCtcRelayRaised == RaiseDrop.Raise && (r.ForcedDrop || rs.IsRouteLockRaised == RaiseDrop.Drop && rs.IsApproachLockMRRaised == RaiseDrop.Raise);
                         })) {
                             _ = serverCommunication.SetCtcRelay(r.RouteName, RaiseDrop.Drop);
+                            updated = true;
                         }
                     }
                 }
             }
+            updated = updated || DataToCTCP.HasDifference();
 
             /*var tcList = data.TrackCircuitDatas;
             var sList = data.SwitchDatas;
@@ -487,11 +490,12 @@ namespace TatehamaCTCPClient.Forms {
             updated |= tcList != null && trackManager.UpdateTCData(tcList);
             updated |= sList != null && UpdatePointData(sList);
             updated |= dList != null && UpdateDirectionData(dList);
-            updated |= trackManager.UpdateNumberWindow();
+            updated |= trackManager.UpdateNumberWindow();*/
 
-            if (updated) {*/
-            displayManager.UpdateCTCP();
-            /*}*/
+            if (updated) {
+                Debug.WriteLine("update");
+                displayManager.UpdateCTCP();
+            }
         }
 
         private async void ClockUpdateLoop() {
@@ -542,8 +546,9 @@ namespace TatehamaCTCPClient.Forms {
                 }
             }
 
-            if (/*!UpdateDebug() && */displayManager.Started && (ReservedUpdate || (oldBlinkStateFast != BlinkStateFast) /*&& MarkupType < 2 && (trainDataDict.Values.Any(td => td.Markup) || MarkupDuplication || MarkupFillZero || MarkupNotTrain || MarkupDelayed > 0 || displayManager.Markuped)*/)) {
+            if (/*!UpdateDebug() && */displayManager.Started && (ReservedUpdate || (oldBlinkStateFast != BlinkStateFast && displayManager.BlinkingButtons()) /*&& MarkupType < 2 && (trainDataDict.Values.Any(td => td.Markup) || MarkupDuplication || MarkupFillZero || MarkupNotTrain || MarkupDelayed > 0 || displayManager.Markuped)*/)) {
                 ReservedUpdate = false;
+                Debug.WriteLine("update clock");
                 displayManager.UpdateCTCP(oldBlinkStateFast != BlinkStateFast, oldBlinkStateSlow != BlinkStateSlow);
             }
 

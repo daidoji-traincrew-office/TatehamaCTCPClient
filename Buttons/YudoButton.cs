@@ -22,11 +22,12 @@ namespace TatehamaCTCPClient.Buttons {
         public YudoButton(string name, int x, int y, ButtonType type, List<SelectionButton> targets) : this(name, new(x, y), type, targets) {
         }
 
-        public override void OnClick() {
+        public override bool OnClick() {
             Active = !Active;
             foreach(var b in targets) {
                 b.SwitchYudo(Active);
             }
+            return true;
         }
 
         protected override LightingType CalculationLighting() {

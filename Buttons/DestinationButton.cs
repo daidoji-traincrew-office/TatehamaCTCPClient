@@ -59,12 +59,12 @@ namespace TatehamaCTCPClient.Buttons
             routes.Add(route);
         }
 
-        public override void OnClick() {
+        public override bool OnClick() {
             if (CancelButton.Active) {
                 if (!IsWaiting) {
                     var c = ServerCommunication.Instance;
                     if (c == null) {
-                        return;
+                        return false;
                     }
                     foreach (var route in routes) {
                         route.SetHikipper(false);
@@ -76,11 +76,12 @@ namespace TatehamaCTCPClient.Buttons
             }
             else if(IsWaiting) {
                 if (!Station.Active || !DataToCTCP.Latest.CenterControlStates.TryGetValue(Station.LeverName, out var state) || state == CenterControlState.StationControl) {
-                    return;
+                    return false;
                 }
                 CurrentRoute?.SetRoute(this);
                 CurrentRoute = null;
             }
+            return true;
 
         }
 

@@ -434,6 +434,7 @@ namespace TatehamaCTCPClient.Forms {
                 using (var g = Graphics.FromImage(i)) {
                     g.Clear(Color.FromArgb(10, 10, 10));
                     g.DrawImage(original, 0, 13);
+                    g.DrawString(displayManager.Window.SystemName, new Font("ＭＳ ゴシック", 12, GraphicsUnit.Pixel), Brushes.White, 0, 0);
                     g.DrawString(labelClock.Text, new Font("ＭＳ ゴシック", 9), Brushes.White, original.Width - 51, 0);
                 }
                 Clipboard.SetImage(i);

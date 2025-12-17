@@ -23,11 +23,32 @@ namespace TatehamaCTCPClient.Models {
             var previous = Previous;
             foreach(var tl in latest.TrackCircuits) {
                 var tp = previous.TrackCircuits.FirstOrDefault(tp => tp.Name == tl.Name);
-                if (tp != null && tp.On == false && tl.On == true) {
+                if (tp == null || tp.On == false && tl.On == true) {
                     l.Add(tl);
                 }
             }
             return l;
+        }
+
+        public static bool HasDifference() {
+            var latest = Latest;
+            var previous = Previous;
+            foreach(var nwl in latest.Retsubans) {
+                var nwp = previous.Retsubans.FirstOrDefault(nw => nw.Name == nwl.Name);
+                if(nwp != null && nwp.Retsuban != nwl.Retsuban) {
+                    return true;
+                }
+            }
+            var rdp = new List<RouteData>(previous.RouteDatas);
+            foreach (var rl in new List<RouteData>(latest.RouteDatas)) {
+                var rp = rdp.FirstOrDefault(r => r.TcName == rl.TcName);
+                if (rp == null || rp.RouteState?.IsCtcRelayRaised != rl.RouteState?.IsCtcRelayRaised || rp.RouteState?.IsSignalControlRaised != rl.RouteState?.IsSignalControlRaised) {
+                    return true;
+                }
+            }
+
+
+            return false;
         }
 
 

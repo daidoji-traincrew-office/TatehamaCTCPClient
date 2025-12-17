@@ -316,7 +316,7 @@ namespace TatehamaCTCPClient.Manager
                     }
                     : (sender, e) => {
                         if (Started) {
-                            b.OnClick();
+                            window.ReservedUpdate |= b.OnClick();
                         }
                     };
                     p.MouseDown += (sender, e) => {
@@ -345,7 +345,7 @@ namespace TatehamaCTCPClient.Manager
                     p.BackColor = Color.White;
                     p.Click += (sender, e) => {
                         if (Started) {
-                            b.OnClick();
+                            window.ReservedUpdate |= b.OnClick();
                         }
                     };
                     p.MouseDown += (sender, e) => {
@@ -1353,6 +1353,20 @@ namespace TatehamaCTCPClient.Manager
 
         public void PlayReleaseButtonSound() {
             releaseButtonSound?.Play();
+        }
+
+        public bool BlinkingButtons() {
+            foreach (var b in buttons.Values) {
+                if (b.Lighting == LightingType.BLINKING_SLOW || b.Lighting == LightingType.BLINKING_FAST) {
+                    return true;
+                }
+            }
+            foreach (var b in destinationButtons.Values) {
+                if (b.Lighting == LightingType.BLINKING_SLOW || b.Lighting == LightingType.BLINKING_FAST) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 }

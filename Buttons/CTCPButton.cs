@@ -30,8 +30,8 @@ namespace TatehamaCTCPClient.Buttons
 
         public CTCPButton(string name, int x, int y, ButtonType type, string label) : this(name, new(x, y), type, label) { }
 
-        public virtual void OnClick() {
-
+        public virtual bool OnClick() {
+            return false;
         }
 
         public bool UpdateLighting() {
@@ -59,8 +59,9 @@ namespace TatehamaCTCPClient.Buttons
         public CancelButton(string name, int x, int y, ButtonType type) : base(name, x, y, type, "") {
         }
 
-        public override void OnClick() {
+        public override bool OnClick() {
             Active = !Active;
+            return true;
         }
 
         public static void MakeInactive() {
@@ -85,7 +86,7 @@ namespace TatehamaCTCPClient.Buttons
         public HikipperButton(string name, int x, int y, ButtonType type) : base(name, x, y, type, "") {
         }
 
-        public override void OnClick() {
+        public override bool OnClick() {
             if (CancelButton.Active) {
                 Active = false;
                 CancelButton.MakeInactive();
@@ -93,6 +94,7 @@ namespace TatehamaCTCPClient.Buttons
             else {
                 Active = !Active;
             }
+            return true;
         }
 
         public static void MakeInactive() {

@@ -97,12 +97,12 @@ namespace TatehamaCTCPClient.Buttons
             }
         }
 
-        public override void OnClick() {
+        public override bool OnClick() {
 
             if (CancelButton.Active) {
                 if (!CancelWaiting()) {
                     if(Lighting == LightingType.NONE) {
-                        return;
+                        return false;
                     }
                     CancelRoute();
                 }
@@ -112,11 +112,11 @@ namespace TatehamaCTCPClient.Buttons
             }
             else {
                 if (!Station.Active || !DataToCTCP.Latest.CenterControlStates.TryGetValue(Station.LeverName, out var state) || state == CenterControlState.StationControl) {
-                    return;
+                    return false;
                 }
                 var d = IsYudo ? yudoRoutes : routes;
                 if (d.Count <= 0) {
-                    return;
+                    return false;
                 }
                 var c = 0;
                 foreach (var k in d.Keys) {
@@ -130,6 +130,7 @@ namespace TatehamaCTCPClient.Buttons
                     IsWaiting = true;
                 }
             }
+            return true;
         }
 
         public void SetRoute(DestinationButton db) {
