@@ -181,7 +181,7 @@ namespace TatehamaCTCPClient.Forms {
 
         public bool OpeningDialog {
             get;
-            private set;
+            set;
         } = false;
 
         public bool Silent { get; private set; } = false;
@@ -382,7 +382,7 @@ namespace TatehamaCTCPClient.Forms {
                             break;
                         case "flashInterval":
                         case "blinkInterval":
-                            if (float.TryParse(texts[1], out var interval) && interval >= 0) {
+                            if (float.TryParse(texts[1], out var interval) && interval > 0) {
                                 blinkInterval = interval;
                             }
                             break;
@@ -602,12 +602,14 @@ namespace TatehamaCTCPClient.Forms {
                     SetStatusSubWindow("×", Color.Red);
                     Debug.WriteLine($"データ受信不能: {delaySeconds}");
                     if (!Silent) {
+                        OpeningDialog = true;
                         TaskDialog.ShowDialog(this, new TaskDialogPage {
                             Caption = $"データ受信不能 | {SystemNameLong} - ダイヤ運転会",
                             Heading = "データ受信不能",
                             Icon = TaskDialogIcon.Error,
                             Text = "サーバ側からのデータ受信が10秒以上ありませんでした。\n復旧を試みますが、しばらく経っても復旧しない場合はアプリケーションの再起動をおすすめします。"
                         });
+                        OpeningDialog = false;
                     }
                     else {
                         PlayWarningSound();

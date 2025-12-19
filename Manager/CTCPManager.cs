@@ -361,7 +361,7 @@ namespace TatehamaCTCPClient.Manager
 
                 foreach (var w in trainWindows.Values) {
                     gd.FillRectangle(new SolidBrush(Color.FromArgb(40, 40, 40)), w.Location.X, w.Location.Y, 67, 13);
-                    var randValue = rand.Next(20);
+                    var randValue = rand.Next(200);
                     if (randValue > 0) {
                         randValue = rand.Next(43);
                         var numHeader = "";
@@ -1247,7 +1247,7 @@ namespace TatehamaCTCPClient.Manager
             lock (OriginalBitmap) {
                 var i = new Bitmap(width, height + 13);
                 using (var g = Graphics.FromImage(i)) {
-                    g.Clear(Color.FromArgb(10, 10, 10));
+                    g.Clear(Color.FromArgb(45, 15, 15));
                     g.DrawImage(OriginalBitmap, new Rectangle(0, 13, width, height), x, y, width, height, GraphicsUnit.Pixel);
                     g.DrawString(window.SystemName, new Font("ＭＳ ゴシック", 12, GraphicsUnit.Pixel), Brushes.White, 0, 0);
                     g.DrawString((window.Clock + window.TimeOffset).ToString("H:mm:ss"), new Font("ＭＳ ゴシック", 12, GraphicsUnit.Pixel), Brushes.White, width - 51, 0);

@@ -26,6 +26,7 @@ namespace TatehamaCTCPClient.Forms {
         /// </summary>
         private void InitializeComponent() {
             components = new System.ComponentModel.Container();
+            pictureBox3 = new PictureBox();
             pictureBox1 = new PictureBox();
             contextMenuStrip1 = new ContextMenuStrip(components);
             menuItemCopy = new ToolStripMenuItem();
@@ -47,10 +48,20 @@ namespace TatehamaCTCPClient.Forms {
             labelStatus = new Label();
             menuItemMarkupTypeAuto = new ToolStripMenuItem();
             toolStripSeparator4 = new ToolStripSeparator();
+            ((System.ComponentModel.ISupportInitialize)pictureBox3).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
             contextMenuStrip1.SuspendLayout();
             flowLayoutPanel1.SuspendLayout();
             SuspendLayout();
+            // 
+            // pictureBox3
+            // 
+            pictureBox3.BackColor = Color.Transparent;
+            pictureBox3.Location = new Point(-300, -300);
+            pictureBox3.Name = "pictureBox3";
+            pictureBox3.Size = new Size(100, 100);
+            pictureBox3.TabIndex = 7;
+            pictureBox3.TabStop = false;
             // 
             // pictureBox1
             // 
@@ -247,6 +258,7 @@ namespace TatehamaCTCPClient.Forms {
             ClientSize = new Size(784, 461);
             Controls.Add(labelStatus);
             Controls.Add(flowLayoutPanel1);
+            Controls.Add(pictureBox3);
             Controls.Add(pictureBox1);
             Name = "SubWindow";
             Text = "CTCP | CTCP - ダイヤ運転会";
@@ -256,6 +268,7 @@ namespace TatehamaCTCPClient.Forms {
             KeyDown += SubWindow_KeyDown;
             KeyUp += SubWindow_KeyUp;
             Resize += SubWindow_Resize;
+            ((System.ComponentModel.ISupportInitialize)pictureBox3).EndInit();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).EndInit();
             contextMenuStrip1.ResumeLayout(false);
             flowLayoutPanel1.ResumeLayout(false);
@@ -284,6 +297,7 @@ namespace TatehamaCTCPClient.Forms {
         private ToolStripMenuItem menuItemMarkupType1;
         private ToolStripMenuItem menuItemMarkupType2;
         private ToolStripMenuItem menuItemMarkupType3;
+        private PictureBox pictureBox3;
         private Label labelStatus;
         private ToolStripMenuItem menuItemMarkupTypeAuto;
         private ToolStripSeparator toolStripSeparator4;
