@@ -32,7 +32,7 @@ namespace TatehamaCTCPClient.Forms {
                 panelStations.Add(p);
                 labelStations.Add(l);
                 checkBoxStations.Add(c);
-                tabPage1.Controls.Add(p);
+                tabHavingStation.Controls.Add(p);
                 p.SuspendLayout();
                 p.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
                 p.BackColor = s.Active ? Color.LightBlue : SystemColors.ControlLight;
@@ -50,7 +50,7 @@ namespace TatehamaCTCPClient.Forms {
                 l.Name = $"label{s.Code}";
                 l.Size = new Size(328, 35);
                 l.TabIndex = 1;
-                l.Text = s.Name;
+                l.Text = s.FullName;
                 l.TextAlign = ContentAlignment.MiddleLeft;
                 l.Click += (sender, e) => {
                     var i = labelStations.IndexOf(l);
@@ -96,6 +96,17 @@ namespace TatehamaCTCPClient.Forms {
         }
         private void NavigationWindow_Closing(object sender, FormClosingEventArgs e) {
             Instance = null;
+        }
+
+        public void UpdateNotification() {
+            if (InvokeRequired) {
+                Invoke(() => {
+                    labelNotifications.Text = NotificationManager.GetNotification();
+                });
+            }
+            else {
+                labelNotifications.Text = NotificationManager.GetNotification();
+            }
         }
     }
 }

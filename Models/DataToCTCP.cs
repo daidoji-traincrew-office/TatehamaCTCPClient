@@ -1,5 +1,7 @@
 ﻿
 using System.Diagnostics;
+using TatehamaCTCPClient.Manager;
+using static System.Windows.Forms.AxHost;
 
 namespace TatehamaCTCPClient.Models {
 
@@ -30,9 +32,25 @@ namespace TatehamaCTCPClient.Models {
             return l;
         }
 
-        public static bool HasDifference() {
+        public static bool HasDifference(CTCPManager manager) {
             var latest = Latest;
             var previous = Previous;
+
+            var updated = false;
+            var stations = manager.StationSettings;
+            foreach (var ccslk in latest.CenterControlStates.Keys) {
+                var ccsl = latest.CenterControlStates[ccslk];
+                if (!previous.CenterControlStates.TryGetValue(ccslk, out var ccsp) || ccsl != ccsp) {
+                    updated = true;
+                    var s = stations.FirstOrDefault(s => s.LeverName == ccslk);
+                    if(s != null) {
+                        NotificationManager.AddNotification($"{s.FullName} が {(ccsl == CenterControlState.StationControl ? "駅扱" : "集中扱")} になりました。");
+                    }
+                }
+            }
+            if (updated) {
+                return true;
+            }
             foreach(var nwl in latest.Retsubans) {
                 var nwp = previous.Retsubans.FirstOrDefault(nw => nw.Name == nwl.Name);
                 if(nwp != null && nwp.Retsuban != nwl.Retsuban) {

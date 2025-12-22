@@ -24,33 +24,37 @@
         /// </summary>
         private void InitializeComponent() {
             tabControl1 = new TabControl();
-            tabPage1 = new TabPage();
+            tabHavingStation = new TabPage();
             label1 = new Label();
+            tabNotification = new TabPage();
+            labelNotifications = new Label();
             tabControl1.SuspendLayout();
-            tabPage1.SuspendLayout();
+            tabHavingStation.SuspendLayout();
+            tabNotification.SuspendLayout();
             SuspendLayout();
             // 
             // tabControl1
             // 
             tabControl1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            tabControl1.Controls.Add(tabPage1);
+            tabControl1.Controls.Add(tabHavingStation);
+            tabControl1.Controls.Add(tabNotification);
             tabControl1.Location = new Point(0, 24);
             tabControl1.Name = "tabControl1";
             tabControl1.SelectedIndex = 0;
             tabControl1.Size = new Size(384, 537);
             tabControl1.TabIndex = 0;
             // 
-            // tabPage1
+            // tabHavingStation
             // 
-            tabPage1.AutoScroll = true;
-            tabPage1.BackColor = SystemColors.Control;
-            tabPage1.Controls.Add(label1);
-            tabPage1.Location = new Point(4, 24);
-            tabPage1.Name = "tabPage1";
-            tabPage1.Padding = new Padding(3);
-            tabPage1.Size = new Size(376, 509);
-            tabPage1.TabIndex = 0;
-            tabPage1.Text = "管轄駅選択";
+            tabHavingStation.AutoScroll = true;
+            tabHavingStation.BackColor = SystemColors.Control;
+            tabHavingStation.Controls.Add(label1);
+            tabHavingStation.Location = new Point(4, 24);
+            tabHavingStation.Name = "tabHavingStation";
+            tabHavingStation.Padding = new Padding(3);
+            tabHavingStation.Size = new Size(376, 509);
+            tabHavingStation.TabIndex = 0;
+            tabHavingStation.Text = "管轄駅選択";
             // 
             // label1
             // 
@@ -60,6 +64,27 @@
             label1.Size = new Size(329, 30);
             label1.TabIndex = 0;
             label1.Text = "信号扱いを行う管轄駅を選択してください。\r\n駅名部分クリックで範囲選択できます（ダブルクリックで単駅選択）";
+            // 
+            // tabNotification
+            // 
+            tabNotification.AutoScroll = true;
+            tabNotification.Controls.Add(labelNotifications);
+            tabNotification.Location = new Point(4, 24);
+            tabNotification.Name = "tabNotification";
+            tabNotification.Padding = new Padding(3);
+            tabNotification.Size = new Size(376, 509);
+            tabNotification.TabIndex = 1;
+            tabNotification.Text = "通知";
+            tabNotification.UseVisualStyleBackColor = true;
+            // 
+            // labelNotifications
+            // 
+            labelNotifications.AutoSize = true;
+            labelNotifications.Location = new Point(4, 4);
+            labelNotifications.Name = "labelNotifications";
+            labelNotifications.Size = new Size(88, 15);
+            labelNotifications.TabIndex = 0;
+            labelNotifications.Text = "通知がありません";
             // 
             // NavigationWindow
             // 
@@ -75,15 +100,19 @@
             Text = "ナビゲーション | CTCP - ダイヤ運転会";
             FormClosing += NavigationWindow_Closing;
             tabControl1.ResumeLayout(false);
-            tabPage1.ResumeLayout(false);
-            tabPage1.PerformLayout();
+            tabHavingStation.ResumeLayout(false);
+            tabHavingStation.PerformLayout();
+            tabNotification.ResumeLayout(false);
+            tabNotification.PerformLayout();
             ResumeLayout(false);
         }
 
         #endregion
 
         private TabControl tabControl1;
-        private TabPage tabPage1;
+        private TabPage tabHavingStation;
         private Label label1;
+        private TabPage tabNotification;
+        private Label labelNotifications;
     }
 }

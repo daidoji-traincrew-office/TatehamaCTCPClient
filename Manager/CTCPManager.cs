@@ -444,11 +444,11 @@ namespace TatehamaCTCPClient.Manager
                     var texts = line.Split('\t');
                     line = sr.ReadLine();
 
-                    if (texts.Length < 5 || texts.Any(t => t.Length <= 0)) {
+                    if (texts.Length < 6 || texts.Any(t => t.Length <= 0)) {
                         continue;
                     }
 
-                    list.Add(new StationSetting(texts[0], texts[1], texts[2], new Point(int.Parse(texts[3]), int.Parse(texts[4]))));
+                    list.Add(new StationSetting(texts[0], texts[1], texts[2], texts[3], new Point(int.Parse(texts[4]), int.Parse(texts[5]))));
                 }
             }
             catch (Exception ex) {
@@ -1015,8 +1015,11 @@ namespace TatehamaCTCPClient.Manager
                     }
                 }
             }
-
-            Started = true;
+            if (!Started) {
+                NotificationManager.AddNotification($"サーバからデータの受信を開始しました。", false);
+                NavigationWindow.Instance?.UpdateNotification();
+                Started = true;
+            }
 
         }
 

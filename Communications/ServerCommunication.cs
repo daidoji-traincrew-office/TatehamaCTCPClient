@@ -475,7 +475,12 @@ namespace TatehamaCTCPClient.Communications {
             try {
                 var trackCircuitList = data.TrackCircuits;
                 DataUpdated?.Invoke(data);
-                error = false;
+                if (error) {
+                    error = false;
+                    LogManager.AddInfoLog("サーバからの受信が再開しました");
+                    NotificationManager.AddNotification($"サーバからデータの受信が再開しました。", false);
+                    NavigationWindow.Instance?.UpdateNotification();
+                }
                 _window.LabelStatusText = "データ正常受信";
                 _window.SetStatusSubWindow("●", Color.LightGreen);
                 UpdatedTime = DateTime.Now;
@@ -505,7 +510,7 @@ namespace TatehamaCTCPClient.Communications {
                         _window.OpeningDialog = false;
                     }
                     else {
-                        _window.PlayWarningSound();
+                        CTCPWindow.PlayWarningSound();
                     }
                 }
             }
@@ -528,7 +533,7 @@ namespace TatehamaCTCPClient.Communications {
                         _window.OpeningDialog = false;
                     }
                     else {
-                        _window.PlayWarningSound();
+                        CTCPWindow.PlayWarningSound();
                     }
                 }
             }
@@ -567,7 +572,7 @@ namespace TatehamaCTCPClient.Communications {
                         }
                     }
                     else {
-                        _window.PlayWarningSound();
+                        CTCPWindow.PlayWarningSound();
                     }
                 }
             }

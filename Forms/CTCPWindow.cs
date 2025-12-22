@@ -130,9 +130,9 @@ namespace TatehamaCTCPClient.Forms {
             }
         }
 
-        private SoundPlayer? warningSound = null;
+        private static SoundPlayer? warningSound = null;
 
-        public void PlayWarningSound() {
+        public static void PlayWarningSound() {
             if (warningSound != null) {
                 warningSound.Play();
             }
@@ -479,7 +479,7 @@ namespace TatehamaCTCPClient.Forms {
                     }
                 }
             }
-            updated = updated || DataToCTCP.HasDifference();
+            updated = updated || DataToCTCP.HasDifference(displayManager);
 
             /*var tcList = data.TrackCircuitDatas;
             var sList = data.SwitchDatas;
@@ -495,6 +495,10 @@ namespace TatehamaCTCPClient.Forms {
             if (updated) {
                 Debug.WriteLine("update");
                 displayManager.UpdateCTCP();
+                if (NotificationManager.Updated) {
+                    PlayWarningSound();
+                }
+                NavigationWindow.Instance?.UpdateNotification();
             }
         }
 
@@ -619,6 +623,8 @@ namespace TatehamaCTCPClient.Forms {
             else if (delaySeconds > 1) {
                 if (!LabelStatusText.Contains("最終受信")) {
                     LogManager.AddWarningLog("サーバからの受信が1秒以上ありません");
+                    NotificationManager.AddNotification($"サーバからデータの受信が途切れました。", false);
+                    NavigationWindow.Instance?.UpdateNotification();
                 }
                 LabelStatusText = $"データ正常受信(最終受信：{updatedTime?.ToString("H:mm:ss")})";
                 SetStatusSubWindow("▲", Color.Yellow);
