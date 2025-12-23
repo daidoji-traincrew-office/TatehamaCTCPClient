@@ -37,6 +37,8 @@ namespace TatehamaCTCPClient.Manager
 
         private readonly Dictionary<string, List<Route>> routes = [];
 
+        private readonly Dictionary<string, List<Route>> routeGroups = [];
+
         /// <summary>
         /// 列車番号の色
         /// </summary>
@@ -171,7 +173,7 @@ namespace TatehamaCTCPClient.Manager
 
 
             stationSettings = LoadStationSetting("station.tsv");
-            routes = LoadRoutes("routes.tsv");
+            LoadRoutes("routes.tsv");
             buttonTypes = LoadButtonType("buttons_type.tsv");
             LoadRouteButtons("buttons_route.tsv");
             LoadDestinationButtons("buttons_destination.tsv");
@@ -778,8 +780,7 @@ namespace TatehamaCTCPClient.Manager
             }
             return list;
         }
-        private Dictionary<string, List<Route>> LoadRoutes(string fileName) {
-            Dictionary<string, List<Route>> list = [];
+        private void LoadRoutes(string fileName) {
             try {
                 using var sr = new StreamReader($".\\tsv\\{fileName}");
                 sr.ReadLine();
@@ -798,7 +799,7 @@ namespace TatehamaCTCPClient.Manager
                             break;
                         }
                     }
-                    if (i < 2) {
+                    if (i < 3) {
                         continue;
                     }
                     StationSetting? station = null;
@@ -809,19 +810,23 @@ namespace TatehamaCTCPClient.Manager
                     if (station == null) {
                         continue;
                     }
-                    var track = texts[1];
-                    var forcedDrop = i > 2 ? texts[2] == "true" : false;
+                    var track = texts[2];
+                    var group = texts[1];
+                    var forcedDrop = i > 3 && texts[3] == "true";
                     var route = new Route(texts[0], track, station, forcedDrop);
-                    if (!list.TryAdd(track, new List<Route>() { route })){
-                        list[track].Add(route);
+                    if (!routes.TryAdd(track, new List<Route>() { route })){
+                        routes[track].Add(route);
                     }
+                    if (!routeGroups.TryAdd(group, new List<Route>() { route })) {
+                        routeGroups[group].Add(route);
+                    }
+
 
                 }
             }
             catch(Exception ex) {
                 Debug.WriteLine(ex);
             }
-            return list;
         }
 
         public void UpdateCTCP(bool updatedBlinkStateFast = false, bool updatedBlinkStateSlow = false) {
