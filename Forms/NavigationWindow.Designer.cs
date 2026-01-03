@@ -26,6 +26,7 @@
             tabControl1 = new TabControl();
             tabHavingStation = new TabPage();
             label1 = new Label();
+            tabTrain = new TabPage();
             tabNotification = new TabPage();
             labelNotifications = new Label();
             tabControl1.SuspendLayout();
@@ -37,6 +38,7 @@
             // 
             tabControl1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             tabControl1.Controls.Add(tabHavingStation);
+            tabControl1.Controls.Add(tabTrain);
             tabControl1.Controls.Add(tabNotification);
             tabControl1.Location = new Point(0, 24);
             tabControl1.Name = "tabControl1";
@@ -64,6 +66,16 @@
             label1.Size = new Size(329, 30);
             label1.TabIndex = 0;
             label1.Text = "信号扱いを行う管轄駅を選択してください。\r\n駅名部分クリックで範囲選択できます（ダブルクリックで単駅選択）";
+            // 
+            // tabTrain
+            // 
+            tabTrain.Location = new Point(4, 24);
+            tabTrain.Name = "tabTrain";
+            tabTrain.Padding = new Padding(3);
+            tabTrain.Size = new Size(376, 509);
+            tabTrain.TabIndex = 2;
+            tabTrain.Text = "列車運行情報";
+            tabTrain.UseVisualStyleBackColor = true;
             // 
             // tabNotification
             // 
@@ -114,5 +126,6 @@
         private Label label1;
         private TabPage tabNotification;
         private Label labelNotifications;
+        private TabPage tabTrain;
     }
 }

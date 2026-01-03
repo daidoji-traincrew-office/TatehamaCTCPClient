@@ -44,7 +44,7 @@ namespace TatehamaCTCPClient.Models {
                     updated = true;
                     var s = stations.FirstOrDefault(s => s.LeverName == ccslk);
                     if(s != null) {
-                        NotificationManager.AddNotification($"{s.FullName} が {(ccsl == CenterControlState.StationControl ? "駅扱" : "集中扱")} になりました。");
+                        NotificationManager.AddNotification($"{s.FullName} が {(ccsl == CenterControlState.StationControl ? "駅扱" : "集中扱")} になりました。", s.Active);
                     }
                 }
             }

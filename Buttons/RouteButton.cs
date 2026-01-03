@@ -61,7 +61,9 @@ namespace TatehamaCTCPClient.Buttons
                 if (Route == null || Lighting != LightingType.NONE) {
                     return false;
                 }
-                Route.SetHikipper(HikipperButton.Active);
+                if (!Route.IsHikipper) {
+                    Route.SetHikipper(HikipperButton.Active);
+                }
                 HikipperButton.MakeInactive();
                 _ = c.SetCtcRelay(Route.RouteName, RaiseDrop.Raise);
             }

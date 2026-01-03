@@ -4,13 +4,13 @@ namespace TatehamaCTCPClient.Forms {
     public partial class NavigationWindow : Form {
         public static NavigationWindow? Instance { get; private set; } = null;
 
-        private CTCPManager displayManager;
+        private readonly CTCPManager displayManager;
 
-        private List<Panel> panelStations = [];
+        private readonly List<Panel> panelStations = [];
 
-        private List<Label> labelStations = [];
+        private readonly List<Label> labelStations = [];
 
-        private List<CheckBox> checkBoxStations = [];
+        private readonly List<CheckBox> checkBoxStations = [];
 
         private int selectedStationIndex = -1;
 
@@ -20,6 +20,48 @@ namespace TatehamaCTCPClient.Forms {
             this.displayManager = displayManager;
             Text = $"ナビゲーション | {displayManager.Window.SystemNameLong} - ダイヤ運転会";
             PlaceStations();
+            UpdateNotification();
+            tabTrain.Text = "準備中";
+
+            {
+                var p = new Panel();
+                var l1 = new Label();
+                var l2 = new Label();
+                tabTrain.Controls.Add(p);
+
+
+                p.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+                p.BackColor = Color.WhiteSmoke;
+                p.Controls.Add(l2);
+                p.Controls.Add(l1);
+                p.Location = new Point(6, 3);
+                p.Name = "panel2";
+                p.Size = new Size(tabTrain.Size.Width - 12, 96);
+                p.TabIndex = 3;
+
+
+                l1.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+                l1.BackColor = Color.FromArgb(0, 192, 192);
+                l1.Font = new Font("Yu Gothic UI", 10F, FontStyle.Bold);
+                l1.ForeColor = Color.White;
+                l1.Location = new Point(3, 0);
+                l1.Name = "label2";
+                l1.Text = /*"1285C ▶ 館浜駅"*/"";
+                l1.Size = new Size(p.Size.Width - 6, 30);
+                l1.TabIndex = 0;
+                l1.TextAlign = ContentAlignment.MiddleLeft;
+
+                l2.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+                l2.BackColor = Color.WhiteSmoke;
+                l2.Font = new Font("Yu Gothic UI", 9F);
+                l2.Location = new Point(3, 32);
+                l2.Name = "richTextBox1";
+                l2.Text = /*"1285C は 駒野駅 を発車しています\n館浜駅場内進路の開通忘れに注意してください"*/"";
+                l2.Size = new Size(p.Size.Width - 6, 61);
+                l2.TabIndex = 1;
+                l2.Cursor = Cursors.Default;
+
+            }
         }
 
         private void PlaceStations() {
@@ -40,7 +82,7 @@ namespace TatehamaCTCPClient.Forms {
                 p.Controls.Add(c);
                 p.Location = new Point(8, label1.Location.Y + label1.Size.Height + 5 + i * 36);
                 p.Name = $"panel{s.Code}";
-                p.Size = new Size(360, 35);
+                p.Size = new Size(/*360*/tabHavingStation.Size.Width - 16, 35);
                 p.Cursor = Cursors.Hand;
                 p.TabIndex = 0;
                 l.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
@@ -101,11 +143,11 @@ namespace TatehamaCTCPClient.Forms {
         public void UpdateNotification() {
             if (InvokeRequired) {
                 Invoke(() => {
-                    labelNotifications.Text = NotificationManager.GetNotification();
+                    labelNotifications.Text = NotificationManager.IsEmpty ? "通知がありません" : NotificationManager.GetNotification();
                 });
             }
             else {
-                labelNotifications.Text = NotificationManager.GetNotification();
+                labelNotifications.Text = NotificationManager.IsEmpty ? "通知がありません" : NotificationManager.GetNotification();
             }
         }
     }

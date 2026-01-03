@@ -1,6 +1,6 @@
 ﻿
 namespace TatehamaCTCPClient.Settings {
-    public class StationSetting(string code, string name, string fullName, string leverName, Point location) {
+    public class StationSetting(string code, string name, string fullName, string leverName, Point labelLocation, Point areaLocation, Size areaSize) {
         public string Code { get; init; } = code;
         public string Number => Code.Replace("S", "");
 
@@ -10,7 +10,11 @@ namespace TatehamaCTCPClient.Settings {
 
         public string LeverName { get; init; } = leverName;
 
-        public Point Location { get; init; } = location;
+        public Point LabelLocation { get; init; } = labelLocation;
+
+        public Point AreaLocation { get; init; } = areaLocation;
+
+        public Size AreaSize { get; init; } = areaSize;
 
         public bool Active { get; private set; } = false;
 

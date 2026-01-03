@@ -12,6 +12,8 @@ namespace TatehamaCTCPClient.Manager {
 
         private static bool updated = false;
 
+        public static bool IsEmpty => log.Length == 0;
+
         public static bool Updated {
             get {
                 var v = updated;

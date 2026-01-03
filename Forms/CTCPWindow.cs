@@ -458,9 +458,6 @@ namespace TatehamaCTCPClient.Forms {
                     if (!isTrain) {
                         continue;
                     }
-                    /*if (!displayManager.Routes.TryGetValue(t.Name, out var routes)) {
-                        continue;
-                    }*/
                     var direction = numBody % 2 == 1 ? "L" : "R";
                     foreach (var r in routes[t.Name]) {
                         if (!r.Station.Active || r.IsHikipper || !r.RouteName.Contains(direction)) {
@@ -473,6 +470,7 @@ namespace TatehamaCTCPClient.Forms {
                             var rs = rd.RouteState;
                             return rs != null && rs.IsCtcRelayRaised == RaiseDrop.Raise && (r.ForcedDrop || rs.IsRouteLockRaised == RaiseDrop.Drop && rs.IsApproachLockMRRaised == RaiseDrop.Raise);
                         })) {
+                            r.SetHikipper(false);
                             _ = serverCommunication.SetCtcRelay(r.RouteName, RaiseDrop.Drop);
                             updated = true;
                         }
@@ -493,7 +491,6 @@ namespace TatehamaCTCPClient.Forms {
             updated |= trackManager.UpdateNumberWindow();*/
 
             if (updated) {
-                Debug.WriteLine("update");
                 displayManager.UpdateCTCP();
                 if (NotificationManager.Updated) {
                     PlayWarningSound();
@@ -552,7 +549,6 @@ namespace TatehamaCTCPClient.Forms {
 
             if (/*!UpdateDebug() && */displayManager.Started && (ReservedUpdate || (oldBlinkStateFast != BlinkStateFast && displayManager.BlinkingButtons()) /*&& MarkupType < 2 && (trainDataDict.Values.Any(td => td.Markup) || MarkupDuplication || MarkupFillZero || MarkupNotTrain || MarkupDelayed > 0 || displayManager.Markuped)*/)) {
                 ReservedUpdate = false;
-                Debug.WriteLine("update clock");
                 displayManager.UpdateCTCP(oldBlinkStateFast != BlinkStateFast, oldBlinkStateSlow != BlinkStateSlow);
             }
 

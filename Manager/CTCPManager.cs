@@ -278,8 +278,8 @@ namespace TatehamaCTCPClient.Manager
                 using var gd = Graphics.FromImage(pictureBox.Image);
                 using var gi = Graphics.FromImage(backgroundImage);
                 foreach (var s in stationSettings) {
-                    gd.FillRectangle(new SolidBrush(Color.FromArgb(40, 40, 40)), s.Location.X + 3, s.Location.Y, 150, 15);
-                    gd.DrawString($"{s.Number} {s.Name} 集中", new Font("ＭＳ ゴシック", 16, GraphicsUnit.Pixel), Brushes.White, s.Location.X, s.Location.Y);
+                    gd.FillRectangle(new SolidBrush(Color.FromArgb(40, 40, 40)), s.LabelLocation.X + 3, s.LabelLocation.Y, 150, 15);
+                    gd.DrawString($"{s.Number} {s.Name} 集中", new Font("ＭＳ ゴシック", 16, GraphicsUnit.Pixel), Brushes.White, s.LabelLocation.X, s.LabelLocation.Y);
                 }
 
                 var hover = pictureBox.ClientRectangle.Contains(pictureBox.PointToClient(Cursor.Position)) && window.Panel1.ClientRectangle.Contains(window.Panel1.PointToClient(Cursor.Position));
@@ -446,11 +446,11 @@ namespace TatehamaCTCPClient.Manager
                     var texts = line.Split('\t');
                     line = sr.ReadLine();
 
-                    if (texts.Length < 6 || texts.Any(t => t.Length <= 0)) {
+                    if (texts.Length < 10 || texts.Any(t => t.Length <= 0)) {
                         continue;
                     }
 
-                    list.Add(new StationSetting(texts[0], texts[1], texts[2], texts[3], new Point(int.Parse(texts[4]), int.Parse(texts[5]))));
+                    list.Add(new StationSetting(texts[0], texts[1], texts[2], texts[3], new Point(int.Parse(texts[4]), int.Parse(texts[5])), new Point(int.Parse(texts[6]), int.Parse(texts[7])), new Size(int.Parse(texts[8]), int.Parse(texts[9]))));
                 }
             }
             catch (Exception ex) {
@@ -848,10 +848,10 @@ namespace TatehamaCTCPClient.Manager
 
             foreach (var s in stationSettings) {
                 if(data.CenterControlStates.TryGetValue(s.LeverName, out var state)) {
-                    g.DrawString($"{s.Number} {s.Name} {(state == CenterControlState.StationControl ? "駅扱" : "集中")}", new Font("ＭＳ ゴシック", 16, GraphicsUnit.Pixel), s.Active ? (state == CenterControlState.StationControl ? Brushes.LightCoral : Brushes.White) : Brushes.Gray, s.Location.X, s.Location.Y);
+                    g.DrawString($"{s.Number} {s.Name} {(state == CenterControlState.StationControl ? "駅扱" : "集中")}", new Font("ＭＳ ゴシック", 16, GraphicsUnit.Pixel), s.Active ? (state == CenterControlState.StationControl ? Brushes.LightCoral : Brushes.White) : Brushes.Gray, s.LabelLocation.X, s.LabelLocation.Y);
                 }
                 else {
-                    g.DrawString($"{s.Number} {s.Name} 不明", new Font("ＭＳ ゴシック", 16, GraphicsUnit.Pixel), s.Active ? Brushes.White : Brushes.Gray, s.Location.X, s.Location.Y);
+                    g.DrawString($"{s.Number} {s.Name} 不明", new Font("ＭＳ ゴシック", 16, GraphicsUnit.Pixel), s.Active ? Brushes.White : Brushes.Gray, s.LabelLocation.X, s.LabelLocation.Y);
                 }
             }
 

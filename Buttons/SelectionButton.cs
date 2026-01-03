@@ -148,7 +148,9 @@ namespace TatehamaCTCPClient.Buttons
                 if(k == db) {
                     foreach (var route in d[db]) {
                         var r = route;
-                        r.SetHikipper(HikipperButton.Active);
+                        if (!r.IsHikipper) {
+                            r.SetHikipper(HikipperButton.Active);
+                        }
                         _ = c.SetCtcRelay(r.RouteName, RaiseDrop.Raise);
                     }
                     HikipperButton.MakeInactive();
