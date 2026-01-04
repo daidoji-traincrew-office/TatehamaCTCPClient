@@ -848,7 +848,7 @@ namespace TatehamaCTCPClient.Manager
 
             foreach (var s in stationSettings) {
                 if(data.CenterControlStates.TryGetValue(s.LeverName, out var state)) {
-                    g.DrawString($"{s.Number} {s.Name} {(state == CenterControlState.StationControl ? "駅扱" : "集中")}", new Font("ＭＳ ゴシック", 16, GraphicsUnit.Pixel), s.Active ? (state == CenterControlState.StationControl ? Brushes.LightCoral : Brushes.White) : Brushes.Gray, s.LabelLocation.X, s.LabelLocation.Y);
+                    g.DrawString($"{s.Number} {s.Name} {(state == CenterControlState.StationControl ? "駅扱" : "集中")}", new Font("ＭＳ ゴシック", 16, GraphicsUnit.Pixel), s.Active ? (state == CenterControlState.StationControl ? Brushes.LightCoral : Brushes.White) : (state == CenterControlState.StationControl ? Brushes.DimGray : Brushes.DarkGray), s.LabelLocation.X, s.LabelLocation.Y);
                 }
                 else {
                     g.DrawString($"{s.Number} {s.Name} 不明", new Font("ＭＳ ゴシック", 16, GraphicsUnit.Pixel), s.Active ? Brushes.White : Brushes.Gray, s.LabelLocation.X, s.LabelLocation.Y);

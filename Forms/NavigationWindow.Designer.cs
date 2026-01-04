@@ -63,9 +63,9 @@
             label1.AutoSize = true;
             label1.Location = new Point(6, 6);
             label1.Name = "label1";
-            label1.Size = new Size(329, 30);
+            label1.Size = new Size(345, 45);
             label1.TabIndex = 0;
-            label1.Text = "信号扱いを行う管轄駅を選択してください。\r\n駅名部分クリックで範囲選択できます（ダブルクリックで単駅選択）";
+            label1.Text = "本ソフトで信号扱いを行う管轄駅を選択してください。\r\n駅名部分クリックで範囲選択できます（ダブルクリックで単駅選択）\r\n！本ソフトで信号扱いを行わない駅は直ちに管轄駅から外してください！";
             // 
             // tabTrain
             // 

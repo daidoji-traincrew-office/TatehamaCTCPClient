@@ -408,6 +408,12 @@ namespace TatehamaCTCPClient.Forms {
         private async void TIDWindow_Load(object? sender, EventArgs? e) {
             _ = Task.Run(ClockUpdateLoop);
 
+            TaskDialog.ShowDialog(new TaskDialogPage {
+                Caption = $"ご注意 | {SystemNameLong} - ダイヤ運転会",
+                Heading = "本ソフト使用上のご注意",
+                Icon = TaskDialogIcon.ShieldWarningYellowBar,
+                Text = "本ソフトで信号扱いを行わない駅は\n直ちに管轄駅から外してください。\n進行定位の進路が解除されるなど、不具合の原因となります。"
+            });
 
 
             SetTopMost(topMostSetting);
@@ -472,6 +478,9 @@ namespace TatehamaCTCPClient.Forms {
                         })) {
                             r.SetHikipper(false);
                             _ = serverCommunication.SetCtcRelay(r.RouteName, RaiseDrop.Drop);
+                            Debug.WriteLine($"{DateTime.Now} {r.RouteName} を解除しました{(r.IsHikipper ? "(進行定位)" : "")}");
+                            NotificationManager.AddNotification($"{r.RouteName} を解除しました{(r.IsHikipper ? "(進行定位)" : "")}", false);
+                            NavigationWindow.Instance?.UpdateNotification();
                             updated = true;
                         }
                     }

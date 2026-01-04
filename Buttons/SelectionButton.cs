@@ -1,6 +1,8 @@
 ﻿using System.Collections.ObjectModel;
 using System.Diagnostics;
 using TatehamaCTCPClient.Communications;
+using TatehamaCTCPClient.Forms;
+using TatehamaCTCPClient.Manager;
 using TatehamaCTCPClient.Models;
 using TatehamaCTCPClient.Settings;
 
@@ -152,6 +154,9 @@ namespace TatehamaCTCPClient.Buttons
                             r.SetHikipper(HikipperButton.Active);
                         }
                         _ = c.SetCtcRelay(r.RouteName, RaiseDrop.Raise);
+                        Debug.WriteLine($"{DateTime.Now} {r.RouteName} を引きました{(r.IsHikipper ? "(進行定位)" : "")}");
+                        NotificationManager.AddNotification($"{r.RouteName} を引きました{(r.IsHikipper ? "(進行定位)" : "")}", false);
+                        NavigationWindow.Instance?.UpdateNotification();
                     }
                     HikipperButton.MakeInactive();
                 }
@@ -173,6 +178,9 @@ namespace TatehamaCTCPClient.Buttons
                 }
                 r.SetHikipper(false);
                 _ = c.SetCtcRelay(r.RouteName, RaiseDrop.Drop);
+                Debug.WriteLine($"{DateTime.Now} {r.RouteName} を取消しました");
+                NotificationManager.AddNotification($"{r.RouteName} を取消しました", false);
+                NavigationWindow.Instance?.UpdateNotification();
             }
         }
 

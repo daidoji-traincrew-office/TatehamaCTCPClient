@@ -1,6 +1,8 @@
 ﻿using System.Collections.ObjectModel;
 using System.Diagnostics;
 using TatehamaCTCPClient.Communications;
+using TatehamaCTCPClient.Forms;
+using TatehamaCTCPClient.Manager;
 using TatehamaCTCPClient.Models;
 using TatehamaCTCPClient.Settings;
 
@@ -69,6 +71,9 @@ namespace TatehamaCTCPClient.Buttons
                     foreach (var route in routes) {
                         route.SetHikipper(false);
                         _ = c.SetCtcRelay(route.RouteName, RaiseDrop.Drop);
+                        Debug.WriteLine($"{DateTime.Now} {route.RouteName} を取消しました");
+                        NotificationManager.AddNotification($"{route.RouteName} を取消しました", false);
+                        NavigationWindow.Instance?.UpdateNotification();
                     }
                     CancelButton.MakeInactive();
                     HikipperButton.MakeInactive();
