@@ -459,14 +459,13 @@ namespace TatehamaCTCPClient.Forms {
             if (serverCommunication != null) {
                 var routes = displayManager.Routes;
                 var routeDatas = new List<RouteData>(DataToCTCP.Latest.RouteDatas);
-                var previous = DataToCTCP.Previous;
-                foreach (var t in DataToCTCP.Latest.TrackCircuits.Where(t => t.On && routes.ContainsKey(t.Name))/*GetDifferenceTrack()*/) {
+                foreach (var t in DataToCTCP./*Latest.TrackCircuits.Where(t => t.On && routes.ContainsKey(t.Name))*/GetDifferenceTrack().Where(t => routes.ContainsKey(t.Name))) {
                     var isTrain = int.TryParse(Regex.Replace(t.Last, @"[^0-9]", ""), out var numBody);  // 列番本体（数字部分）
                     if (!isTrain) {
                         continue;
                     }
                     var direction = numBody % 2 == 1 ? "L" : "R";
-                    var justDrop = previous.TrackCircuits.Any(tp => tp.Name == t.Name && (!tp.On || tp.Name != t.Name));
+                    /*var justDrop = previous.TrackCircuits.Any(tp => tp.Name == t.Name && (!tp.On || tp.Name != t.Name));*/
                     foreach (var r in routes[t.Name]) {
                         if (!r.Station.Active || r.IsHikipper || !r.RouteName.Contains(direction)) {
                             continue;
@@ -476,7 +475,7 @@ namespace TatehamaCTCPClient.Forms {
                                 return false;
                             }
                             var rs = rd.RouteState;
-                            return rs != null && justDrop && rs.IsCtcRelayRaised == RaiseDrop.Raise && (r.ForcedDrop || rs.IsRouteLockRaised == RaiseDrop.Drop && rs.IsApproachLockMRRaised == RaiseDrop.Raise);
+                            return rs != null /*&& justDrop*/ && rs.IsCtcRelayRaised == RaiseDrop.Raise && (r.ForcedDrop || rs.IsRouteLockRaised == RaiseDrop.Drop && rs.IsApproachLockMRRaised == RaiseDrop.Raise);
                         })) {
                             r.SetHikipper(false);
                             _ = serverCommunication.SetCtcRelay(r.RouteName, RaiseDrop.Drop);

@@ -25,7 +25,7 @@ namespace TatehamaCTCPClient.Models {
             var previous = Previous;
             foreach(var tl in latest.TrackCircuits) {
                 var tp = previous.TrackCircuits.FirstOrDefault(tp => tp.Name == tl.Name);
-                if (tp == null || tp.On == false && tl.On == true) {
+                if (tp == null || tp.On == false && tl.On == true || tp.On && tl.On && tp.Last != tl.Last) {
                     l.Add(tl);
                 }
             }
