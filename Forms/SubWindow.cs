@@ -80,7 +80,7 @@ namespace TatehamaCTCPClient.Forms {
 
         private Point? selectionStarting = null;
 
-        public SubWindow(Point location, Size size, CTCPManager displayManager) {
+        public SubWindow(Point location, Size size, CTCPManager displayManager, string? name = null) {
             StartLocation = location;
             DisplaySize = size;
             this.displayManager = displayManager;
@@ -88,7 +88,7 @@ namespace TatehamaCTCPClient.Forms {
 
             pictureBox3.Parent = pictureBox1;
 
-            Text = $"サブモニタ{++counter} | {displayManager.Window.SystemNameLong} - ダイヤ運転会";
+            Text = $"{(name != null ? name : $"サブモニタ{++counter}")} | {displayManager.Window.SystemNameLong} - ダイヤ運転会";
 
             Size = new Size(Size.Width - ClientSize.Width + DisplaySize.Width, Size.Height - ClientSize.Height + pictureBox1.Location.Y + DisplaySize.Height);
             MinimumSize = new Size(Size.Width - ClientSize.Width + DisplaySize.Width / 2, Size.Height - ClientSize.Height + pictureBox1.Location.Y + DisplaySize.Height / 2);

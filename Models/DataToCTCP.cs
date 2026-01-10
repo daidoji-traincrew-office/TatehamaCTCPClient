@@ -1,4 +1,5 @@
 ﻿
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using TatehamaCTCPClient.Manager;
 using static System.Windows.Forms.AxHost;
@@ -14,12 +15,19 @@ namespace TatehamaCTCPClient.Models {
 
         public static DataToCTCP Previous { get; private set; } = new DataToCTCP();
 
+        private static List<TrackCircuitData> differenceTrack = [];
+
+        public static ReadOnlyCollection<TrackCircuitData> DifferenceTrack { get; private set; } = differenceTrack.AsReadOnly();
+
         public static void SetLatest(DataToCTCP data) {
             Previous = Latest;
             Latest = data;
+
+            GetDifferenceTrack();
+
         }
 
-        public static List<TrackCircuitData> GetDifferenceTrack() {
+        public static void GetDifferenceTrack() {
             var l = new List<TrackCircuitData>();
             var latest = Latest;
             var previous = Previous;
@@ -29,7 +37,8 @@ namespace TatehamaCTCPClient.Models {
                     l.Add(tl);
                 }
             }
-            return l;
+            differenceTrack = l;
+            DifferenceTrack = differenceTrack.AsReadOnly();
         }
 
         public static bool HasDifference(CTCPManager manager) {

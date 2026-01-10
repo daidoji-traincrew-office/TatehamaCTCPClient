@@ -1,4 +1,5 @@
-﻿using TatehamaCTCPClient.Manager;
+﻿using System.Windows.Forms;
+using TatehamaCTCPClient.Manager;
 
 namespace TatehamaCTCPClient.Forms {
     public partial class NavigationWindow : Form {
@@ -71,6 +72,8 @@ namespace TatehamaCTCPClient.Forms {
                 var p = new Panel();
                 var l = new Label();
                 var c = new CheckBox();
+                var b1 = new Button();
+                var b2 = new Button();
                 panelStations.Add(p);
                 labelStations.Add(l);
                 checkBoxStations.Add(c);
@@ -80,17 +83,62 @@ namespace TatehamaCTCPClient.Forms {
                 p.BackColor = s.Active ? Color.LightBlue : SystemColors.ControlLight;
                 p.Controls.Add(l);
                 p.Controls.Add(c);
+                p.Controls.Add(b1);
+                p.Controls.Add(b2);
                 p.Location = new Point(8, label1.Location.Y + label1.Size.Height + 5 + i * 36);
                 p.Name = $"panel{s.Code}";
                 p.Size = new Size(/*360*/tabHavingStation.Size.Width - 16, 35);
-                p.Cursor = Cursors.Hand;
+                /*p.Cursor = Cursors.Hand;*/
                 p.TabIndex = 0;
+
+
+                b2.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Right;
+                b2.Name = $"b2{s.Code}";
+                b2.Size = new Size(50, 31);
+                b2.AutoSize = false;
+                b2.Text = "開く";
+                b2.Location = new Point(p.Size.Width - b2.Size.Width - 2, (p.Size.Height - b2.Size.Height) / 2);
+                b2.TabIndex = 1;
+                b2.Click += (sender, e) => {
+                    foreach(var w in displayManager.SubWindows) {
+                        if(w.StartLocation.X < s.AreaLocation.X && w.StartLocation.Y < s.AreaLocation.Y && w.StartLocation.X + w.DisplaySize.Width > s.AreaLocation.X + s.AreaSize.Width && w.StartLocation.Y + w.DisplaySize.Height > s.AreaLocation.Y + s.AreaSize.Height) {
+                            w.Activate();
+                            return;
+                        }
+                    }
+
+                    var sub = new SubWindow(new Point(Math.Max(0, s.AreaLocation.X - 16), Math.Max(0, s.AreaLocation.Y - 16)), new Size(s.AreaSize.Width + 32, s.AreaSize.Height + 32), displayManager, s.FullName);
+                    sub.Icon = Icon;
+                    sub.Show();
+                    var border = (Size.Width - ClientSize.Width) / 2;
+                    sub.SetTopMost(TopMost);
+                    sub.SetClockColor(displayManager.Window.UseServerTime ? Color.White : Color.Yellow);
+                    displayManager.AddSubWindow(sub);
+                };
+                b2.UseVisualStyleBackColor = true;
+
+
+                b1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Right;
+                b1.Name = $"b1{s.Code}";
+                b1.Size = new Size(50, 31);
+                b1.AutoSize = false;
+                b1.Text = "移動";
+                b1.Location = new Point(p.Size.Width - b1.Size.Width - b2.Size.Width - 4, (p.Size.Height - b1.Size.Height) / 2);
+                b1.TabIndex = 1;
+                b1.Click += (sender, e) => {
+                    displayManager.Window.Activate();
+
+                    displayManager.Window.MoveScroll(Math.Max(0, s.AreaLocation.X - 16), Math.Max(0, s.AreaLocation.Y - 16));
+                };
+                b1.UseVisualStyleBackColor = true;
+
+
                 l.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
                 l.BackColor = Color.Transparent;
                 l.Font = new Font("Yu Gothic UI", 11F);
                 l.Location = new Point(32, 0);
                 l.Name = $"label{s.Code}";
-                l.Size = new Size(328, 35);
+                l.Size = new Size(p.Size.Width - 34 - 8 - b1.Size.Width - b2.Size.Width, 35);
                 l.TabIndex = 1;
                 l.Text = s.FullName;
                 l.TextAlign = ContentAlignment.MiddleLeft;
@@ -116,6 +164,7 @@ namespace TatehamaCTCPClient.Forms {
                         checkBoxStations[j].Checked = j == i;
                     }
                 };
+                l.Cursor = Cursors.Hand;
                 c.AutoSize = false;
                 c.Location = new Point(9, 0);
                 c.Name = $"checkBox{s.Code}";
@@ -132,6 +181,7 @@ namespace TatehamaCTCPClient.Forms {
                 };
                 c.TabIndex = 0;
                 c.UseVisualStyleBackColor = true;
+
                 p.ResumeLayout(false);
                 p.PerformLayout();
             }

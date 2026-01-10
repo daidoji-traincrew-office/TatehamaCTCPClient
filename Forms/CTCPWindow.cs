@@ -233,7 +233,7 @@ namespace TatehamaCTCPClient.Forms {
             }
 
             if(SystemName != "CTCP") {
-                SystemNameLong = $"{SystemName}システム(CTCP)";
+                SystemNameLong = $"{SystemName}(CTCP)";
             }
             Text = $"全線CTCP | {SystemNameLong} - ダイヤ運転会";
 
@@ -459,7 +459,13 @@ namespace TatehamaCTCPClient.Forms {
             if (serverCommunication != null) {
                 var routes = displayManager.Routes;
                 var routeDatas = new List<RouteData>(DataToCTCP.Latest.RouteDatas);
-                foreach (var t in DataToCTCP./*Latest.TrackCircuits.Where(t => t.On && routes.ContainsKey(t.Name))*/GetDifferenceTrack().Where(t => routes.ContainsKey(t.Name))) {
+                /*var rrr = routeDatas.FirstOrDefault(r => r.TcName == "TH70_2L");
+                var rrrr = routes["TH70_2LT"].FirstOrDefault();
+                var tcc = DataToCTCP.Latest.TrackCircuits.FirstOrDefault(t => t.Name == "TH70_2LT");
+                if(rrr != null && rrrr != null && tcc != null) {
+                    Debug.WriteLine($"TH70_2L: TH70_2LT {tcc.On}  ForcedDrop {rrrr.ForcedDrop}   CTC {rrr.RouteState?.IsCtcRelayRaised}  進路 {rrr.RouteState?.IsRouteLockRaised}  MR {rrr.RouteState?.IsApproachLockMRRaised}");
+                }*/
+                foreach (var t in DataToCTCP./*Latest.TrackCircuits.Where(t => t.On && routes.ContainsKey(t.Name))*/DifferenceTrack.Where(t => routes.ContainsKey(t.Name))) {
                     var isTrain = int.TryParse(Regex.Replace(t.Last, @"[^0-9]", ""), out var numBody);  // 列番本体（数字部分）
                     if (!isTrain) {
                         continue;
@@ -1630,6 +1636,13 @@ namespace TatehamaCTCPClient.Forms {
 
         private void menuItemNavigationWindow_Click(object sender, EventArgs e) {
             OpenNavigationWindow();
+        }
+
+        public void MoveScroll(int x, int y) {
+            var p = ConvertPointToScreen(x, y);
+            var mx = pictureBox1.Size.Width - panel1.Size.Width;
+            var my = pictureBox1.Size.Height - panel1.Size.Height;
+            panel1.AutoScrollPosition = new Point(mx > p.X ? p.X : (mx + 17), my > p.Y ? p.Y : (my + 17));
         }
     }
 }
