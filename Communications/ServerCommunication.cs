@@ -483,7 +483,7 @@ namespace TatehamaCTCPClient.Communications {
                 }
                 _window.LabelStatusText = "データ正常受信";
                 _window.SetStatusSubWindow("●", Color.LightGreen);
-                UpdatedTime = DateTime.Now;
+                UpdatedTime = DateTime.UtcNow.AddHours(9);
             }
             catch (WebSocketException e) when (e.WebSocketErrorCode == WebSocketError.ConnectionClosedPrematurely) {
                 LogManager.AddExceptionLog(e);

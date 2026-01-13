@@ -23,7 +23,7 @@ namespace TatehamaCTCPClient.Manager {
         }
 
         public static void AddNotification(string text, bool notifyUpdate = true) {
-            log.Append($"{DateTime.Now.ToString()} ");
+            log.Append($"{DateTime.UtcNow.AddHours(9).ToString()} ");
             log.AppendLine(text);
             updated |= notifyUpdate;
         }

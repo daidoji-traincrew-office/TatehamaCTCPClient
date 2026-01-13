@@ -58,7 +58,7 @@ namespace TatehamaCTCPClient.Forms {
         public DateTime RealTime {
             get;
             set;
-        } = DateTime.Now;
+        } = DateTime.UtcNow.AddHours(9);
 
         /// <summary>
         /// 現実との時差
@@ -485,7 +485,7 @@ namespace TatehamaCTCPClient.Forms {
                         })) {
                             r.SetHikipper(false);
                             _ = serverCommunication.SetCtcRelay(r.RouteName, RaiseDrop.Drop);
-                            Debug.WriteLine($"{DateTime.Now} {r.RouteName} を解除しました{(r.IsHikipper ? "(進行定位)" : "")}");
+                            Debug.WriteLine($"{DateTime.UtcNow.AddHours(9)} {r.RouteName} を解除しました{(r.IsHikipper ? "(進行定位)" : "")}");
                             NotificationManager.AddNotification($"{r.RouteName} を解除しました{(r.IsHikipper ? "(進行定位)" : "")}", false);
                             NavigationWindow.Instance?.UpdateNotification();
                             updated = true;
@@ -553,7 +553,7 @@ namespace TatehamaCTCPClient.Forms {
 
             var oldBlinkStateFast = BlinkStateFast;
             var oldBlinkStateSlow = BlinkStateSlow;
-            var now = DateTime.Now;
+            var now = DateTime.UtcNow.AddHours(9);
             var deltaSeconds = (now - RealTime).TotalSeconds;
             RealTime = now;
             if (blinkInterval > 0) {

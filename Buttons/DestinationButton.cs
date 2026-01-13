@@ -71,7 +71,7 @@ namespace TatehamaCTCPClient.Buttons
                     foreach (var route in routes) {
                         route.SetHikipper(false);
                         _ = c.SetCtcRelay(route.RouteName, RaiseDrop.Drop);
-                        Debug.WriteLine($"{DateTime.Now} {route.RouteName} を取消しました");
+                        Debug.WriteLine($"{DateTime.UtcNow.AddHours(9)} {route.RouteName} を取消しました");
                         NotificationManager.AddNotification($"{route.RouteName} を取消しました", false);
                         NavigationWindow.Instance?.UpdateNotification();
                     }
