@@ -1190,9 +1190,9 @@ namespace TatehamaCTCPClient.Manager
 
             window.MaximumSize = new Size(Math.Max(width, OriginalWidth) + window.Size.Width - window.ClientSize.Width, Math.Max(height, OriginalHeight) + window.Panel1.Location.Y + window.Size.Height - window.ClientSize.Height);
 
-            if (-window.Location.X > window.Size.Width - 60) {
-                window.Location = new Point(0, 80);
-            }
+            var screenRect = Screen.GetBounds(window);
+
+            window.Location = new Point(screenRect.X > window.Location.X + window.Size.Width - 60 ? screenRect.X : window.Location.X, screenRect.Y > window.Location.Y + window.Size.Height - 60 ? screenRect.Y : window.Location.Y);
 
             if (window.CTCPScale < 0) {
                 PictureBoxWidth = window.ClientSize.Width;
