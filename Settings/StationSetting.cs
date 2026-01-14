@@ -1,4 +1,7 @@
 ﻿
+using TatehamaCTCPClient.Forms;
+using TatehamaCTCPClient.Manager;
+
 namespace TatehamaCTCPClient.Settings {
     public class StationSetting(string code, string name, string fullName, string leverName, Point labelLocation, Point areaLocation, Size areaSize) {
         public string Code { get; init; } = code;
@@ -20,6 +23,10 @@ namespace TatehamaCTCPClient.Settings {
 
         public void SetActive(bool v) {
             Active = v;
+            if (!v) {
+                TrainAlertManager.RemoveAlert(this);
+                NavigationWindow.Instance?.UpdateAlert();
+            }
         }
     }
 }

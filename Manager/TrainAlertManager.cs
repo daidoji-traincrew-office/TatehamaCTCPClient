@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.ObjectModel;
 using TatehamaCTCPClient.Buttons;
 using TatehamaCTCPClient.Models;
+using TatehamaCTCPClient.Settings;
 
 namespace TatehamaCTCPClient.Manager {
     public class TrainAlertManager {
@@ -35,6 +31,15 @@ namespace TatehamaCTCPClient.Manager {
             var l = new List<TrainAlert>(trainAlerts);
             foreach(var a in l) {
                 if (a.RouteGroup == routeGroup) {
+                    trainAlerts.Remove(a);
+                }
+            }
+        }
+
+        public static void RemoveAlert(StationSetting station) {
+            var l = new List<TrainAlert>(trainAlerts);
+            foreach (var a in l) {
+                if (a.Station == station) {
                     trainAlerts.Remove(a);
                 }
             }
