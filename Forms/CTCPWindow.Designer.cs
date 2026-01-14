@@ -32,6 +32,8 @@
             menuItemCopy = new ToolStripMenuItem();
             toolStripSeparator1 = new ToolStripSeparator();
             menuItemMarkupType = new ToolStripMenuItem();
+            menuItemMarkupTypeAuto = new ToolStripMenuItem();
+            toolStripSeparator6 = new ToolStripSeparator();
             menuItemMarkupType1 = new ToolStripMenuItem();
             menuItemMarkupType2 = new ToolStripMenuItem();
             menuItemMarkupType3 = new ToolStripMenuItem();
@@ -50,12 +52,11 @@
             menuItemVersion = new ToolStripMenuItem();
             labelStatus = new Label();
             flowLayoutPanel1 = new FlowLayoutPanel();
+            labelTrainAlert = new Label();
             labelSilent = new Label();
             labelScale = new Label();
             labelTopMost = new Label();
             labelClock = new Label();
-            menuItemMarkupTypeAuto = new ToolStripMenuItem();
-            toolStripSeparator6 = new ToolStripSeparator();
             panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pictureBox3).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pictureBox2).BeginInit();
@@ -141,6 +142,20 @@
             menuItemMarkupType.Name = "menuItemMarkupType";
             menuItemMarkupType.Size = new Size(177, 22);
             menuItemMarkupType.Text = "強調表示タイプ";
+            // 
+            // menuItemMarkupTypeAuto
+            // 
+            menuItemMarkupTypeAuto.Checked = true;
+            menuItemMarkupTypeAuto.CheckState = CheckState.Indeterminate;
+            menuItemMarkupTypeAuto.Name = "menuItemMarkupTypeAuto";
+            menuItemMarkupTypeAuto.Size = new Size(191, 22);
+            menuItemMarkupTypeAuto.Text = "自動";
+            menuItemMarkupTypeAuto.Click += menuItemMarkupTypeAuto_Click;
+            // 
+            // toolStripSeparator6
+            // 
+            toolStripSeparator6.Name = "toolStripSeparator6";
+            toolStripSeparator6.Size = new Size(188, 6);
             // 
             // menuItemMarkupType1
             // 
@@ -263,14 +278,29 @@
             flowLayoutPanel1.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             flowLayoutPanel1.AutoSize = true;
             flowLayoutPanel1.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            flowLayoutPanel1.Controls.Add(labelTrainAlert);
             flowLayoutPanel1.Controls.Add(labelSilent);
             flowLayoutPanel1.Controls.Add(labelScale);
             flowLayoutPanel1.Controls.Add(labelTopMost);
             flowLayoutPanel1.Controls.Add(labelClock);
-            flowLayoutPanel1.Location = new Point(643, 3);
+            flowLayoutPanel1.Location = new Point(572, 3);
             flowLayoutPanel1.Name = "flowLayoutPanel1";
-            flowLayoutPanel1.Size = new Size(340, 15);
+            flowLayoutPanel1.Size = new Size(411, 15);
             flowLayoutPanel1.TabIndex = 4;
+            // 
+            // labelTrainAlert
+            // 
+            labelTrainAlert.AutoSize = true;
+            labelTrainAlert.BackColor = Color.FromArgb(30, 30, 30);
+            labelTrainAlert.Cursor = Cursors.Hand;
+            labelTrainAlert.ForeColor = Color.Gray;
+            labelTrainAlert.Location = new Point(3, 0);
+            labelTrainAlert.Name = "labelTrainAlert";
+            labelTrainAlert.Padding = new Padding(5, 0, 5, 0);
+            labelTrainAlert.Size = new Size(65, 15);
+            labelTrainAlert.TabIndex = 5;
+            labelTrainAlert.Text = "列車情報";
+            labelTrainAlert.Click += labelTrainAlert_Click;
             // 
             // labelSilent
             // 
@@ -278,7 +308,7 @@
             labelSilent.BackColor = Color.FromArgb(30, 30, 30);
             labelSilent.Cursor = Cursors.Hand;
             labelSilent.ForeColor = Color.White;
-            labelSilent.Location = new Point(3, 0);
+            labelSilent.Location = new Point(74, 0);
             labelSilent.Name = "labelSilent";
             labelSilent.Padding = new Padding(5, 0, 5, 0);
             labelSilent.Size = new Size(95, 15);
@@ -295,7 +325,7 @@
             labelScale.BackColor = Color.Transparent;
             labelScale.Cursor = Cursors.Hand;
             labelScale.ForeColor = Color.White;
-            labelScale.Location = new Point(104, 0);
+            labelScale.Location = new Point(175, 0);
             labelScale.Name = "labelScale";
             labelScale.Padding = new Padding(5, 0, 5, 0);
             labelScale.Size = new Size(84, 15);
@@ -313,7 +343,7 @@
             labelTopMost.BackColor = Color.FromArgb(30, 30, 30);
             labelTopMost.Cursor = Cursors.Hand;
             labelTopMost.ForeColor = Color.Gray;
-            labelTopMost.Location = new Point(194, 0);
+            labelTopMost.Location = new Point(265, 0);
             labelTopMost.Name = "labelTopMost";
             labelTopMost.Padding = new Padding(5, 0, 5, 0);
             labelTopMost.Size = new Size(86, 15);
@@ -330,7 +360,7 @@
             labelClock.BackColor = Color.Transparent;
             labelClock.Cursor = Cursors.Hand;
             labelClock.ForeColor = Color.White;
-            labelClock.Location = new Point(286, 0);
+            labelClock.Location = new Point(357, 0);
             labelClock.Name = "labelClock";
             labelClock.Padding = new Padding(1, 0, 1, 0);
             labelClock.Size = new Size(51, 15);
@@ -338,20 +368,6 @@
             labelClock.Text = "00:00:00";
             labelClock.TextAlign = ContentAlignment.TopRight;
             labelClock.MouseDown += labelClock_MouseDown;
-            // 
-            // menuItemMarkupTypeAuto
-            // 
-            menuItemMarkupTypeAuto.Checked = true;
-            menuItemMarkupTypeAuto.CheckState = CheckState.Indeterminate;
-            menuItemMarkupTypeAuto.Name = "menuItemMarkupTypeAuto";
-            menuItemMarkupTypeAuto.Size = new Size(191, 22);
-            menuItemMarkupTypeAuto.Text = "自動";
-            menuItemMarkupTypeAuto.Click += menuItemMarkupTypeAuto_Click;
-            // 
-            // toolStripSeparator6
-            // 
-            toolStripSeparator6.Name = "toolStripSeparator6";
-            toolStripSeparator6.Size = new Size(188, 6);
             // 
             // CTCPWindow
             // 
@@ -418,5 +434,6 @@
         private ToolStripMenuItem menuItemNavigationWindow;
         private ToolStripMenuItem menuItemMarkupTypeAuto;
         private ToolStripSeparator toolStripSeparator6;
+        private Label labelTrainAlert;
     }
 }

@@ -70,6 +70,9 @@ namespace TatehamaCTCPClient.Buttons
                     Route.SetHikipper(HikipperButton.Active);
                 }
                 HikipperButton.MakeInactive();
+                TrainAlertManager.RemoveAlert(Route.RouteGroup);
+                NavigationWindow.Instance?.UpdateAlert();
+                c.Window.UpdateLabelTrainAlert();
                 _ = c.SetCtcRelay(Route.RouteName, RaiseDrop.Raise);
                 Debug.WriteLine($"{DateTime.UtcNow.AddHours(9)} {Route.RouteName} を引きました{(Route.IsHikipper ? "(進行定位)" : "")}");
                 NotificationManager.AddNotification($"{Route.RouteName} を引きました{(Route.IsHikipper ? "(進行定位)" : "")}", false);

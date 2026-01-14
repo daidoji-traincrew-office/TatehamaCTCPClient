@@ -1,8 +1,10 @@
 ﻿using TatehamaCTCPClient.Settings;
 
 namespace TatehamaCTCPClient.Models {
-    public class Route (string routeName, string trackName, StationSetting station, bool forcedDrop = false) {
+    public class Route (string routeName, string routeGroup, string trackName, StationSetting station, bool forcedDrop = false) {
         public string RouteName { get; init; } = routeName;
+
+        public string RouteGroup { get; init; } = routeGroup;
 
         public string TrackName { get; init; } = trackName;
 

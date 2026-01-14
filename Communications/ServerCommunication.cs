@@ -28,6 +28,8 @@ namespace TatehamaCTCPClient.Communications {
 
         public static ServerCommunication? Instance { get; private set; }
 
+        public CTCPWindow Window => _window;
+
 
         public static bool connected { get; set; } = false;
 
@@ -600,6 +602,7 @@ namespace TatehamaCTCPClient.Communications {
                         break;
                     }
                 }
+
                 DataUpdated?.Invoke(d);
             }
             catch (Exception ex) {

@@ -17,6 +17,10 @@ namespace TatehamaCTCPClient.Models {
 
         private static List<TrackCircuitData> differenceTrack = [];
 
+        private static List<string> trains = [];
+
+        private static List<string> newTrains = [];
+
         public static ReadOnlyCollection<TrackCircuitData> DifferenceTrack { get; private set; } = differenceTrack.AsReadOnly();
 
         public static void SetLatest(DataToCTCP data) {
@@ -28,17 +32,30 @@ namespace TatehamaCTCPClient.Models {
         }
 
         public static void GetDifferenceTrack() {
-            var l = new List<TrackCircuitData>();
+            var tcl = new List<TrackCircuitData>();
+            var tl = new List<string>();
+            newTrains.Clear();
             var latest = Latest;
             var previous = Previous;
-            foreach(var tl in latest.TrackCircuits) {
-                var tp = previous.TrackCircuits.FirstOrDefault(tp => tp.Name == tl.Name);
-                if (tp == null || tp.On == false && tl.On == true || tp.On && tl.On && tp.Last != tl.Last) {
-                    l.Add(tl);
+            foreach(var tc in latest.TrackCircuits) {
+                var tp = previous.TrackCircuits.FirstOrDefault(tp => tp.Name == tc.Name);
+                if (tp == null || tp.On == false && tc.On == true || tp.On && tc.On && tp.Last != tc.Last) {
+                    tcl.Add(tc);
+                    if (!tl.Contains(tc.Last)) {
+                        tl.Add(tc.Last);
+                    }
+                    if (!trains.Contains(tc.Last)) {
+                        newTrains.Add(tc.Last);
+                    }
                 }
             }
-            differenceTrack = l;
+            differenceTrack = tcl;
+            trains = tl;
             DifferenceTrack = differenceTrack.AsReadOnly();
+        }
+
+        public static bool IsNewTrain(string trainNumber) {
+            return newTrains.Contains(trainNumber);
         }
 
         public static bool HasDifference(CTCPManager manager) {

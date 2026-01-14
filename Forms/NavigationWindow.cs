@@ -1,5 +1,6 @@
 ﻿using System.Windows.Forms;
 using TatehamaCTCPClient.Manager;
+using TatehamaCTCPClient.Settings;
 
 namespace TatehamaCTCPClient.Forms {
     public partial class NavigationWindow : Form {
@@ -22,9 +23,9 @@ namespace TatehamaCTCPClient.Forms {
             Text = $"ナビゲーション | {displayManager.Window.SystemNameLong} - ダイヤ運転会";
             PlaceStations();
             UpdateNotification();
-            tabTrain.Text = "準備中";
+            UpdateAlert();
 
-            {
+            /*{
                 var p = new Panel();
                 var l1 = new Label();
                 var l2 = new Label();
@@ -47,7 +48,7 @@ namespace TatehamaCTCPClient.Forms {
                 l1.ForeColor = Color.White;
                 l1.Location = new Point(3, 0);
                 l1.Name = "label2";
-                l1.Text = /*"1285C ▶ 館浜駅"*/"";
+                l1.Text = *//*"1285C ▶ 館浜駅"*//*"";
                 l1.Size = new Size(p.Size.Width - 6, 30);
                 l1.TabIndex = 0;
                 l1.TextAlign = ContentAlignment.MiddleLeft;
@@ -57,12 +58,13 @@ namespace TatehamaCTCPClient.Forms {
                 l2.Font = new Font("Yu Gothic UI", 9F);
                 l2.Location = new Point(3, 32);
                 l2.Name = "richTextBox1";
-                l2.Text = /*"1285C は 駒野駅 を発車しています\n館浜駅場内進路の開通忘れに注意してください"*/"";
+                l2.Text = *//*"1285C は 駒野駅 を発車しています\n館浜駅場内進路の開通忘れに注意してください"*//*"";
                 l2.Size = new Size(p.Size.Width - 6, 61);
                 l2.TabIndex = 1;
                 l2.Cursor = Cursors.Default;
 
-            }
+            }*/
+
         }
 
         private void PlaceStations() {
@@ -199,6 +201,126 @@ namespace TatehamaCTCPClient.Forms {
             else {
                 labelNotifications.Text = NotificationManager.IsEmpty ? "通知がありません" : NotificationManager.GetNotification();
             }
+        }
+
+        public void UpdateAlert() {
+            if (InvokeRequired) {
+                Invoke(() => {
+                    tabTrain.Controls.Clear();
+                    var alerts = TrainAlertManager.TrainAlerts;
+                    for (var i = 0; i < alerts.Count; i++){
+                        var p = new Panel();
+                        var l1 = new Label();
+                        var l2 = new Label();
+                        tabTrain.Controls.Add(p);
+
+                        var a = alerts[i];
+                        p.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+                        p.BackColor = Color.WhiteSmoke;
+                        p.Controls.Add(l2);
+                        p.Controls.Add(l1);
+                        p.Location = new Point(6, 3 + i * 100);
+                        p.Name = "panel2";
+                        p.Size = new Size(tabTrain.Size.Width - 12, 96);
+                        p.TabIndex = 3;
+                        p.Cursor = Cursors.Hand;
+                        p.Click += (sender, e) => { MoveToStation(a.Station); };
+
+
+                        l1.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+                        l1.BackColor = Color.FromArgb(0, 192, 192);
+                        l1.Font = new Font("Yu Gothic UI", 10F, FontStyle.Bold);
+                        l1.ForeColor = Color.White;
+                        l1.Location = new Point(3, 0);
+                        l1.Name = "label2";
+                        l1.Text = a.Title;
+                        l1.Size = new Size(p.Size.Width - 6, 30);
+                        l1.TabIndex = 0;
+                        l1.TextAlign = ContentAlignment.MiddleLeft;
+                        l1.Cursor = Cursors.Hand;
+                        l1.Click += (sender, e) => { MoveToStation(a.Station); };
+
+                        l2.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+                        l2.BackColor = Color.WhiteSmoke;
+                        l2.Font = new Font("Yu Gothic UI", 9F);
+                        l2.Location = new Point(3, 32);
+                        l2.Name = "richTextBox1";
+                        l2.Text = a.Text;
+                        l2.Size = new Size(p.Size.Width - 6, 61);
+                        l2.TabIndex = 1;
+                        l2.Cursor = Cursors.Hand;
+                        l2.Click += (sender, e) => { MoveToStation(a.Station); };
+
+                    }
+                });
+            }
+            else {
+                tabTrain.Controls.Clear();
+                var alerts = TrainAlertManager.TrainAlerts;
+                for (var i = 0; i < alerts.Count; i++) {
+                    var p = new Panel();
+                    var l1 = new Label();
+                    var l2 = new Label();
+                    tabTrain.Controls.Add(p);
+
+
+                    var a = alerts[i];
+                    p.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+                    p.BackColor = Color.WhiteSmoke;
+                    p.Controls.Add(l2);
+                    p.Controls.Add(l1);
+                    p.Location = new Point(6, 3 + i * 100);
+                    p.Name = "panel2";
+                    p.Size = new Size(tabTrain.Size.Width - 12, 96);
+                    p.TabIndex = 3;
+                    p.Cursor = Cursors.Hand;
+                    p.Click += (sender, e) => { MoveToStation(a.Station); };
+
+
+                    l1.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+                    l1.BackColor = Color.FromArgb(0, 192, 192);
+                    l1.Font = new Font("Yu Gothic UI", 10F, FontStyle.Bold);
+                    l1.ForeColor = Color.White;
+                    l1.Location = new Point(3, 0);
+                    l1.Name = "label2";
+                    l1.Text = a.Title;
+                    l1.Size = new Size(p.Size.Width - 6, 30);
+                    l1.TabIndex = 0;
+                    l1.TextAlign = ContentAlignment.MiddleLeft;
+                    l1.Cursor = Cursors.Hand;
+                    l1.Click += (sender, e) => { MoveToStation(a.Station); };
+
+                    l2.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+                    l2.BackColor = Color.WhiteSmoke;
+                    l2.Font = new Font("Yu Gothic UI", 9F);
+                    l2.Location = new Point(3, 32);
+                    l2.Name = "richTextBox1";
+                    l2.Text = a.Text;
+                    l2.Size = new Size(p.Size.Width - 6, 61);
+                    l2.TabIndex = 1;
+                    l2.Cursor = Cursors.Hand;
+                    l2.Click += (sender, e) => { MoveToStation(a.Station); };
+
+                }
+            }
+        }
+
+        public void MoveToStation(StationSetting s) {
+            foreach (var w in displayManager.SubWindows) {
+                if (w.StartLocation.X < s.AreaLocation.X && w.StartLocation.Y < s.AreaLocation.Y && w.StartLocation.X + w.DisplaySize.Width > s.AreaLocation.X + s.AreaSize.Width && w.StartLocation.Y + w.DisplaySize.Height > s.AreaLocation.Y + s.AreaSize.Height) {
+                    w.Activate();
+                    return;
+                }
+            }
+
+            displayManager.Window.Activate();
+
+            displayManager.Window.MoveScroll(Math.Max(0, s.AreaLocation.X - 16), Math.Max(0, s.AreaLocation.Y - 16));
+
+        }
+
+        public void SelectTabTrainAlert() {
+            tabControl1.SelectedTab = tabTrain;
         }
     }
 }

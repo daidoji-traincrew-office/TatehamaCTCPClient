@@ -39,6 +39,9 @@ namespace TatehamaCTCPClient.Manager
 
         private readonly Dictionary<string, List<Route>> routeGroups = [];
 
+        private readonly Dictionary<string, AlertDepSetting> alertDepSettings = [];
+
+
         /// <summary>
         /// 列車番号の色
         /// </summary>
@@ -180,6 +183,7 @@ namespace TatehamaCTCPClient.Manager
             LoadSelectionButtons("buttons_selection.tsv");
             LoadOtherButtons("buttons_others.tsv");
             trainWindows = LoadTrainWindows("trainwindow.tsv");
+            LoadAlertDep("alert_dep.txt");
 
             StationSettings = stationSettings.AsReadOnly();
             SubWindows = subWindows.AsReadOnly();
@@ -813,7 +817,7 @@ namespace TatehamaCTCPClient.Manager
                     var track = texts[2];
                     var group = texts[1];
                     var forcedDrop = i > 3 && texts[3] == "true";
-                    var route = new Route(texts[0], track, station, forcedDrop);
+                    var route = new Route(texts[0], group, track, station, forcedDrop);
                     if (!routes.TryAdd(track, new List<Route>() { route })){
                         routes[track].Add(route);
                     }
@@ -827,6 +831,40 @@ namespace TatehamaCTCPClient.Manager
             catch(Exception ex) {
                 Debug.WriteLine(ex);
             }
+        }
+
+        public void LoadAlertDep(string fileName) {
+            try {
+                using var sr = new StreamReader($".\\tsv\\{fileName}");
+                sr.ReadLine();
+                var line = sr.ReadLine();
+                while (line != null) {
+                    if (line.StartsWith('#')) {
+                        line = sr.ReadLine();
+                        continue;
+                    }
+                    var texts = line.Split('\t');
+                    line = sr.ReadLine();
+
+                    if (texts.Length < 3 || texts.Any(t => t.Length <= 0)) {
+                        continue;
+                    }
+                    StationSetting? station = null;
+                    if (texts[0].Length > 0) {
+                        station = stationSettings.FirstOrDefault(s => texts[0].Contains(s.Code));
+                    }
+
+                    if (station == null) {
+                        continue;
+                    }
+                    alertDepSettings.Add(texts[0], new(texts[0], station, texts[1], texts[2]));
+
+                }
+            }
+            catch (Exception ex) {
+                Debug.WriteLine(ex);
+            }
+
         }
 
         public void UpdateCTCP(bool updatedBlinkStateFast = false, bool updatedBlinkStateSlow = false) {
@@ -892,7 +930,10 @@ namespace TatehamaCTCPClient.Manager
 
                 var mc = numSet.FirstOrDefault(i => i.Name == num);
                 if (mc == null) {
-                    DrawTrainNumber(g, numHeader, numBodyStr, numFooter, w.Location.X, w.Location.Y);
+                    var l = TrainAlertManager.GetLightingType(num);
+                    if (l == LightingType.LIGHTING || !blinkFast && l == LightingType.BLINKING_FAST || !blinkSlow && l == LightingType.BLINKING_SLOW) {
+                        DrawTrainNumber(g, numHeader, numBodyStr, numFooter, w.Location.X, w.Location.Y);
+                    }
                 }
                 else {
                     DrawNonTrainNumber(g, num, w.Location.X, w.Location.Y);
@@ -1165,10 +1206,7 @@ namespace TatehamaCTCPClient.Manager
 
         }
 
-        public void DrawTrainNumber(Graphics g, string numHeader, string numBody, string numFooter, int x, int y, bool fill = false) {
-            if (fill) {
-                g.FillRectangle(new SolidBrush(Color.FromArgb(40, 40, 40)), x, y, 67, 13);
-            }
+        public void DrawTrainNumber(Graphics g, string numHeader, string numBody, string numFooter, int x, int y, bool invert = false, bool fill = false) {
 
 
             // 種別色
@@ -1183,8 +1221,17 @@ namespace TatehamaCTCPClient.Manager
             if (classColor == null) {
                 classColor = Color.White;
             }
+
+
+            if (invert) {
+                g.FillRectangle(new SolidBrush(classColor.Value), x, y, 67, 13);
+            }
+            else if (fill) {
+                g.FillRectangle(new SolidBrush(Color.FromArgb(40, 40, 40)), x, y, 67, 13);
+            }
+
             var iaType = new ImageAttributes();
-            iaType.SetRemapTable([new ColorMap { OldColor = Color.White, NewColor = classColor.Value }]);
+            iaType.SetRemapTable([new ColorMap { OldColor = Color.White, NewColor = invert ? Color.FromArgb(60, 60, 60) : classColor.Value }]);
 
             middleCharSet.DrawText(g, numHeader, x + 1, y + 1, 11, 11, iaType, ContentAlignment.MiddleLeft);
             middleCharSet.DrawText(g, numBody, x + 13, y + 1, 39, 11, iaType, ContentAlignment.MiddleRight);
@@ -1364,6 +1411,9 @@ namespace TatehamaCTCPClient.Manager
         }
 
         public bool BlinkingButtons() {
+            if (TrainAlertManager.IsNotEmpty) {
+                return true;
+            }
             foreach (var b in buttons.Values) {
                 if (b.Lighting == LightingType.BLINKING_SLOW || b.Lighting == LightingType.BLINKING_FAST) {
                     return true;
@@ -1375,6 +1425,13 @@ namespace TatehamaCTCPClient.Manager
                 }
             }
             return false;
+        }
+
+        public AlertDepSetting? GetAlertDepSetting(string trackName) {
+            if(alertDepSettings.TryGetValue(trackName, out var v)) {
+                return v;
+            }
+            return null;
         }
     }
 }

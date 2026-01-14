@@ -141,6 +141,17 @@ namespace TatehamaCTCPClient.Forms {
             }
         }
 
+        private static SoundPlayer? spawnSound = null;
+
+        public static void PlaySpawnSound() {
+            if (spawnSound != null) {
+                spawnSound.Play();
+            }
+            else {
+                SystemSounds.Asterisk.Play();
+            }
+        }
+
         private bool windowMinimized = false;
 
         private float blinkInterval = 0.5f;
@@ -232,7 +243,7 @@ namespace TatehamaCTCPClient.Forms {
                 });
             }
 
-            if(SystemName != "CTCP") {
+            if (SystemName != "CTCP") {
                 SystemNameLong = $"{SystemName}(CTCP)";
             }
             Text = $"全線CTCP | {SystemNameLong} - ダイヤ運転会";
@@ -240,6 +251,9 @@ namespace TatehamaCTCPClient.Forms {
 
             if (File.Exists(".\\sound\\warning.wav")) {
                 warningSound = new SoundPlayer(".\\sound\\warning.wav");
+            }
+            if (File.Exists(".\\sound\\spawn.wav")) {
+                spawnSound = new SoundPlayer(".\\sound\\spawn.wav");
             }
 
 
@@ -465,9 +479,25 @@ namespace TatehamaCTCPClient.Forms {
                 if(rrr != null && rrrr != null && tcc != null) {
                     Debug.WriteLine($"TH70_2L: TH70_2LT {tcc.On}  ForcedDrop {rrrr.ForcedDrop}   CTC {rrr.RouteState?.IsCtcRelayRaised}  進路 {rrr.RouteState?.IsRouteLockRaised}  MR {rrr.RouteState?.IsApproachLockMRRaised}");
                 }*/
-                foreach (var t in DataToCTCP./*Latest.TrackCircuits.Where(t => t.On && routes.ContainsKey(t.Name))*/DifferenceTrack.Where(t => routes.ContainsKey(t.Name))) {
+                foreach (var t in DataToCTCP./*Latest.TrackCircuits.Where(t => t.On && routes.ContainsKey(t.Name))*/DifferenceTrack) {
                     var isTrain = int.TryParse(Regex.Replace(t.Last, @"[^0-9]", ""), out var numBody);  // 列番本体（数字部分）
                     if (!isTrain) {
+                        continue;
+                    }
+                    var alertDep = displayManager.GetAlertDepSetting(t.Name);
+                    var alertUpdated = false;
+                    if (alertDep != null && alertDep.Station.Active && DataToCTCP.IsNewTrain(t.Last)) {
+                        Debug.WriteLine($"spawn {t.Last}");
+                        TrainAlertManager.AddAlert(new(alertDep.Station, $"{alertDep.Station.FullName} {alertDep.PosName} ▶ {t.Last}", $"{alertDep.Station.FullName} {alertDep.PosName}に {t.Last} が入線しました\n発車時刻に注意してください", t.Last, alertDep.RouteGroup));
+                        alertUpdated = true;
+                    }
+                    if (alertUpdated) {
+                        Debug.WriteLine($"spawn! {t.Last}");
+                        NavigationWindow.Instance?.UpdateAlert();
+                        UpdateLabelTrainAlert();
+                        PlaySpawnSound();
+                    }
+                    if (!routes.ContainsKey(t.Name)) {
                         continue;
                     }
                     var direction = numBody % 2 == 1 ? "L" : "R";
@@ -741,6 +771,11 @@ namespace TatehamaCTCPClient.Forms {
 
         private void labelSilent_Click(object sender, EventArgs e) {
             SetSilent(!Silent);
+        }
+
+        private void labelTrainAlert_Click(object sender, EventArgs e) {
+            OpenNavigationWindow();
+            NavigationWindow.Instance?.SelectTabTrainAlert();
         }
 
 
@@ -1643,6 +1678,19 @@ namespace TatehamaCTCPClient.Forms {
             var mx = pictureBox1.Size.Width - panel1.Size.Width;
             var my = pictureBox1.Size.Height - panel1.Size.Height;
             panel1.AutoScrollPosition = new Point(mx > p.X ? p.X : (mx + 17), my > p.Y ? p.Y : (my + 17));
+        }
+
+        public void UpdateLabelTrainAlert() {
+            if (InvokeRequired) {
+                Invoke(() => {
+                    if (TrainAlertManager.IsNotEmpty) {
+                        labelTrainAlert.ForeColor = TrainAlertManager.IsNotEmpty ? Color.Yellow : Color.Gray;
+                    }
+                });
+            }
+            else {
+                labelTrainAlert.ForeColor = TrainAlertManager.IsNotEmpty ? Color.Yellow : Color.Gray;
+            }
         }
     }
 }
