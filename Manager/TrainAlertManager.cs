@@ -27,22 +27,33 @@ namespace TatehamaCTCPClient.Manager {
             }
         }
 
-        public static void RemoveAlert(string routeGroup) {
+        public static void RemoveAlert(string routeGroup, AlertType? type = null) {
             var l = new List<TrainAlert>(trainAlerts);
             foreach(var a in l) {
-                if (a.RouteGroup == routeGroup) {
+                if (a.RouteGroup == routeGroup && (type == null || type == a.Type)) {
                     trainAlerts.Remove(a);
                 }
             }
         }
 
-        public static void RemoveAlert(StationSetting station) {
+        public static void RemoveAlert(StationSetting station, AlertType? type = null) {
             var l = new List<TrainAlert>(trainAlerts);
             foreach (var a in l) {
-                if (a.Station == station) {
+                if (a.Station == station && (type == null || type == a.Type)) {
                     trainAlerts.Remove(a);
                 }
             }
+        }
+
+        public static bool RemoveAlertTrain(string trainNumber, AlertType? type = null) {
+            var l = new List<TrainAlert>(trainAlerts);
+            var v = false;
+            foreach (var a in l) {
+                if (a.TrainNumber == trainNumber && (type == null || type == a.Type)) {
+                    v |= trainAlerts.Remove(a);
+                }
+            }
+            return v;
         }
 
         public static LightingType GetLightingType(string train) {

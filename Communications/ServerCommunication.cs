@@ -33,6 +33,8 @@ namespace TatehamaCTCPClient.Communications {
 
         public static bool connected { get; set; } = false;
 
+        private List<CtcRelayReservation> reservations = [];
+
         // 再接続間隔（ミリ秒）
         private const int ReconnectIntervalMs = 500; // 0.5秒
 
@@ -590,6 +592,11 @@ namespace TatehamaCTCPClient.Communications {
             if (_connection == null) {
                 return;
             }
+            foreach(var r in new List<CtcRelayReservation>(reservations)) {
+                if(r.TcName == TcName) {
+                    reservations.Remove(r);
+                }
+            }
             try {
                 Debug.WriteLine($"{TcName}: {raiseDrop}");
                 // 更新されたRouteDataを受け取る
@@ -607,6 +614,20 @@ namespace TatehamaCTCPClient.Communications {
             }
             catch (Exception ex) {
                 Debug.WriteLine($"Error server receiving: {ex.Message}{ex.StackTrace}");
+                reservations.Add(new(TcName, raiseDrop));
+            }
+        }
+
+        public void SetCtcRelayFromReservations() {
+            if (_connection == null) {
+                return;
+            }
+            var l = new List<CtcRelayReservation>(reservations);
+            while(l.Count > 0) {
+                var r = l[0];
+                l.Remove(r);
+                reservations.Remove(r);
+                _ = SetCtcRelay(r.TcName, r.RaiseDrop);
             }
         }
 

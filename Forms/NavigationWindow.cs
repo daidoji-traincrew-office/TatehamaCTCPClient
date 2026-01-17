@@ -208,6 +208,8 @@ namespace TatehamaCTCPClient.Forms {
                 Invoke(() => {
                     tabTrain.Controls.Clear();
                     var alerts = TrainAlertManager.TrainAlerts;
+                    var width = Size.Width - 30;
+                    tabTrain.AutoScroll = false;
                     for (var i = 0; i < alerts.Count; i++){
                         var p = new Panel();
                         var l1 = new Label();
@@ -215,13 +217,13 @@ namespace TatehamaCTCPClient.Forms {
                         tabTrain.Controls.Add(p);
 
                         var a = alerts[i];
-                        p.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
                         p.BackColor = Color.WhiteSmoke;
                         p.Controls.Add(l2);
                         p.Controls.Add(l1);
                         p.Location = new Point(6, 3 + i * 100);
                         p.Name = "panel2";
-                        p.Size = new Size(tabTrain.Size.Width - 12, 96);
+                        p.Size = new Size(width, 96);
+                        p.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
                         p.TabIndex = 3;
                         p.Cursor = Cursors.Hand;
                         p.Click += (sender, e) => { MoveToStation(a.Station); };
@@ -251,27 +253,30 @@ namespace TatehamaCTCPClient.Forms {
                         l2.Cursor = Cursors.Hand;
                         l2.Click += (sender, e) => { MoveToStation(a.Station); };
 
+
                     }
+                    tabTrain.AutoScroll = true;
                 });
             }
             else {
                 tabTrain.Controls.Clear();
                 var alerts = TrainAlertManager.TrainAlerts;
+                var width = Size.Width - 30;
+                tabTrain.AutoScroll = false;
                 for (var i = 0; i < alerts.Count; i++) {
                     var p = new Panel();
                     var l1 = new Label();
                     var l2 = new Label();
                     tabTrain.Controls.Add(p);
 
-
                     var a = alerts[i];
-                    p.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
                     p.BackColor = Color.WhiteSmoke;
                     p.Controls.Add(l2);
                     p.Controls.Add(l1);
                     p.Location = new Point(6, 3 + i * 100);
                     p.Name = "panel2";
-                    p.Size = new Size(tabTrain.Size.Width - 12, 96);
+                    p.Size = new Size(width, 96);
+                    p.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
                     p.TabIndex = 3;
                     p.Cursor = Cursors.Hand;
                     p.Click += (sender, e) => { MoveToStation(a.Station); };
@@ -301,7 +306,9 @@ namespace TatehamaCTCPClient.Forms {
                     l2.Cursor = Cursors.Hand;
                     l2.Click += (sender, e) => { MoveToStation(a.Station); };
 
+
                 }
+                tabTrain.AutoScroll = true;
             }
         }
 

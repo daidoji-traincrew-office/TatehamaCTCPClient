@@ -69,6 +69,7 @@
             // 
             // tabTrain
             // 
+            tabTrain.AutoScroll = true;
             tabTrain.Location = new Point(4, 24);
             tabTrain.Name = "tabTrain";
             tabTrain.Padding = new Padding(3);

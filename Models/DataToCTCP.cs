@@ -21,7 +21,13 @@ namespace TatehamaCTCPClient.Models {
 
         private static List<string> newTrains = [];
 
+        private static List<string> movingTrains = [];
+
+        private static List<string> removedTrains = [];
+
         public static ReadOnlyCollection<TrackCircuitData> DifferenceTrack { get; private set; } = differenceTrack.AsReadOnly();
+
+        public static ReadOnlyCollection<string> RemovedTrains { get; private set; } = removedTrains.AsReadOnly();
 
         public static void SetLatest(DataToCTCP data) {
             Previous = Latest;
@@ -35,18 +41,26 @@ namespace TatehamaCTCPClient.Models {
             var tcl = new List<TrackCircuitData>();
             var tl = new List<string>();
             newTrains.Clear();
+            movingTrains.Clear();
+            removedTrains.Clear();
             var latest = Latest;
             var previous = Previous;
-            foreach(var tc in latest.TrackCircuits) {
+            foreach (var tc in latest.TrackCircuits) {
                 var tp = previous.TrackCircuits.FirstOrDefault(tp => tp.Name == tc.Name);
                 if (tp == null || tp.On == false && tc.On == true || tp.On && tc.On && tp.Last != tc.Last) {
                     tcl.Add(tc);
-                    if (!tl.Contains(tc.Last)) {
-                        tl.Add(tc.Last);
-                    }
-                    if (!trains.Contains(tc.Last)) {
-                        newTrains.Add(tc.Last);
-                    }
+                    movingTrains.Add(tc.Last);
+                }
+                if (!tl.Contains(tc.Last)) {
+                    tl.Add(tc.Last);
+                }
+                if (!trains.Contains(tc.Last)) {
+                    newTrains.Add(tc.Last);
+                }
+            }
+            foreach(var t in trains) {
+                if (!tl.Contains(t)) {
+                    removedTrains.Add(t);
                 }
             }
             differenceTrack = tcl;
@@ -56,6 +70,10 @@ namespace TatehamaCTCPClient.Models {
 
         public static bool IsNewTrain(string trainNumber) {
             return newTrains.Contains(trainNumber);
+        }
+
+        public static bool IsRemovedTrain(string trainNumber) {
+            return removedTrains.Contains(trainNumber);
         }
 
         public static bool HasDifference(CTCPManager manager) {

@@ -183,7 +183,7 @@ namespace TatehamaCTCPClient.Manager
             LoadSelectionButtons("buttons_selection.tsv");
             LoadOtherButtons("buttons_others.tsv");
             trainWindows = LoadTrainWindows("trainwindow.tsv");
-            LoadAlertDep("alert_dep.txt");
+            LoadAlertDep("alert_dep.tsv");
 
             StationSettings = stationSettings.AsReadOnly();
             SubWindows = subWindows.AsReadOnly();

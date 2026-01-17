@@ -479,23 +479,22 @@ namespace TatehamaCTCPClient.Forms {
                 if(rrr != null && rrrr != null && tcc != null) {
                     Debug.WriteLine($"TH70_2L: TH70_2LT {tcc.On}  ForcedDrop {rrrr.ForcedDrop}   CTC {rrr.RouteState?.IsCtcRelayRaised}  進路 {rrr.RouteState?.IsRouteLockRaised}  MR {rrr.RouteState?.IsApproachLockMRRaised}");
                 }*/
+                var alertUpdated = false;
+                var playSpawn = false;
+                foreach(var t in DataToCTCP.RemovedTrains) {
+                    alertUpdated |= TrainAlertManager.RemoveAlertTrain(t, AlertType.Spawn);
+                }
                 foreach (var t in DataToCTCP./*Latest.TrackCircuits.Where(t => t.On && routes.ContainsKey(t.Name))*/DifferenceTrack) {
                     var isTrain = int.TryParse(Regex.Replace(t.Last, @"[^0-9]", ""), out var numBody);  // 列番本体（数字部分）
                     if (!isTrain) {
                         continue;
                     }
+                    alertUpdated |= TrainAlertManager.RemoveAlertTrain(t.Last, AlertType.Spawn);
                     var alertDep = displayManager.GetAlertDepSetting(t.Name);
-                    var alertUpdated = false;
                     if (alertDep != null && alertDep.Station.Active && DataToCTCP.IsNewTrain(t.Last)) {
-                        Debug.WriteLine($"spawn {t.Last}");
-                        TrainAlertManager.AddAlert(new(alertDep.Station, $"{alertDep.Station.FullName} {alertDep.PosName} ▶ {t.Last}", $"{alertDep.Station.FullName} {alertDep.PosName}に {t.Last} が入線しました\n発車時刻に注意してください", t.Last, alertDep.RouteGroup));
+                        TrainAlertManager.AddAlert(new(alertDep.Station, $"{alertDep.Station.FullName} {alertDep.PosName} ▶ {t.Last}", $"{alertDep.Station.FullName} {alertDep.PosName}に {t.Last} が入線しました\n発車時刻に注意してください", t.Last, alertDep.RouteGroup, AlertType.Spawn));
+                        playSpawn = true;
                         alertUpdated = true;
-                    }
-                    if (alertUpdated) {
-                        Debug.WriteLine($"spawn! {t.Last}");
-                        NavigationWindow.Instance?.UpdateAlert();
-                        UpdateLabelTrainAlert();
-                        PlaySpawnSound();
                     }
                     if (!routes.ContainsKey(t.Name)) {
                         continue;
@@ -520,6 +519,13 @@ namespace TatehamaCTCPClient.Forms {
                             NavigationWindow.Instance?.UpdateNotification();
                             updated = true;
                         }
+                    }
+                }
+                if (alertUpdated) {
+                    NavigationWindow.Instance?.UpdateAlert();
+                    UpdateLabelTrainAlert();
+                    if (playSpawn) {
+                        PlaySpawnSound();
                     }
                 }
             }
@@ -580,6 +586,7 @@ namespace TatehamaCTCPClient.Forms {
             if (showOffset > 0) {
                 showOffset--;
             }
+            serverCommunication?.SetCtcRelayFromReservations();
 
             var oldBlinkStateFast = BlinkStateFast;
             var oldBlinkStateSlow = BlinkStateSlow;
@@ -1683,9 +1690,7 @@ namespace TatehamaCTCPClient.Forms {
         public void UpdateLabelTrainAlert() {
             if (InvokeRequired) {
                 Invoke(() => {
-                    if (TrainAlertManager.IsNotEmpty) {
-                        labelTrainAlert.ForeColor = TrainAlertManager.IsNotEmpty ? Color.Yellow : Color.Gray;
-                    }
+                    labelTrainAlert.ForeColor = TrainAlertManager.IsNotEmpty ? Color.Yellow : Color.Gray;
                 });
             }
             else {
