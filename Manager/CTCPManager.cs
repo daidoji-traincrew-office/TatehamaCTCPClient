@@ -1,7 +1,7 @@
-﻿using System.Collections.ObjectModel;
+﻿using NAudio.Wave;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Drawing.Imaging;
-using System.Media;
 using System.Text.RegularExpressions;
 using TatehamaCTCPClient.Buttons;
 using TatehamaCTCPClient.Communications;
@@ -41,6 +41,10 @@ namespace TatehamaCTCPClient.Manager
 
         private readonly Dictionary<string, AlertDepSetting> alertDepSettings = [];
 
+        private readonly List<AlertAprSetting> alertAprSettings = [];
+
+        private readonly Dictionary<string, List<AlertAprSetting>> alertAprSettingsDict = [];
+
 
         /// <summary>
         /// 列車番号の色
@@ -76,9 +80,11 @@ namespace TatehamaCTCPClient.Manager
 
         private CharacterSet xsmallCharSet;
 
-        private SoundPlayer? pressButtonSound = null;
+        private AudioFileReader? pressButtonSound = null;
+        private WaveOut woPressButtonSound = new();
 
-        private SoundPlayer? releaseButtonSound = null;
+        private AudioFileReader? releaseButtonSound = null;
+        private WaveOut woReleaseButtonSound = new();
 
         private bool resizing = false;
 
@@ -158,6 +164,8 @@ namespace TatehamaCTCPClient.Manager
 
         public ReadOnlyCollection<SubWindow> SubWindows { get; init; }
 
+        public ReadOnlyCollection<AlertAprSetting> AlertAprSettings { get; init; }
+
         public CTCPWindow Window => window;
 
         public bool IsActiveForm {
@@ -184,10 +192,12 @@ namespace TatehamaCTCPClient.Manager
             LoadOtherButtons("buttons_others.tsv");
             trainWindows = LoadTrainWindows("trainwindow.tsv");
             LoadAlertDep("alert_dep.tsv");
+            LoadAlertApr("alert_apr.tsv");
 
             StationSettings = stationSettings.AsReadOnly();
             SubWindows = subWindows.AsReadOnly();
             Routes = routes.AsReadOnly();
+            AlertAprSettings = alertAprSettings.AsReadOnly();
 
 
             backgroundDefault = Image.FromFile(".\\png\\Background-1.png");
@@ -240,11 +250,13 @@ namespace TatehamaCTCPClient.Manager
 
 
             if (File.Exists(".\\sound\\pressButton.wav")) {
-                pressButtonSound = new SoundPlayer(".\\sound\\pressButton.wav");
+                pressButtonSound = new AudioFileReader(".\\sound\\pressButton.wav");
+                woPressButtonSound.Init(pressButtonSound);
             }
 
             if (File.Exists(".\\sound\\releaseButton.wav")) {
-                releaseButtonSound = new SoundPlayer(".\\sound\\releaseButton.wav");
+                releaseButtonSound = new AudioFileReader(".\\sound\\releaseButton.wav");
+                woReleaseButtonSound.Init(releaseButtonSound);
             }
 
 
@@ -867,6 +879,96 @@ namespace TatehamaCTCPClient.Manager
 
         }
 
+        private void LoadAlertApr(string fileName) {
+            try {
+                using var sr = new StreamReader($".\\tsv\\{fileName}");
+                sr.ReadLine();
+                var line = sr.ReadLine();
+                StationSetting? station = null;
+                string? routeGroup = null;
+                TrainDirection? d = null;
+                List<string> signals = [];
+                AlertAprSetting? alert = null;
+                while (line != null) {
+                    if (line.StartsWith('#')) {
+                        line = sr.ReadLine();
+                        continue;
+                    }
+                    var texts = line.Split('\t');
+                    line = sr.ReadLine();
+
+                    
+                    if (texts.Length < 6 || texts[3].Length <= 0 || texts[5].Length <= 0) {
+                        continue;
+                    }
+
+
+                    var newData = false;
+                    if (texts[0].Length > 0) {
+                        station = stationSettings.FirstOrDefault(s => texts[0].Contains(s.Code));
+                        signals.Clear();
+                        newData = true;
+                    }
+                    if (station == null) {
+                        continue;
+                    }
+
+                    if (texts[1].Length > 0) {
+                        routeGroup = texts[1];
+                        signals.Clear();
+                        newData = true;
+                    }
+                    if (routeGroup == null) {
+                        continue;
+                    }
+
+                    if (texts[2].Length > 0) {
+                        var nd = texts[2] == "UP" ? TrainDirection.UP : TrainDirection.DOWN;
+                        newData |= nd != d;
+                        d = nd;
+                        signals.Clear();
+
+                    }
+                    if (d == null) {
+                        continue;
+                    }
+
+                    foreach (var s in texts[4].Split(' ')) {
+                        if(s.Length > 0) {
+                            signals.Add(s);
+                        }
+                    }
+
+                    var trackCircuits = new List<string>();
+                    for (var i = 5; i < texts.Length; i++) {
+                        trackCircuits.Add(texts[i]);
+                    }
+
+                    if (alert == null || newData) {
+                        alert = new AlertAprSetting(station, routeGroup, (TrainDirection)d, texts[3] == "true", signals, trackCircuits);
+                        alertAprSettings.Add(alert);
+                    }
+                    else {
+                        alert.AddSetting(texts[3] == "true", signals, trackCircuits);
+                    }
+
+                    foreach(var tc in trackCircuits) {
+                        if (alertAprSettingsDict.ContainsKey(tc)) {
+                            alertAprSettingsDict[tc].Add(alert);
+                        }
+                        else {
+                            alertAprSettingsDict.Add(tc, [alert]);
+                        }
+                    }
+
+                    
+                }
+            }
+            catch (Exception ex) {
+                Debug.WriteLine(ex);
+            }
+        }
+
         public void UpdateCTCP(bool updatedBlinkStateFast = false, bool updatedBlinkStateSlow = false) {
 
             var data = DataToCTCP.Latest;
@@ -931,8 +1033,12 @@ namespace TatehamaCTCPClient.Manager
                 var mc = numSet.FirstOrDefault(i => i.Name == num);
                 if (mc == null) {
                     var l = TrainAlertManager.GetLightingType(num);
-                    if (l == LightingType.LIGHTING || !blinkFast && l == LightingType.BLINKING_FAST || !blinkSlow && l == LightingType.BLINKING_SLOW) {
-                        DrawTrainNumber(g, numHeader, numBodyStr, numFooter, w.Location.X, w.Location.Y);
+                    if (window.MarkupType == 3 || l == LightingType.LIGHTING || !blinkFast && l == LightingType.BLINKING_FAST || !blinkSlow && l == LightingType.BLINKING_SLOW) {
+                        var invert = window.MarkupType > 0 || window.MarkupType < 0 && l == LightingType.BLINKING_FAST;
+                        DrawTrainNumber(g, numHeader, numBodyStr, numFooter, w.Location.X, w.Location.Y, invert);
+                    }
+                    else {
+                        DrawTrainNumber(g, numHeader, numBodyStr, numFooter, w.Location.X, w.Location.Y, false, window.MarkupType != 1 && (window.MarkupType >= 0 || l == LightingType.BLINKING_SLOW));
                     }
                 }
                 else {
@@ -1206,7 +1312,7 @@ namespace TatehamaCTCPClient.Manager
 
         }
 
-        public void DrawTrainNumber(Graphics g, string numHeader, string numBody, string numFooter, int x, int y, bool invert = false, bool fill = false) {
+        public void DrawTrainNumber(Graphics g, string numHeader, string numBody, string numFooter, int x, int y, bool invert = false, bool lightsOut = false, bool fill = false) {
 
 
             // 種別色
@@ -1231,7 +1337,7 @@ namespace TatehamaCTCPClient.Manager
             }
 
             var iaType = new ImageAttributes();
-            iaType.SetRemapTable([new ColorMap { OldColor = Color.White, NewColor = invert ? Color.FromArgb(60, 60, 60) : classColor.Value }]);
+            iaType.SetRemapTable([new ColorMap { OldColor = Color.White, NewColor = invert || lightsOut ? Color.FromArgb(45, 45, 45) : classColor.Value }]);
 
             middleCharSet.DrawText(g, numHeader, x + 1, y + 1, 11, 11, iaType, ContentAlignment.MiddleLeft);
             middleCharSet.DrawText(g, numBody, x + 13, y + 1, 39, 11, iaType, ContentAlignment.MiddleRight);
@@ -1403,15 +1509,21 @@ namespace TatehamaCTCPClient.Manager
         }
 
         public void PlayPressButtonSound() {
-            pressButtonSound?.Play();
+            if (pressButtonSound != null) {
+                pressButtonSound.Position = 0;
+                woPressButtonSound.Play();
+            }
         }
 
         public void PlayReleaseButtonSound() {
-            releaseButtonSound?.Play();
+            if (releaseButtonSound != null) {
+                releaseButtonSound.Position = 0;
+                woReleaseButtonSound.Play();
+            }
         }
 
         public bool BlinkingButtons() {
-            if (TrainAlertManager.IsNotEmpty) {
+            if (window.MarkupType < 3 && TrainAlertManager.IsNotEmpty) {
                 return true;
             }
             foreach (var b in buttons.Values) {
@@ -1430,6 +1542,20 @@ namespace TatehamaCTCPClient.Manager
         public AlertDepSetting? GetAlertDepSetting(string trackName) {
             if(alertDepSettings.TryGetValue(trackName, out var v)) {
                 return v;
+            }
+            return null;
+        }
+
+        public List<AlertAprSetting>? GetAlertAprSetting(string trackName) {
+            if (alertAprSettingsDict.TryGetValue(trackName, out var v)) {
+                return v;
+            }
+            return null;
+        }
+
+        public ReadOnlyCollection<Route>? GetRouteGroup(string key) {
+            if(routeGroups.TryGetValue(key, out var v)) {
+                return v.AsReadOnly();
             }
             return null;
         }

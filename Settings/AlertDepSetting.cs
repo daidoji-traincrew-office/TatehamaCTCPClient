@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿
 
 namespace TatehamaCTCPClient.Settings {
     public class AlertDepSetting(string trackName, StationSetting station, string posName, string routeGroup) {

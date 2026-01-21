@@ -1,5 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using TatehamaCTCPClient.Buttons;
+using TatehamaCTCPClient.Forms;
 using TatehamaCTCPClient.Models;
 using TatehamaCTCPClient.Settings;
 
@@ -12,11 +13,18 @@ namespace TatehamaCTCPClient.Manager {
 
         public static bool IsNotEmpty => trainAlerts.Count > 0;
 
-        public static void AddAlert(TrainAlert alert) {
+        public static bool HasImportant => trainAlerts.Any(a => a.Important);
+
+        public static bool AddAlert(TrainAlert alert) {
             var l = new List<TrainAlert>(trainAlerts);
             foreach (var a in l) {
                 if (a.TrainNumber == alert.TrainNumber) {
-                    trainAlerts.Remove(a);
+                    if (alert.Important && !a.Important || alert.Station != a.Station) {
+                        trainAlerts.Remove(a);
+                    }
+                    else {
+                        return false;
+                    }
                 }
             }
             if (trainAlerts.Count > 0 && alert.Important) {
@@ -25,33 +33,58 @@ namespace TatehamaCTCPClient.Manager {
             else {
                 trainAlerts.Add(alert);
             }
+            if (alert.Important) {
+                CTCPWindow.PlayAprPiSound();
+            }
+            return true;
         }
 
         public static void RemoveAlert(string routeGroup, AlertType? type = null) {
             var l = new List<TrainAlert>(trainAlerts);
+            var i = true;
             foreach(var a in l) {
                 if (a.RouteGroup == routeGroup && (type == null || type == a.Type)) {
                     trainAlerts.Remove(a);
                 }
+                else if(a.Important) {
+                    i = false;
+                }
+            }
+            if (i) {
+                CTCPWindow.StopAprPiSound();
             }
         }
 
         public static void RemoveAlert(StationSetting station, AlertType? type = null) {
             var l = new List<TrainAlert>(trainAlerts);
+            var i = true;
             foreach (var a in l) {
                 if (a.Station == station && (type == null || type == a.Type)) {
                     trainAlerts.Remove(a);
                 }
+                else if (a.Important) {
+                    i = false;
+                }
+            }
+            if (i) {
+                CTCPWindow.StopAprPiSound();
             }
         }
 
         public static bool RemoveAlertTrain(string trainNumber, AlertType? type = null) {
             var l = new List<TrainAlert>(trainAlerts);
             var v = false;
+            var i = true;
             foreach (var a in l) {
                 if (a.TrainNumber == trainNumber && (type == null || type == a.Type)) {
                     v |= trainAlerts.Remove(a);
                 }
+                else if (a.Important) {
+                    i = false;
+                }
+            }
+            if (i) {
+                CTCPWindow.StopAprPiSound();
             }
             return v;
         }

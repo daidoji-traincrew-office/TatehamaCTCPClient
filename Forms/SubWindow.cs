@@ -618,6 +618,10 @@ namespace TatehamaCTCPClient.Forms {
             displayManager.Window.SetMarkupType(2);
         }
 
+        private void menuItemMarkupType4_Click(object sender, EventArgs e) {
+            displayManager.Window.SetMarkupType(3);
+        }
+
         private void menuItemMarkupTypeAuto_Click(object sender, EventArgs e) {
             displayManager.Window.SetMarkupType(-1);
         }
@@ -627,6 +631,7 @@ namespace TatehamaCTCPClient.Forms {
             menuItemMarkupType1.CheckState = type == 0 ? CheckState.Indeterminate : CheckState.Unchecked;
             menuItemMarkupType2.CheckState = type == 1 ? CheckState.Indeterminate : CheckState.Unchecked;
             menuItemMarkupType3.CheckState = type == 2 ? CheckState.Indeterminate : CheckState.Unchecked;
+            menuItemMarkupType4.CheckState = type == 3 ? CheckState.Indeterminate : CheckState.Unchecked;
         }
 
         public void HideButtons() {

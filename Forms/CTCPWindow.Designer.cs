@@ -57,6 +57,7 @@
             labelScale = new Label();
             labelTopMost = new Label();
             labelClock = new Label();
+            menuItemMarkupType4 = new ToolStripMenuItem();
             panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pictureBox3).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pictureBox2).BeginInit();
@@ -122,25 +123,25 @@
             // 
             contextMenuStrip1.Items.AddRange(new ToolStripItem[] { menuItemCopy, toolStripSeparator1, menuItemMarkupType, toolStripSeparator2, menuItemScale, menuItemTopMost, menuItemSilent, menuItemQuickTimeSetting, menuItemNavigationWindow, toolStripSeparator4, menuItemVersion });
             contextMenuStrip1.Name = "contextMenuStrip1";
-            contextMenuStrip1.Size = new Size(178, 198);
+            contextMenuStrip1.Size = new Size(181, 220);
             // 
             // menuItemCopy
             // 
             menuItemCopy.Name = "menuItemCopy";
-            menuItemCopy.Size = new Size(177, 22);
+            menuItemCopy.Size = new Size(180, 22);
             menuItemCopy.Text = "CTCP画面をコピー";
             menuItemCopy.Click += menuItemCopy_Click;
             // 
             // toolStripSeparator1
             // 
             toolStripSeparator1.Name = "toolStripSeparator1";
-            toolStripSeparator1.Size = new Size(174, 6);
+            toolStripSeparator1.Size = new Size(177, 6);
             // 
             // menuItemMarkupType
             // 
-            menuItemMarkupType.DropDownItems.AddRange(new ToolStripItem[] { menuItemMarkupTypeAuto, toolStripSeparator6, menuItemMarkupType1, menuItemMarkupType2, menuItemMarkupType3 });
+            menuItemMarkupType.DropDownItems.AddRange(new ToolStripItem[] { menuItemMarkupTypeAuto, toolStripSeparator6, menuItemMarkupType1, menuItemMarkupType2, menuItemMarkupType3, menuItemMarkupType4 });
             menuItemMarkupType.Name = "menuItemMarkupType";
-            menuItemMarkupType.Size = new Size(177, 22);
+            menuItemMarkupType.Size = new Size(180, 22);
             menuItemMarkupType.Text = "強調表示タイプ";
             // 
             // menuItemMarkupTypeAuto
@@ -148,46 +149,46 @@
             menuItemMarkupTypeAuto.Checked = true;
             menuItemMarkupTypeAuto.CheckState = CheckState.Indeterminate;
             menuItemMarkupTypeAuto.Name = "menuItemMarkupTypeAuto";
-            menuItemMarkupTypeAuto.Size = new Size(191, 22);
+            menuItemMarkupTypeAuto.Size = new Size(197, 22);
             menuItemMarkupTypeAuto.Text = "自動";
             menuItemMarkupTypeAuto.Click += menuItemMarkupTypeAuto_Click;
             // 
             // toolStripSeparator6
             // 
             toolStripSeparator6.Name = "toolStripSeparator6";
-            toolStripSeparator6.Size = new Size(188, 6);
+            toolStripSeparator6.Size = new Size(194, 6);
             // 
             // menuItemMarkupType1
             // 
             menuItemMarkupType1.Name = "menuItemMarkupType1";
-            menuItemMarkupType1.Size = new Size(191, 22);
+            menuItemMarkupType1.Size = new Size(197, 22);
             menuItemMarkupType1.Text = "タイプ1（点滅）";
             menuItemMarkupType1.Click += menuItemMarkupType1_Click;
             // 
             // menuItemMarkupType2
             // 
             menuItemMarkupType2.Name = "menuItemMarkupType2";
-            menuItemMarkupType2.Size = new Size(191, 22);
-            menuItemMarkupType2.Text = "タイプ2（色逆転点滅）";
+            menuItemMarkupType2.Size = new Size(197, 22);
+            menuItemMarkupType2.Text = "タイプ2（色逆転点滅1）";
             menuItemMarkupType2.Click += menuItemMarkupType2_Click;
             // 
             // menuItemMarkupType3
             // 
             menuItemMarkupType3.Name = "menuItemMarkupType3";
-            menuItemMarkupType3.Size = new Size(191, 22);
-            menuItemMarkupType3.Text = "タイプ3（色逆転固定）";
+            menuItemMarkupType3.Size = new Size(197, 22);
+            menuItemMarkupType3.Text = "タイプ3（色逆転点滅2）";
             menuItemMarkupType3.Click += menuItemMarkupType3_Click;
             // 
             // toolStripSeparator2
             // 
             toolStripSeparator2.Name = "toolStripSeparator2";
-            toolStripSeparator2.Size = new Size(174, 6);
+            toolStripSeparator2.Size = new Size(177, 6);
             // 
             // menuItemScale
             // 
             menuItemScale.DropDownItems.AddRange(new ToolStripItem[] { toolStripSeparator3, menuItemScaleFit, menuItemFixedScale });
             menuItemScale.Name = "menuItemScale";
-            menuItemScale.Size = new Size(177, 22);
+            menuItemScale.Size = new Size(180, 22);
             menuItemScale.Text = "拡大率";
             // 
             // toolStripSeparator3
@@ -211,14 +212,14 @@
             // menuItemTopMost
             // 
             menuItemTopMost.Name = "menuItemTopMost";
-            menuItemTopMost.Size = new Size(177, 22);
+            menuItemTopMost.Size = new Size(180, 22);
             menuItemTopMost.Text = "最前面表示";
             menuItemTopMost.Click += menuItemTopMost_Click;
             // 
             // menuItemSilent
             // 
             menuItemSilent.Name = "menuItemSilent";
-            menuItemSilent.Size = new Size(177, 22);
+            menuItemSilent.Size = new Size(180, 22);
             menuItemSilent.Text = "サイレントモード";
             menuItemSilent.Click += menuItemSilent_Click;
             // 
@@ -226,7 +227,7 @@
             // 
             menuItemQuickTimeSetting.DropDownItems.AddRange(new ToolStripItem[] { menuItemServerTime, toolStripSeparator5 });
             menuItemQuickTimeSetting.Name = "menuItemQuickTimeSetting";
-            menuItemQuickTimeSetting.Size = new Size(177, 22);
+            menuItemQuickTimeSetting.Size = new Size(180, 22);
             menuItemQuickTimeSetting.Text = "クイック時刻設定";
             // 
             // menuItemServerTime
@@ -246,19 +247,19 @@
             // menuItemNavigationWindow
             // 
             menuItemNavigationWindow.Name = "menuItemNavigationWindow";
-            menuItemNavigationWindow.Size = new Size(177, 22);
+            menuItemNavigationWindow.Size = new Size(180, 22);
             menuItemNavigationWindow.Text = "ナビゲーションウィンドウ";
             menuItemNavigationWindow.Click += menuItemNavigationWindow_Click;
             // 
             // toolStripSeparator4
             // 
             toolStripSeparator4.Name = "toolStripSeparator4";
-            toolStripSeparator4.Size = new Size(174, 6);
+            toolStripSeparator4.Size = new Size(177, 6);
             // 
             // menuItemVersion
             // 
             menuItemVersion.Name = "menuItemVersion";
-            menuItemVersion.Size = new Size(177, 22);
+            menuItemVersion.Size = new Size(180, 22);
             menuItemVersion.Text = "バージョン情報";
             menuItemVersion.Click += menuItemVersion_Click;
             // 
@@ -369,6 +370,13 @@
             labelClock.TextAlign = ContentAlignment.TopRight;
             labelClock.MouseDown += labelClock_MouseDown;
             // 
+            // menuItemMarkupType4
+            // 
+            menuItemMarkupType4.Name = "menuItemMarkupType4";
+            menuItemMarkupType4.Size = new Size(197, 22);
+            menuItemMarkupType4.Text = "タイプ4（色逆転固定）";
+            menuItemMarkupType4.Click += menuItemMarkupType4_Click;
+            // 
             // CTCPWindow
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -435,5 +443,6 @@
         private ToolStripMenuItem menuItemMarkupTypeAuto;
         private ToolStripSeparator toolStripSeparator6;
         private Label labelTrainAlert;
+        private ToolStripMenuItem menuItemMarkupType4;
     }
 }

@@ -1,8 +1,6 @@
 ﻿
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using TatehamaCTCPClient.Manager;
-using static System.Windows.Forms.AxHost;
 
 namespace TatehamaCTCPClient.Models {
 
@@ -15,7 +13,11 @@ namespace TatehamaCTCPClient.Models {
 
         public static DataToCTCP Previous { get; private set; } = new DataToCTCP();
 
-        private static List<TrackCircuitData> differenceTrack = [];
+        private static Dictionary<string, TrackCircuitData> differenceTracks = [];
+
+        private static Dictionary<string, TrackCircuitData> dropingTracks = [];
+
+        private static Dictionary<string, RouteData> differenceRoutes = [];
 
         private static List<string> trains = [];
 
@@ -25,7 +27,11 @@ namespace TatehamaCTCPClient.Models {
 
         private static List<string> removedTrains = [];
 
-        public static ReadOnlyCollection<TrackCircuitData> DifferenceTrack { get; private set; } = differenceTrack.AsReadOnly();
+        public static ReadOnlyDictionary<string, TrackCircuitData> DifferenceTracks { get; private set; } = differenceTracks.AsReadOnly();
+
+        public static ReadOnlyDictionary<string, TrackCircuitData> DropingTracks { get; private set; } = dropingTracks.AsReadOnly();
+
+        public static ReadOnlyDictionary<string, RouteData> DifferenceRoutes { get; private set; } = differenceRoutes.AsReadOnly();
 
         public static ReadOnlyCollection<string> RemovedTrains { get; private set; } = removedTrains.AsReadOnly();
 
@@ -38,7 +44,8 @@ namespace TatehamaCTCPClient.Models {
         }
 
         public static void GetDifferenceTrack() {
-            var tcl = new List<TrackCircuitData>();
+            var tcl = new Dictionary<string, TrackCircuitData>();
+            var dtcl = new Dictionary<string, TrackCircuitData>();
             var tl = new List<string>();
             newTrains.Clear();
             movingTrains.Clear();
@@ -46,9 +53,12 @@ namespace TatehamaCTCPClient.Models {
             var latest = Latest;
             var previous = Previous;
             foreach (var tc in latest.TrackCircuits) {
+                if (tc.On) {
+                    tcl.Add(tc.Name, tc);
+                }
                 var tp = previous.TrackCircuits.FirstOrDefault(tp => tp.Name == tc.Name);
                 if (tp == null || tp.On == false && tc.On == true || tp.On && tc.On && tp.Last != tc.Last) {
-                    tcl.Add(tc);
+                    dtcl.Add(tc.Name, tc);
                     movingTrains.Add(tc.Last);
                 }
                 if (!tl.Contains(tc.Last)) {
@@ -63,9 +73,27 @@ namespace TatehamaCTCPClient.Models {
                     removedTrains.Add(t);
                 }
             }
-            differenceTrack = tcl;
+            dropingTracks = tcl;
+            differenceTracks = dtcl;
             trains = tl;
-            DifferenceTrack = differenceTrack.AsReadOnly();
+            DropingTracks = dropingTracks.AsReadOnly();
+            DifferenceTracks = differenceTracks.AsReadOnly();
+
+
+            var rl = new Dictionary<string, RouteData>();
+            var rdp = new List<RouteData>(previous.RouteDatas);
+            foreach (var rd in new List<RouteData>(latest.RouteDatas)) {
+                var rp = rdp.FirstOrDefault(tp => tp.TcName == rd.TcName);
+                if (rp == null || rp.RouteState?.IsRouteLockRaised != rd.RouteState?.IsRouteLockRaised ||
+                    rp.RouteState?.IsCtcRelayRaised != rd.RouteState?.IsCtcRelayRaised ||
+                    rp.RouteState?.IsSignalControlRaised != rd.RouteState?.IsSignalControlRaised) {
+                    rl.Add(rd.TcName, rd);
+                }
+            }
+            differenceRoutes = rl;
+            DifferenceRoutes = differenceRoutes.AsReadOnly();
+
+
         }
 
         public static bool IsNewTrain(string trainNumber) {

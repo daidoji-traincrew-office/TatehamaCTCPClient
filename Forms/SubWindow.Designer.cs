@@ -32,6 +32,8 @@ namespace TatehamaCTCPClient.Forms {
             menuItemCopy = new ToolStripMenuItem();
             toolStripSeparator1 = new ToolStripSeparator();
             menuItemMarkupType = new ToolStripMenuItem();
+            menuItemMarkupTypeAuto = new ToolStripMenuItem();
+            toolStripSeparator4 = new ToolStripSeparator();
             menuItemMarkupType1 = new ToolStripMenuItem();
             menuItemMarkupType2 = new ToolStripMenuItem();
             menuItemMarkupType3 = new ToolStripMenuItem();
@@ -46,8 +48,7 @@ namespace TatehamaCTCPClient.Forms {
             labelTopMost = new Label();
             labelScale = new Label();
             labelStatus = new Label();
-            menuItemMarkupTypeAuto = new ToolStripMenuItem();
-            toolStripSeparator4 = new ToolStripSeparator();
+            menuItemMarkupType4 = new ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)pictureBox3).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
             contextMenuStrip1.SuspendLayout();
@@ -85,83 +86,95 @@ namespace TatehamaCTCPClient.Forms {
             // 
             contextMenuStrip1.Items.AddRange(new ToolStripItem[] { menuItemCopy, toolStripSeparator1, menuItemMarkupType, toolStripSeparator2, menuItemTopMost, menuItemSilent, menuItemRename, toolStripSeparator3, menuItemVersion });
             contextMenuStrip1.Name = "contextMenuStrip1";
-            contextMenuStrip1.Size = new Size(163, 154);
+            contextMenuStrip1.Size = new Size(181, 176);
             // 
             // menuItemCopy
             // 
             menuItemCopy.Name = "menuItemCopy";
-            menuItemCopy.Size = new Size(162, 22);
+            menuItemCopy.Size = new Size(180, 22);
             menuItemCopy.Text = "CTCP画面をコピー";
             menuItemCopy.Click += menuItemCopy_Click;
             // 
             // toolStripSeparator1
             // 
             toolStripSeparator1.Name = "toolStripSeparator1";
-            toolStripSeparator1.Size = new Size(159, 6);
+            toolStripSeparator1.Size = new Size(177, 6);
             // 
             // menuItemMarkupType
             // 
-            menuItemMarkupType.DropDownItems.AddRange(new ToolStripItem[] { menuItemMarkupTypeAuto, toolStripSeparator4, menuItemMarkupType1, menuItemMarkupType2, menuItemMarkupType3 });
+            menuItemMarkupType.DropDownItems.AddRange(new ToolStripItem[] { menuItemMarkupTypeAuto, toolStripSeparator4, menuItemMarkupType1, menuItemMarkupType2, menuItemMarkupType3, menuItemMarkupType4 });
             menuItemMarkupType.Name = "menuItemMarkupType";
-            menuItemMarkupType.Size = new Size(162, 22);
+            menuItemMarkupType.Size = new Size(180, 22);
             menuItemMarkupType.Text = "強調表示タイプ";
+            // 
+            // menuItemMarkupTypeAuto
+            // 
+            menuItemMarkupTypeAuto.Name = "menuItemMarkupTypeAuto";
+            menuItemMarkupTypeAuto.Size = new Size(197, 22);
+            menuItemMarkupTypeAuto.Text = "自動";
+            menuItemMarkupTypeAuto.Click += menuItemMarkupTypeAuto_Click;
+            // 
+            // toolStripSeparator4
+            // 
+            toolStripSeparator4.Name = "toolStripSeparator4";
+            toolStripSeparator4.Size = new Size(194, 6);
             // 
             // menuItemMarkupType1
             // 
             menuItemMarkupType1.Name = "menuItemMarkupType1";
-            menuItemMarkupType1.Size = new Size(191, 22);
+            menuItemMarkupType1.Size = new Size(197, 22);
             menuItemMarkupType1.Text = "タイプ1（点滅）";
             menuItemMarkupType1.Click += menuItemMarkupType1_Click;
             // 
             // menuItemMarkupType2
             // 
             menuItemMarkupType2.Name = "menuItemMarkupType2";
-            menuItemMarkupType2.Size = new Size(191, 22);
-            menuItemMarkupType2.Text = "タイプ2（色逆転点滅）";
+            menuItemMarkupType2.Size = new Size(197, 22);
+            menuItemMarkupType2.Text = "タイプ2（色逆転点滅1）";
             menuItemMarkupType2.Click += menuItemMarkupType2_Click;
             // 
             // menuItemMarkupType3
             // 
             menuItemMarkupType3.Name = "menuItemMarkupType3";
-            menuItemMarkupType3.Size = new Size(191, 22);
-            menuItemMarkupType3.Text = "タイプ3（色逆転固定）";
+            menuItemMarkupType3.Size = new Size(197, 22);
+            menuItemMarkupType3.Text = "タイプ3（色逆転点滅2）";
             menuItemMarkupType3.Click += menuItemMarkupType3_Click;
             // 
             // toolStripSeparator2
             // 
             toolStripSeparator2.Name = "toolStripSeparator2";
-            toolStripSeparator2.Size = new Size(159, 6);
+            toolStripSeparator2.Size = new Size(177, 6);
             // 
             // menuItemTopMost
             // 
             menuItemTopMost.Name = "menuItemTopMost";
-            menuItemTopMost.Size = new Size(162, 22);
+            menuItemTopMost.Size = new Size(180, 22);
             menuItemTopMost.Text = "最前面表示";
             menuItemTopMost.Click += menuItemTopMost_Click;
             // 
             // menuItemSilent
             // 
             menuItemSilent.Name = "menuItemSilent";
-            menuItemSilent.Size = new Size(162, 22);
+            menuItemSilent.Size = new Size(180, 22);
             menuItemSilent.Text = "サイレントモード";
             menuItemSilent.Click += menuItemSilent_Click;
             // 
             // menuItemRename
             // 
             menuItemRename.Name = "menuItemRename";
-            menuItemRename.Size = new Size(162, 22);
+            menuItemRename.Size = new Size(180, 22);
             menuItemRename.Text = "ウィンドウ名の変更";
             menuItemRename.Click += menuItemRename_Click;
             // 
             // toolStripSeparator3
             // 
             toolStripSeparator3.Name = "toolStripSeparator3";
-            toolStripSeparator3.Size = new Size(159, 6);
+            toolStripSeparator3.Size = new Size(177, 6);
             // 
             // menuItemVersion
             // 
             menuItemVersion.Name = "menuItemVersion";
-            menuItemVersion.Size = new Size(162, 22);
+            menuItemVersion.Size = new Size(180, 22);
             menuItemVersion.Text = "バージョン情報";
             menuItemVersion.Click += menuItemVersion_Click;
             // 
@@ -238,17 +251,12 @@ namespace TatehamaCTCPClient.Forms {
             labelStatus.TabIndex = 11;
             labelStatus.Text = " ";
             // 
-            // menuItemMarkupTypeAuto
+            // menuItemMarkupType4
             // 
-            menuItemMarkupTypeAuto.Name = "menuItemMarkupTypeAuto";
-            menuItemMarkupTypeAuto.Size = new Size(191, 22);
-            menuItemMarkupTypeAuto.Text = "自動";
-            menuItemMarkupTypeAuto.Click += menuItemMarkupTypeAuto_Click;
-            // 
-            // toolStripSeparator4
-            // 
-            toolStripSeparator4.Name = "toolStripSeparator4";
-            toolStripSeparator4.Size = new Size(188, 6);
+            menuItemMarkupType4.Name = "menuItemMarkupType4";
+            menuItemMarkupType4.Size = new Size(197, 22);
+            menuItemMarkupType4.Text = "タイプ4（色逆転固定）";
+            menuItemMarkupType4.Click += menuItemMarkupType4_Click;
             // 
             // SubWindow
             // 
@@ -301,5 +309,6 @@ namespace TatehamaCTCPClient.Forms {
         private Label labelStatus;
         private ToolStripMenuItem menuItemMarkupTypeAuto;
         private ToolStripSeparator toolStripSeparator4;
+        private ToolStripMenuItem menuItemMarkupType4;
     }
 }

@@ -208,7 +208,7 @@ namespace TatehamaCTCPClient.Forms {
                 Invoke(() => {
                     tabTrain.Controls.Clear();
                     var alerts = TrainAlertManager.TrainAlerts;
-                    var width = Size.Width - 30;
+                    var width = Size.Width - 36;
                     tabTrain.AutoScroll = false;
                     for (var i = 0; i < alerts.Count; i++){
                         var p = new Panel();
@@ -230,7 +230,7 @@ namespace TatehamaCTCPClient.Forms {
 
 
                         l1.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-                        l1.BackColor = Color.FromArgb(0, 192, 192);
+                        l1.BackColor = a.Important ? Color.OrangeRed : Color.FromArgb(0, 192, 192);
                         l1.Font = new Font("Yu Gothic UI", 10F, FontStyle.Bold);
                         l1.ForeColor = Color.White;
                         l1.Location = new Point(3, 0);
@@ -261,7 +261,7 @@ namespace TatehamaCTCPClient.Forms {
             else {
                 tabTrain.Controls.Clear();
                 var alerts = TrainAlertManager.TrainAlerts;
-                var width = Size.Width - 30;
+                var width = Size.Width - 36;
                 tabTrain.AutoScroll = false;
                 for (var i = 0; i < alerts.Count; i++) {
                     var p = new Panel();
@@ -283,7 +283,7 @@ namespace TatehamaCTCPClient.Forms {
 
 
                     l1.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-                    l1.BackColor = Color.FromArgb(0, 192, 192);
+                    l1.BackColor = a.Important ? Color.OrangeRed : Color.FromArgb(0, 192, 192);
                     l1.Font = new Font("Yu Gothic UI", 10F, FontStyle.Bold);
                     l1.ForeColor = Color.White;
                     l1.Location = new Point(3, 0);

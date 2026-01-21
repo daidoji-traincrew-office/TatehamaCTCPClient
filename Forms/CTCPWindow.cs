@@ -1,4 +1,5 @@
 ﻿using Dapplo.Microsoft.Extensions.Hosting.WinForms;
+using NAudio.Wave;
 using OpenIddict.Client;
 using System.Diagnostics;
 using System.Drawing.Drawing2D;
@@ -9,6 +10,7 @@ using TatehamaCTCPClient.Buttons;
 using TatehamaCTCPClient.Communications;
 using TatehamaCTCPClient.Manager;
 using TatehamaCTCPClient.Models;
+using TatehamaCTCPClient.Settings;
 
 namespace TatehamaCTCPClient.Forms {
     public partial class CTCPWindow : Form, IWinFormsShell {
@@ -129,26 +131,74 @@ namespace TatehamaCTCPClient.Forms {
                 }
             }
         }
-
-        private static SoundPlayer? warningSound = null;
+        
+        private static AudioFileReader? warningSound = null;
+        private static WaveOut woWarningSound = new();
 
         public static void PlayWarningSound() {
             if (warningSound != null) {
-                warningSound.Play();
+                warningSound.Position = 0;
+                woWarningSound.Play();
             }
             else {
                 SystemSounds.Hand.Play();
             }
         }
 
-        private static SoundPlayer? spawnSound = null;
+        private static AudioFileReader? spawnSound = null;
+        private static WaveOut woSpawnSound = new();
 
         public static void PlaySpawnSound() {
             if (spawnSound != null) {
-                spawnSound.Play();
+                spawnSound.Position = 0;
+                woSpawnSound.Play();
             }
             else {
                 SystemSounds.Asterisk.Play();
+            }
+        }
+
+        private static AudioFileReader? aprDownSound = null;
+        private static WaveOut woAprDownSound = new();
+
+        public static void PlayAprDownSound() {
+            if (aprDownSound != null) {
+                aprDownSound.Position = 0;
+                woAprDownSound.Play();
+            }
+            else {
+                SystemSounds.Asterisk.Play();
+            }
+        }
+
+        private static AudioFileReader? aprUpSound = null;
+        private static WaveOut woAprUpSound = new();
+
+        public static void PlayAprUpSound() {
+            if (aprUpSound != null) {
+                aprUpSound.Position = 0;
+                woAprUpSound.Play();
+            }
+            else {
+                SystemSounds.Asterisk.Play();
+            }
+        }
+
+        private static SoundPlayer? aprPiSound = null;
+
+        private static bool playingAprPiSound = false;
+
+        public static void PlayAprPiSound() {
+            if (aprPiSound != null && !playingAprPiSound) {
+                playingAprPiSound = true;
+                aprPiSound.PlayLooping();
+            }
+        }
+
+        public static void StopAprPiSound() {
+            if (aprPiSound != null && playingAprPiSound) {
+                aprPiSound.Stop();
+                playingAprPiSound = false;
             }
         }
 
@@ -249,11 +299,38 @@ namespace TatehamaCTCPClient.Forms {
             Text = $"全線CTCP | {SystemNameLong} - ダイヤ運転会";
 
 
-            if (File.Exists(".\\sound\\warning.wav")) {
+            /*if (File.Exists(".\\sound\\warning.wav")) {
                 warningSound = new SoundPlayer(".\\sound\\warning.wav");
             }
             if (File.Exists(".\\sound\\spawn.wav")) {
                 spawnSound = new SoundPlayer(".\\sound\\spawn.wav");
+            }
+
+            if (File.Exists(".\\sound\\approaching_down.wav")) {
+                aprDownSound = new SoundPlayer(".\\sound\\approaching_down.wav");
+            }
+            if (File.Exists(".\\sound\\approaching_up.wav")) {
+                aprUpSound = new SoundPlayer(".\\sound\\approaching_up.wav");
+            }*/
+            if (File.Exists(".\\sound\\warning.wav")) {
+                warningSound = new AudioFileReader(".\\sound\\warning.wav");
+                woWarningSound.Init(warningSound);
+            }
+            if (File.Exists(".\\sound\\spawn.wav")) {
+                spawnSound = new AudioFileReader(".\\sound\\spawn.wav");
+                woSpawnSound.Init(spawnSound);
+            }
+
+            if (File.Exists(".\\sound\\approaching_down.wav")) {
+                aprDownSound = new AudioFileReader(".\\sound\\approaching_down.wav");
+                woAprDownSound.Init(aprDownSound);
+            }
+            if (File.Exists(".\\sound\\approaching_up.wav")) {
+                aprUpSound = new AudioFileReader(".\\sound\\approaching_up.wav");
+                woAprUpSound.Init(aprUpSound);
+            }
+            if (File.Exists(".\\sound\\approaching_pi.wav")) {
+                aprPiSound = new SoundPlayer(".\\sound\\approaching_pi.wav");
             }
 
 
@@ -481,27 +558,137 @@ namespace TatehamaCTCPClient.Forms {
                 }*/
                 var alertUpdated = false;
                 var playSpawn = false;
-                foreach(var t in DataToCTCP.RemovedTrains) {
-                    alertUpdated |= TrainAlertManager.RemoveAlertTrain(t, AlertType.Spawn);
+                var playAprDown = false;
+                var playAprUp = false;
+                foreach (var t in DataToCTCP.RemovedTrains) {
+                    alertUpdated |= TrainAlertManager.RemoveAlertTrain(t);
                 }
-                foreach (var t in DataToCTCP./*Latest.TrackCircuits.Where(t => t.On && routes.ContainsKey(t.Name))*/DifferenceTrack) {
-                    var isTrain = int.TryParse(Regex.Replace(t.Last, @"[^0-9]", ""), out var numBody);  // 列番本体（数字部分）
+                var differenceRoutes = DataToCTCP.DifferenceRoutes;
+
+                foreach (var a in new List<TrainAlert>(TrainAlertManager.TrainAlerts)) {
+                    var routeGroup = displayManager.GetRouteGroup(a.RouteGroup);
+                    if (routeGroup == null) {
+                        continue;
+                    }
+                    foreach (var r in routeGroup) {
+                        if (differenceRoutes.TryGetValue(r.RouteName, out var dr) && (dr.RouteState?.IsCtcRelayRaised == RaiseDrop.Raise || dr.RouteState?.IsSignalControlRaised == RaiseDrop.Raise)) {
+                            TrainAlertManager.RemoveAlert(a.RouteGroup);
+                            alertUpdated = true;
+                        }
+                    }
+                }
+
+
+
+
+                var differenceTracks = DataToCTCP./*Latest.TrackCircuits.Where(t => t.On && routes.ContainsKey(t.Name))*/DifferenceTracks;
+                /*var droppingTracks = DataToCTCP.DropingTracks;*/
+                if (differenceTracks.Count > 0) {
+                    foreach (var alert in displayManager.AlertAprSettings.Where(a => a.Station.Active)) {
+                        foreach (var a in alert.Settings) {
+
+                            string? trainNumber = null;
+                            var numBody = 0;
+                            foreach (var tc in a.TrackCircuits) {
+                                if (!differenceTracks.TryGetValue(tc, out var dtc)) {
+                                    continue;
+                                }
+                                var isTrain = int.TryParse(Regex.Replace(dtc.Last, @"[^0-9]", ""), out numBody);
+                                if (!isTrain || (numBody % 2 == 1) != (alert.Direction == TrainDirection.DOWN)) {
+                                    continue;
+                                }
+                                trainNumber = dtc.Last;
+                                break;
+                            }
+                            if (trainNumber == null) {
+                                continue;
+                            }
+
+
+                            var signals1 = a.Signals.Count > 0 ? routeDatas.Where(r => a.Signals.Any(s => s == r.TcName)) : null;
+                            Debug.WriteLine($"sig1");
+                            var isSignalDroped = true;
+                            if (signals1 != null) {
+                                foreach (var s in signals1) {
+                                    if (s.RouteState?.IsRouteLockRaised == RaiseDrop.Raise) {
+                                        isSignalDroped = false;
+                                        Debug.WriteLine($"sig1t {alert.RouteGroup} {s.TcName} {s.RouteState?.IsRouteLockRaised == RaiseDrop.Raise}");
+                                        break;
+                                    }
+                                    Debug.WriteLine($"sig1f {alert.RouteGroup} {s.TcName} {s.RouteState?.IsRouteLockRaised == RaiseDrop.Raise}");
+                                }
+                            }
+                            Debug.WriteLine($"sig1end");
+                            if (!isSignalDroped) {
+                                continue;
+                            }
+
+                            var route2 = displayManager.GetRouteGroup(alert.RouteGroup);
+                            if (route2 == null) {
+                                break;
+                            }
+                            Debug.WriteLine($"sig2");
+                            var signals2 = route2.Count > 0 ? routeDatas.Where(r => route2.Any(s => s.RouteName == r.TcName)) : null;
+                            var isRouteRaised = false;
+                            if (signals2 != null) {
+                                foreach (var s in signals2) {
+                                    if (s.RouteState?.IsCtcRelayRaised == RaiseDrop.Raise || s.RouteState?.IsSignalControlRaised == RaiseDrop.Raise) {
+                                        isRouteRaised = true;
+                                        Debug.WriteLine($"sig2t {alert.RouteGroup} {s.TcName} {s.RouteState?.IsCtcRelayRaised == RaiseDrop.Raise} {s.RouteState?.IsSignalControlRaised == RaiseDrop.Raise}");
+                                        break;
+                                    }
+                                    Debug.WriteLine($"sig2f {alert.RouteGroup} {s.TcName} {s.RouteState?.IsCtcRelayRaised == RaiseDrop.Raise} {s.RouteState?.IsSignalControlRaised == RaiseDrop.Raise}");
+                                }
+                            }
+                            Debug.WriteLine($"sig2end");
+                            if (isRouteRaised) {
+                                continue;
+                            }
+
+                            if (a.Nearest) {
+                                var v = TrainAlertManager.AddAlert(new(alert.Station, $"[接近]{trainNumber} ▶ {alert.Station.FullName}", $"まもなく {alert.Station.FullName} に {trainNumber} が到着します\n場内進路を開通させてください", trainNumber, alert.RouteGroup, AlertType.Approaching, true));
+
+                                playAprDown |= numBody % 2 == 1 && v;
+                                playAprUp |= numBody % 2 != 1 && v;
+                                alertUpdated |= v;
+                            }
+                            else {
+                                var v = TrainAlertManager.AddAlert(new(alert.Station, $"[接近]{trainNumber} ▶ {alert.Station.FullName}", $"{trainNumber} が {alert.Station.FullName} に接近中です\n進路に注意してください", trainNumber, alert.RouteGroup, AlertType.Approaching));
+                                playAprDown |= numBody % 2 == 1 && v;
+                                playAprUp |= numBody % 2 != 1 && v;
+                                alertUpdated |= v;
+                            }
+
+                            break;
+
+
+
+                        }
+                    }
+                }
+                foreach (var t in differenceTracks.Keys) {
+                    var tc = differenceTracks[t];
+                    var isTrain = int.TryParse(Regex.Replace(tc.Last, @"[^0-9]", ""), out var numBody);  // 列番本体（数字部分）
                     if (!isTrain) {
                         continue;
                     }
-                    alertUpdated |= TrainAlertManager.RemoveAlertTrain(t.Last, AlertType.Spawn);
-                    var alertDep = displayManager.GetAlertDepSetting(t.Name);
-                    if (alertDep != null && alertDep.Station.Active && DataToCTCP.IsNewTrain(t.Last)) {
-                        TrainAlertManager.AddAlert(new(alertDep.Station, $"{alertDep.Station.FullName} {alertDep.PosName} ▶ {t.Last}", $"{alertDep.Station.FullName} {alertDep.PosName}に {t.Last} が入線しました\n発車時刻に注意してください", t.Last, alertDep.RouteGroup, AlertType.Spawn));
+
+                    // スポーン通知
+                    alertUpdated |= TrainAlertManager.RemoveAlertTrain(tc.Last, AlertType.Spawn);
+                    var alertDep = displayManager.GetAlertDepSetting(t);
+                    if (alertDep != null && alertDep.Station.Active && DataToCTCP.IsNewTrain(tc.Last)) {
+                        TrainAlertManager.AddAlert(new(alertDep.Station, $"[入線]{alertDep.Station.FullName} {alertDep.PosName} ▶ {tc.Last}", $"{alertDep.Station.FullName} {alertDep.PosName}に {tc.Last} が入線しました\n{(tc.Last == "9999" ? "ご注意ください" : "発車時刻に注意してください")}", tc.Last, alertDep.RouteGroup, AlertType.Spawn));
                         playSpawn = true;
                         alertUpdated = true;
                     }
-                    if (!routes.ContainsKey(t.Name)) {
+
+
+                    if (!routes.ContainsKey(t)) {
                         continue;
                     }
                     var direction = numBody % 2 == 1 ? "L" : "R";
                     /*var justDrop = previous.TrackCircuits.Any(tp => tp.Name == t.Name && (!tp.On || tp.Name != t.Name));*/
-                    foreach (var r in routes[t.Name]) {
+                    foreach (var r in routes[t]) {
                         if (!r.Station.Active || r.IsHikipper || !r.RouteName.Contains(direction)) {
                             continue;
                         }
@@ -526,6 +713,12 @@ namespace TatehamaCTCPClient.Forms {
                     UpdateLabelTrainAlert();
                     if (playSpawn) {
                         PlaySpawnSound();
+                    }
+                    if (playAprDown) {
+                        PlayAprDownSound();
+                    }
+                    if (playAprUp) {
+                        PlayAprUpSound();
                     }
                 }
             }
@@ -602,6 +795,7 @@ namespace TatehamaCTCPClient.Forms {
 
             if (/*!UpdateDebug() && */displayManager.Started && (ReservedUpdate || (oldBlinkStateFast != BlinkStateFast && displayManager.BlinkingButtons()) /*&& MarkupType < 2 && (trainDataDict.Values.Any(td => td.Markup) || MarkupDuplication || MarkupFillZero || MarkupNotTrain || MarkupDelayed > 0 || displayManager.Markuped)*/)) {
                 ReservedUpdate = false;
+                Debug.WriteLine("update");
                 displayManager.UpdateCTCP(oldBlinkStateFast != BlinkStateFast, oldBlinkStateSlow != BlinkStateSlow);
             }
 
@@ -971,17 +1165,22 @@ namespace TatehamaCTCPClient.Forms {
             SetMarkupType(2);
         }
 
+        private void menuItemMarkupType4_Click(object sender, EventArgs e) {
+            SetMarkupType(3);
+        }
+
         private void menuItemMarkupTypeAuto_Click(object sender, EventArgs e) {
             SetMarkupType(-1);
         }
 
         public void SetMarkupType(int type) {
 
-            MarkupType = type < 3 ? type : 2;
+            MarkupType = type < 4 ? type : -1;
             menuItemMarkupTypeAuto.CheckState = type < 0 ? CheckState.Indeterminate : CheckState.Unchecked;
             menuItemMarkupType1.CheckState = type == 0 ? CheckState.Indeterminate : CheckState.Unchecked;
             menuItemMarkupType2.CheckState = type == 1 ? CheckState.Indeterminate : CheckState.Unchecked;
             menuItemMarkupType3.CheckState = type == 2 ? CheckState.Indeterminate : CheckState.Unchecked;
+            menuItemMarkupType4.CheckState = type == 3 ? CheckState.Indeterminate : CheckState.Unchecked;
             if (displayManager == null) {
                 return;
             }
@@ -1690,11 +1889,11 @@ namespace TatehamaCTCPClient.Forms {
         public void UpdateLabelTrainAlert() {
             if (InvokeRequired) {
                 Invoke(() => {
-                    labelTrainAlert.ForeColor = TrainAlertManager.IsNotEmpty ? Color.Yellow : Color.Gray;
+                    labelTrainAlert.ForeColor = TrainAlertManager.IsNotEmpty ? (TrainAlertManager.HasImportant ? Color.Orange : Color.Yellow) : Color.Gray;
                 });
             }
             else {
-                labelTrainAlert.ForeColor = TrainAlertManager.IsNotEmpty ? Color.Yellow : Color.Gray;
+                labelTrainAlert.ForeColor = TrainAlertManager.IsNotEmpty ? (TrainAlertManager.HasImportant ? Color.Orange : Color.Yellow) : Color.Gray;
             }
         }
     }
