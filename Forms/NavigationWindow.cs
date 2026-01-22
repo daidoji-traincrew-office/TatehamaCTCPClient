@@ -179,7 +179,7 @@ namespace TatehamaCTCPClient.Forms {
                     }
                     s.SetActive(c.Checked);
                     p.BackColor = s.Active ? Color.LightBlue : SystemColors.ControlLight;
-                    displayManager.Window.ReservedUpdate = true;
+                    displayManager.Window.ReservedUpdate = 1;
                 };
                 c.TabIndex = 0;
                 c.UseVisualStyleBackColor = true;

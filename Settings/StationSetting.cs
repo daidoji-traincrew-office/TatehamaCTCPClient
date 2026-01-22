@@ -23,8 +23,7 @@ namespace TatehamaCTCPClient.Settings {
 
         public void SetActive(bool v) {
             Active = v;
-            if (!v) {
-                TrainAlertManager.RemoveAlert(this);
+            if (!v && TrainAlertManager.RemoveAlert(this)) {
                 NavigationWindow.Instance?.UpdateAlert();
             }
         }

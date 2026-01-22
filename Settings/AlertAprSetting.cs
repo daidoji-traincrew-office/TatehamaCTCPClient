@@ -5,27 +5,22 @@ namespace TatehamaCTCPClient.Settings {
         public StationSetting Station { get; init; }
         public string RouteGroup { get; init; }
         public TrainDirection Direction { get; init; }
-        /*public bool Nearest { get; init; }
-        public List<string> Signals { get; init; }
-        public List<string> TrackCircuits { get; init; }*/
+        
 
         private readonly List<AlertAprSTPair> settings = [];
 
         public ReadOnlyCollection<AlertAprSTPair> Settings { get; init; }
 
-        public AlertAprSetting(StationSetting station, string routeGroup, TrainDirection direction, bool nearest, List<string> signals, List<string> trackCircuits) {
+        public AlertAprSetting(StationSetting station, string routeGroup, TrainDirection direction, bool nearest, List<string> signals, string raisingTrackCircuit, List<string> dropingTrackCircuits) {
             Station = station;
             RouteGroup = routeGroup;
             Direction = direction;
-            /*Nearest = nearest;
-            Signals = new List<string>(signals);
-            TrackCircuits = trackCircuits;*/
-            settings.Add(new AlertAprSTPair(nearest, signals, trackCircuits));
+            settings.Add(new AlertAprSTPair(nearest, signals, raisingTrackCircuit, dropingTrackCircuits));
             Settings = settings.AsReadOnly();
         }
 
-        public void AddSetting(bool nearest, List<string> signals, List<string> trackCircuits) {
-            settings.Add(new AlertAprSTPair(nearest, signals, trackCircuits));
+        public void AddSetting(bool nearest, List<string> signals, string raisingTrackCircuit, List<string> dropingTrackCircuits) {
+            settings.Add(new AlertAprSTPair(nearest, signals, raisingTrackCircuit, dropingTrackCircuits));
         }
 
         public class AlertAprSTPair {
@@ -33,17 +28,20 @@ namespace TatehamaCTCPClient.Settings {
 
             private readonly List<string> signals;
 
-            private readonly List<string> trackCircuits;
+            public string RaisingTrackCircuit { get; init; }
+
+            private readonly List<string> dropingTrackCircuits;
 
             public ReadOnlyCollection<string> Signals { get; init; }
-            public ReadOnlyCollection<string> TrackCircuits { get; init; }
+            public ReadOnlyCollection<string> DropingTrackCircuits { get; init; }
 
-            public AlertAprSTPair(bool nearest, List<string> signals, List<string> trackCircuits) {
+            public AlertAprSTPair(bool nearest, List<string> signals, string raisingTrackCircuit, List<string> dropingTrackCircuits) {
                 Nearest = nearest;
                 this.signals = new List<string>(signals);
-                this.trackCircuits = trackCircuits;
+                this.dropingTrackCircuits = dropingTrackCircuits;
                 Signals = this.signals.AsReadOnly();
-                TrackCircuits = this.trackCircuits.AsReadOnly();
+                RaisingTrackCircuit = raisingTrackCircuit;
+                DropingTrackCircuits = this.dropingTrackCircuits.AsReadOnly();
             }
         }
     }

@@ -153,8 +153,9 @@ namespace TatehamaCTCPClient.Buttons
                         if (!r.IsHikipper) {
                             r.SetHikipper(HikipperButton.Active);
                         }
-                        TrainAlertManager.RemoveAlert(r.RouteGroup);
-                        NavigationWindow.Instance?.UpdateAlert();
+                        if (TrainAlertManager.RemoveAlert(r.RouteGroup, AlertType.Spawn)) {
+                            NavigationWindow.Instance?.UpdateAlert();
+                        }
                         c.Window.UpdateLabelTrainAlert();
                         _ = c.SetCtcRelay(r.RouteName, RaiseDrop.Raise);
                         Debug.WriteLine($"{DateTime.UtcNow.AddHours(9)} {r.RouteName} を引きました{(r.IsHikipper ? "(進行定位)" : "")}");

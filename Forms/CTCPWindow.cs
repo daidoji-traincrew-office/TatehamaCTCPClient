@@ -221,10 +221,18 @@ namespace TatehamaCTCPClient.Forms {
             private set;
         } = -1;
 
-        public bool ReservedUpdate {
-            get;
-            set;
-        } = false;
+        private int reservedUpdate = 0;
+
+        public int ReservedUpdate {
+            get {
+                return reservedUpdate;
+            }
+            set { 
+                if(value > reservedUpdate) {
+                    reservedUpdate = value;
+                }
+            }
+        }
 
         public bool UseServerTime {
             get;
@@ -582,43 +590,54 @@ namespace TatehamaCTCPClient.Forms {
 
 
                 var differenceTracks = DataToCTCP./*Latest.TrackCircuits.Where(t => t.On && routes.ContainsKey(t.Name))*/DifferenceTracks;
-                /*var droppingTracks = DataToCTCP.DropingTracks;*/
-                if (differenceTracks.Count > 0) {
+                var droppingTracks = DataToCTCP.DropingTracks;
+                if (droppingTracks.Count > 0) {
                     foreach (var alert in displayManager.AlertAprSettings.Where(a => a.Station.Active)) {
                         foreach (var a in alert.Settings) {
 
-                            string? trainNumber = null;
+                            string? trainNumberD = null;
+                            string? trainNumberR = null;
                             var numBody = 0;
-                            foreach (var tc in a.TrackCircuits) {
-                                if (!differenceTracks.TryGetValue(tc, out var dtc)) {
+                            if(a.RaisingTrackCircuit.Length > 0 && droppingTracks.TryGetValue(a.RaisingTrackCircuit, out var rtc)) {
+                                var isTrain = int.TryParse(Regex.Replace(rtc.Last, @"[^0-9]", ""), out numBody);
+                                if (isTrain && (numBody % 2 == 1) == (alert.Direction == TrainDirection.DOWN)) {
+                                    trainNumberR = rtc.Last;
+                                }
+                            }
+
+                            foreach (var tc in a.DropingTrackCircuits) {
+                                if (!droppingTracks.TryGetValue(tc, out var dtc)) {
                                     continue;
                                 }
                                 var isTrain = int.TryParse(Regex.Replace(dtc.Last, @"[^0-9]", ""), out numBody);
                                 if (!isTrain || (numBody % 2 == 1) != (alert.Direction == TrainDirection.DOWN)) {
                                     continue;
                                 }
-                                trainNumber = dtc.Last;
+                                trainNumberD = dtc.Last;
+                                if(trainNumberD != trainNumberR) {
+                                    trainNumberR = null;
+                                }
                                 break;
                             }
-                            if (trainNumber == null) {
+                            if (trainNumberR != null || trainNumberD == null) {
                                 continue;
                             }
 
 
                             var signals1 = a.Signals.Count > 0 ? routeDatas.Where(r => a.Signals.Any(s => s == r.TcName)) : null;
-                            Debug.WriteLine($"sig1");
+                            /*Debug.WriteLine($"sig1");*/
                             var isSignalDroped = true;
                             if (signals1 != null) {
                                 foreach (var s in signals1) {
                                     if (s.RouteState?.IsRouteLockRaised == RaiseDrop.Raise) {
                                         isSignalDroped = false;
-                                        Debug.WriteLine($"sig1t {alert.RouteGroup} {s.TcName} {s.RouteState?.IsRouteLockRaised == RaiseDrop.Raise}");
+                                        /*Debug.WriteLine($"sig1t {alert.RouteGroup} {s.TcName} {s.RouteState?.IsRouteLockRaised == RaiseDrop.Raise}");*/
                                         break;
                                     }
-                                    Debug.WriteLine($"sig1f {alert.RouteGroup} {s.TcName} {s.RouteState?.IsRouteLockRaised == RaiseDrop.Raise}");
+                                    /*Debug.WriteLine($"sig1f {alert.RouteGroup} {s.TcName} {s.RouteState?.IsRouteLockRaised == RaiseDrop.Raise}");*/
                                 }
                             }
-                            Debug.WriteLine($"sig1end");
+                            /*Debug.WriteLine($"sig1end");*/
                             if (!isSignalDroped) {
                                 continue;
                             }
@@ -627,33 +646,33 @@ namespace TatehamaCTCPClient.Forms {
                             if (route2 == null) {
                                 break;
                             }
-                            Debug.WriteLine($"sig2");
+                            /*Debug.WriteLine($"sig2");*/
                             var signals2 = route2.Count > 0 ? routeDatas.Where(r => route2.Any(s => s.RouteName == r.TcName)) : null;
                             var isRouteRaised = false;
                             if (signals2 != null) {
                                 foreach (var s in signals2) {
                                     if (s.RouteState?.IsCtcRelayRaised == RaiseDrop.Raise || s.RouteState?.IsSignalControlRaised == RaiseDrop.Raise) {
                                         isRouteRaised = true;
-                                        Debug.WriteLine($"sig2t {alert.RouteGroup} {s.TcName} {s.RouteState?.IsCtcRelayRaised == RaiseDrop.Raise} {s.RouteState?.IsSignalControlRaised == RaiseDrop.Raise}");
+                                        /*Debug.WriteLine($"sig2t {alert.RouteGroup} {s.TcName} {s.RouteState?.IsCtcRelayRaised == RaiseDrop.Raise} {s.RouteState?.IsSignalControlRaised == RaiseDrop.Raise}");*/
                                         break;
                                     }
-                                    Debug.WriteLine($"sig2f {alert.RouteGroup} {s.TcName} {s.RouteState?.IsCtcRelayRaised == RaiseDrop.Raise} {s.RouteState?.IsSignalControlRaised == RaiseDrop.Raise}");
+                                    /*Debug.WriteLine($"sig2f {alert.RouteGroup} {s.TcName} {s.RouteState?.IsCtcRelayRaised == RaiseDrop.Raise} {s.RouteState?.IsSignalControlRaised == RaiseDrop.Raise}");*/
                                 }
                             }
-                            Debug.WriteLine($"sig2end");
+                            /*Debug.WriteLine($"sig2end");*/
                             if (isRouteRaised) {
                                 continue;
                             }
 
                             if (a.Nearest) {
-                                var v = TrainAlertManager.AddAlert(new(alert.Station, $"[接近]{trainNumber} ▶ {alert.Station.FullName}", $"まもなく {alert.Station.FullName} に {trainNumber} が到着します\n場内進路を開通させてください", trainNumber, alert.RouteGroup, AlertType.Approaching, true));
+                                var v = TrainAlertManager.AddAlert(new(alert.Station, $"[接近]{trainNumberD} ▶ {alert.Station.FullName}", $"まもなく {alert.Station.FullName} に {trainNumberD} が到着します\n場内進路を開通させてください", trainNumberD, alert.RouteGroup, AlertType.Approaching, true));
 
                                 playAprDown |= numBody % 2 == 1 && v;
                                 playAprUp |= numBody % 2 != 1 && v;
                                 alertUpdated |= v;
                             }
                             else {
-                                var v = TrainAlertManager.AddAlert(new(alert.Station, $"[接近]{trainNumber} ▶ {alert.Station.FullName}", $"{trainNumber} が {alert.Station.FullName} に接近中です\n進路に注意してください", trainNumber, alert.RouteGroup, AlertType.Approaching));
+                                var v = TrainAlertManager.AddAlert(new(alert.Station, $"[接近]{trainNumberD} ▶ {alert.Station.FullName}", $"{trainNumberD} が {alert.Station.FullName} に接近中です\n進路に注意してください", trainNumberD, alert.RouteGroup, AlertType.Approaching));
                                 playAprDown |= numBody % 2 == 1 && v;
                                 playAprUp |= numBody % 2 != 1 && v;
                                 alertUpdated |= v;
@@ -793,9 +812,10 @@ namespace TatehamaCTCPClient.Forms {
                 }
             }
 
-            if (/*!UpdateDebug() && */displayManager.Started && (ReservedUpdate || (oldBlinkStateFast != BlinkStateFast && displayManager.BlinkingButtons()) /*&& MarkupType < 2 && (trainDataDict.Values.Any(td => td.Markup) || MarkupDuplication || MarkupFillZero || MarkupNotTrain || MarkupDelayed > 0 || displayManager.Markuped)*/)) {
-                ReservedUpdate = false;
-                Debug.WriteLine("update");
+            if (/*!UpdateDebug() && */displayManager.Started && (ReservedUpdate > 0 || (oldBlinkStateFast != BlinkStateFast && displayManager.BlinkingButtons()) /*&& MarkupType < 2 && (trainDataDict.Values.Any(td => td.Markup) || MarkupDuplication || MarkupFillZero || MarkupNotTrain || MarkupDelayed > 0 || displayManager.Markuped)*/)) {
+                if(reservedUpdate > 0) {
+                    reservedUpdate--;
+                }
                 displayManager.UpdateCTCP(oldBlinkStateFast != BlinkStateFast, oldBlinkStateSlow != BlinkStateSlow);
             }
 
@@ -1187,6 +1207,7 @@ namespace TatehamaCTCPClient.Forms {
             foreach (var w in displayManager.SubWindows) {
                 w.SetMarkupType(type);
             }
+            ReservedUpdate = 1;
         }
 
         private void menuItemServerTime_Click(object sender, EventArgs e) {
@@ -1576,7 +1597,7 @@ namespace TatehamaCTCPClient.Forms {
                 if (displayManager.Started) {
                     b.OnClick();
                     if (b.NeedsUpdate) {
-                        ReservedUpdate = true;
+                        ReservedUpdate = 1;
                     }
                 }
             }

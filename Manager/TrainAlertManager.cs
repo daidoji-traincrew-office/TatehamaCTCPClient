@@ -39,12 +39,13 @@ namespace TatehamaCTCPClient.Manager {
             return true;
         }
 
-        public static void RemoveAlert(string routeGroup, AlertType? type = null) {
+        public static bool RemoveAlert(string routeGroup, AlertType? type = null) {
             var l = new List<TrainAlert>(trainAlerts);
+            var v = false;
             var i = true;
             foreach(var a in l) {
                 if (a.RouteGroup == routeGroup && (type == null || type == a.Type)) {
-                    trainAlerts.Remove(a);
+                    v |= trainAlerts.Remove(a);
                 }
                 else if(a.Important) {
                     i = false;
@@ -53,14 +54,16 @@ namespace TatehamaCTCPClient.Manager {
             if (i) {
                 CTCPWindow.StopAprPiSound();
             }
+            return v;
         }
 
-        public static void RemoveAlert(StationSetting station, AlertType? type = null) {
+        public static bool RemoveAlert(StationSetting station, AlertType? type = null) {
             var l = new List<TrainAlert>(trainAlerts);
+            var v = false;
             var i = true;
             foreach (var a in l) {
                 if (a.Station == station && (type == null || type == a.Type)) {
-                    trainAlerts.Remove(a);
+                    v |= trainAlerts.Remove(a);
                 }
                 else if (a.Important) {
                     i = false;
@@ -69,6 +72,7 @@ namespace TatehamaCTCPClient.Manager {
             if (i) {
                 CTCPWindow.StopAprPiSound();
             }
+            return v;
         }
 
         public static bool RemoveAlertTrain(string trainNumber, AlertType? type = null) {

@@ -122,12 +122,12 @@ namespace TatehamaCTCPClient.Forms {
                 p.Click += b.NeedsUpdate ? (sender, e) => {
                     if (displayManager.Started) {
                         b.OnClick();
-                        displayManager.Window.ReservedUpdate = true;
+                        displayManager.Window.ReservedUpdate = 1;
                     }
                 }
                 : (sender, e) => {
                     if (displayManager.Started) {
-                        displayManager.Window.ReservedUpdate |= b.OnClick();
+                        displayManager.Window.ReservedUpdate = b.OnClick() ? 2 : 0;
                     }
                 };
                 p.MouseDown += (sender, e) => {

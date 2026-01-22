@@ -329,12 +329,12 @@ namespace TatehamaCTCPClient.Manager
                     p.Click += b.NeedsUpdate ? (sender, e) => {
                         if (Started) {
                             b.OnClick();
-                            window.ReservedUpdate = true;
+                            window.ReservedUpdate = 1;
                         }
                     }
                     : (sender, e) => {
                         if (Started) {
-                            window.ReservedUpdate |= b.OnClick();
+                            window.ReservedUpdate = b.OnClick() ? 2 : 0;
                         }
                     };
                     p.MouseDown += (sender, e) => {
@@ -363,7 +363,7 @@ namespace TatehamaCTCPClient.Manager
                     p.BackColor = Color.White;
                     p.Click += (sender, e) => {
                         if (Started) {
-                            window.ReservedUpdate |= b.OnClick();
+                            window.ReservedUpdate = b.OnClick() ? 2 : 0;
                         }
                     };
                     p.MouseDown += (sender, e) => {
@@ -898,7 +898,7 @@ namespace TatehamaCTCPClient.Manager
                     line = sr.ReadLine();
 
                     
-                    if (texts.Length < 6 || texts[3].Length <= 0 || texts[5].Length <= 0) {
+                    if (texts.Length < 7 || texts[3].Length <= 0 || texts[6].Length <= 0) {
                         continue;
                     }
 
@@ -940,16 +940,16 @@ namespace TatehamaCTCPClient.Manager
                     }
 
                     var trackCircuits = new List<string>();
-                    for (var i = 5; i < texts.Length; i++) {
+                    for (var i = 6; i < texts.Length; i++) {
                         trackCircuits.Add(texts[i]);
                     }
 
                     if (alert == null || newData) {
-                        alert = new AlertAprSetting(station, routeGroup, (TrainDirection)d, texts[3] == "true", signals, trackCircuits);
+                        alert = new AlertAprSetting(station, routeGroup, (TrainDirection)d, texts[3] == "true", signals, texts[5], trackCircuits);
                         alertAprSettings.Add(alert);
                     }
                     else {
-                        alert.AddSetting(texts[3] == "true", signals, trackCircuits);
+                        alert.AddSetting(texts[3] == "true", signals, texts[5], trackCircuits);
                     }
 
                     foreach(var tc in trackCircuits) {
@@ -1034,7 +1034,7 @@ namespace TatehamaCTCPClient.Manager
                 if (mc == null) {
                     var l = TrainAlertManager.GetLightingType(num);
                     if (window.MarkupType == 3 || l == LightingType.LIGHTING || !blinkFast && l == LightingType.BLINKING_FAST || !blinkSlow && l == LightingType.BLINKING_SLOW) {
-                        var invert = window.MarkupType > 0 || window.MarkupType < 0 && l == LightingType.BLINKING_FAST;
+                        var invert = window.MarkupType > 0 && l != LightingType.LIGHTING || window.MarkupType < 0 && l == LightingType.BLINKING_FAST;
                         DrawTrainNumber(g, numHeader, numBodyStr, numFooter, w.Location.X, w.Location.Y, invert);
                     }
                     else {
