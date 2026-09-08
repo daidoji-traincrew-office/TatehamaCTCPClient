@@ -1,0 +1,22 @@
+﻿using TatehamaCTCPClient.Settings;
+
+namespace TatehamaCTCPClient.Models {
+    public class Route (string routeName, string routeGroup, string trackName, StationSetting station, bool forcedDrop = false) {
+        public string RouteName { get; init; } = routeName;
+
+        public string RouteGroup { get; init; } = routeGroup;
+
+        public string TrackName { get; init; } = trackName;
+
+        public StationSetting Station {  get; init; } = station;
+
+        public bool ForcedDrop { get; init; } = forcedDrop;
+
+        public bool IsHikipper { get; private set; } = false;
+
+        public void SetHikipper(bool isHikipper) {
+            IsHikipper = isHikipper;
+        }
+
+    }
+}

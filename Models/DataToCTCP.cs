@@ -1,0 +1,183 @@
+﻿
+using System.Collections.ObjectModel;
+using TatehamaCTCPClient.Manager;
+
+namespace TatehamaCTCPClient.Models {
+
+    /// <summary>
+    /// CTCP送信用データクラス 
+    /// </summary>
+    public class DataToCTCP {
+
+        public static DataToCTCP Latest { get; private set; } = new DataToCTCP();
+
+        public static DataToCTCP Previous { get; private set; } = new DataToCTCP();
+
+        private static Dictionary<string, TrackCircuitData> differenceTracks = [];
+
+        private static Dictionary<string, TrackCircuitData> dropingTracks = [];
+
+        private static Dictionary<string, RouteData> differenceRoutes = [];
+
+        private static List<string> trains = [];
+
+        private static List<string> newTrains = [];
+
+        private static List<string> movingTrains = [];
+
+        private static List<string> removedTrains = [];
+
+        public static ReadOnlyDictionary<string, TrackCircuitData> DifferenceTracks { get; private set; } = differenceTracks.AsReadOnly();
+
+        public static ReadOnlyDictionary<string, TrackCircuitData> DropingTracks { get; private set; } = dropingTracks.AsReadOnly();
+
+        public static ReadOnlyDictionary<string, RouteData> DifferenceRoutes { get; private set; } = differenceRoutes.AsReadOnly();
+
+        public static ReadOnlyCollection<string> RemovedTrains { get; private set; } = removedTrains.AsReadOnly();
+
+        public static void SetLatest(DataToCTCP data) {
+            Previous = Latest;
+            Latest = data;
+
+            GetDifferenceTrack();
+
+        }
+
+        public static void GetDifferenceTrack() {
+            var tcl = new Dictionary<string, TrackCircuitData>();
+            var dtcl = new Dictionary<string, TrackCircuitData>();
+            var tl = new List<string>();
+            newTrains.Clear();
+            movingTrains.Clear();
+            removedTrains.Clear();
+            var latest = Latest;
+            var previous = Previous;
+            foreach (var tc in latest.TrackCircuits) {
+                if (tc.On) {
+                    tcl.Add(tc.Name, tc);
+                }
+                var tp = previous.TrackCircuits.FirstOrDefault(tp => tp.Name == tc.Name);
+                if (tp == null || tp.On == false && tc.On == true || tp.On && tc.On && tp.Last != tc.Last) {
+                    dtcl.Add(tc.Name, tc);
+                    movingTrains.Add(tc.Last);
+                }
+                if (!tl.Contains(tc.Last)) {
+                    tl.Add(tc.Last);
+                }
+                if (!trains.Contains(tc.Last)) {
+                    newTrains.Add(tc.Last);
+                }
+            }
+            foreach(var t in trains) {
+                if (!tl.Contains(t)) {
+                    removedTrains.Add(t);
+                }
+            }
+            dropingTracks = tcl;
+            differenceTracks = dtcl;
+            trains = tl;
+            DropingTracks = dropingTracks.AsReadOnly();
+            DifferenceTracks = differenceTracks.AsReadOnly();
+
+
+            var rl = new Dictionary<string, RouteData>();
+            var rdp = new List<RouteData>(previous.RouteDatas);
+            foreach (var rd in new List<RouteData>(latest.RouteDatas)) {
+                var rp = rdp.FirstOrDefault(tp => tp.TcName == rd.TcName);
+                if (rp == null || rp.RouteState?.R06 != rd.RouteState?.R06 ||
+                    rp.RouteState?.R12 != rd.RouteState?.R12 ||
+                    rp.RouteState?.R03 != rd.RouteState?.R03) {
+                    rl.Add(rd.TcName, rd);
+                }
+            }
+            differenceRoutes = rl;
+            DifferenceRoutes = differenceRoutes.AsReadOnly();
+
+
+        }
+
+        public static bool IsNewTrain(string trainNumber) {
+            return newTrains.Contains(trainNumber);
+        }
+
+        public static bool IsRemovedTrain(string trainNumber) {
+            return removedTrains.Contains(trainNumber);
+        }
+
+        public static bool HasDifference(CTCPManager manager) {
+            var latest = Latest;
+            var previous = Previous;
+
+            var updated = false;
+            var stations = manager.StationSettings;
+            foreach (var ccslk in latest.CenterControlStates.Keys) {
+                var ccsl = latest.CenterControlStates[ccslk];
+                if (!previous.CenterControlStates.TryGetValue(ccslk, out var ccsp) || ccsl != ccsp) {
+                    updated = true;
+                    var s = stations.FirstOrDefault(s => s.LeverName == ccslk);
+                    if(s != null) {
+                        NotificationManager.AddNotification($"{s.FullName} が {(ccsl == CenterControlState.StationControl ? "駅扱" : "集中扱")} になりました。", s.Active);
+                    }
+                }
+            }
+            if (updated) {
+                return true;
+            }
+            foreach(var nwl in latest.Retsubans) {
+                var nwp = previous.Retsubans.FirstOrDefault(nw => nw.Name == nwl.Name);
+                if(nwp != null && nwp.Retsuban != nwl.Retsuban) {
+                    return true;
+                }
+            }
+            var rdp = new List<RouteData>(previous.RouteDatas);
+            foreach (var rl in new List<RouteData>(latest.RouteDatas)) {
+                var rp = rdp.FirstOrDefault(r => r.TcName == rl.TcName);
+                if (rp == null || rp.RouteState?.R12 != rl.RouteState?.R12 || rp.RouteState?.R03 != rl.RouteState?.R03) {
+                    return true;
+                }
+            }
+
+
+            return false;
+        }
+
+
+        /// <summary>
+        /// 軌道回路情報リスト
+        /// </summary>
+        public List<TrackCircuitData> TrackCircuits { get; set; } = [];
+
+
+
+        /// <summama
+        /// CTCてこ情報リスト
+        /// </summary>
+        public List<RouteData> RouteDatas { get; set; } = [];
+
+        /// <summary>
+        /// 集中・駅扱状態
+        /// </summary>
+        public Dictionary<string, CenterControlState> CenterControlStates { get; set; } = [];
+
+        /// <summary>
+        /// 列番情報リスト
+        /// </summary>
+        public List<InterlockingRetsubanData> Retsubans { get; set; } = [];
+
+        /// <summary>
+        /// 表示灯情報リスト
+        /// </summary>
+        public Dictionary<string, bool> Lamps { get; set; } = [];
+
+
+        /// <summary>
+        /// TST時差
+        /// </summary>
+        public int TimeOffset { get; set; } = 14;
+    }
+
+    public enum CenterControlState {
+        StationControl,
+        CenterControl
+    }
+}

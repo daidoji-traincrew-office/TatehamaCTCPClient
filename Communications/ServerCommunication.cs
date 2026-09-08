@@ -1,0 +1,695 @@
+﻿using Microsoft.AspNetCore.SignalR.Client;
+using OpenIddict.Abstractions;
+using OpenIddict.Client;
+using System.Diagnostics;
+using System.Net.WebSockets;
+using System.Net;
+using TatehamaCTCPClient.Manager;
+using TatehamaCTCPClient.Models;
+using TatehamaCTCPClient.Forms;
+using static System.Net.Mime.MediaTypeNames;
+using System.Xml.Linq;
+using System;
+
+namespace TatehamaCTCPClient.Communications {
+    public class ServerCommunication : IAsyncDisposable {
+        private readonly TimeSpan _renewMargin = TimeSpan.FromMinutes(1);
+        private readonly OpenIddictClientService _service;
+        private readonly CTCPWindow _window;
+
+        private HubConnection? _connection;
+        private bool _eventHandlersSet = false;
+
+        private string _token = "";
+        private string _refreshToken = "";
+        private DateTimeOffset _tokenExpiration = DateTimeOffset.MinValue;
+
+        internal event Action<DataToCTCP>? DataUpdated;
+        internal event Action<bool>? ConnectionStatusChanged;
+
+        private static bool error = false;
+
+        public static ServerCommunication? Instance { get; private set; }
+
+        public CTCPWindow Window => _window;
+
+
+        public static bool connected { get; set; } = false;
+
+        private Dictionary<string, CtcRelayReservation> reservations = [];
+
+        // 再接続間隔（ミリ秒）
+        private const int ReconnectIntervalMs = 500; // 0.5秒
+
+        public static bool Error {
+            get { return error; }
+            set { error = value; }
+        }
+
+        public DateTime? UpdatedTime { get; private set; } = null;
+
+        /// <summary>
+        /// アプリケーション用のホスト構築
+        /// </summary>
+        /// <param name="window">CTCPWindowのオブジェクト</param>
+        public ServerCommunication(CTCPWindow window, OpenIddictClientService service) {
+            _window = window;
+            _service = service;
+            if(Instance == null) {
+                Instance = this;
+            }
+        }
+
+        /// <summary>
+        /// インタラクティブ認証を行い、SignalR接続を試みる
+        /// </summary>
+        /// <returns>ユーザーのアクションが必要かどうか</returns>
+        public async Task<bool> Authorize() {
+            if (!ServerAddress.IsDebug) {
+                // 認証を行う
+                var isAuthenticated = await CheckUserAuthenticationAsync();
+                if (!isAuthenticated) {
+                    return false;
+                }
+            }
+
+            await DisposeAndStopConnectionAsync(CancellationToken.None); // 古いクライアントを破棄
+            InitializeConnection(); // 新しいクライアントを初期化
+
+            // 接続を試みる
+            var isActionNeeded = await ConnectAsync();
+            if (isActionNeeded) {
+                return true;
+            }
+
+            SetEventHandlers(); // イベントハンドラを設定
+            return false;
+        }
+
+        /// <summary>
+        /// ユーザー認証
+        /// </summary>
+        /// <returns></returns>
+        private async Task<bool> CheckUserAuthenticationAsync() {
+            using var source = new CancellationTokenSource(delay: TimeSpan.FromSeconds(90));
+            return await CheckUserAuthenticationAsync(source.Token);
+        }
+
+        /// <summary>
+        /// ユーザー認証
+        /// </summary>
+        /// <returns></returns>
+        private async Task<bool> CheckUserAuthenticationAsync(CancellationToken cancellationToken) {
+            try {
+                _window.LabelStatusText = "サーバ認証待機中";
+                _window.SetStatusSubWindow("▲", Color.Yellow);
+                error = false;
+
+                // 認証フローの開始
+                var result = await _service.ChallengeInteractivelyAsync(new() {
+                    CancellationToken = cancellationToken,
+                    Scopes = [OpenIddictConstants.Scopes.OfflineAccess]
+                });
+
+                // ユーザー認証の完了を待つ
+                var resultAuth = await _service.AuthenticateInteractivelyAsync(new() {
+                    CancellationToken = cancellationToken,
+                    Nonce = result.Nonce
+                });
+
+                _token = resultAuth.BackchannelAccessToken ?? "";
+                _tokenExpiration = resultAuth.BackchannelAccessTokenExpirationDate ?? DateTimeOffset.MinValue;
+                _refreshToken = resultAuth.RefreshToken ?? "";
+
+                return true;
+            }
+
+            catch (OperationCanceledException) {
+                error = true;
+
+                _window.LabelStatusText = "サーバ認証失敗（タイムアウト）";
+                _window.SetStatusSubWindow("×", Color.Red);
+
+                _window.OpeningDialog = true;
+                var result = TaskDialog.ShowDialog(_window, new TaskDialogPage {
+                    Caption = $"サーバ認証失敗（タイムアウト） | {_window.SystemNameLong} - ダイヤ運転会",
+                    Icon = TaskDialogIcon.Error,
+                    Text = CTCPWindow.IsAprilFool ? "サーバ認証中にタイムアウトしたらしいわ。\n再認証するのかしら？" : "サーバ認証中にタイムアウトしました。\n再認証しますか？",
+                    Buttons = { TaskDialogButton.Yes, TaskDialogButton.No },
+                    DefaultButton = TaskDialogButton.Yes
+                });
+                _window.OpeningDialog = false;
+
+                /*DialogResult result = MessageBox.Show($"サーバ認証中にタイムアウトしました。\n再認証しますか？", $"サーバ認証失敗（タイムアウト） | {_window.SystemName} - ダイヤ運転会",
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Error);*/
+                if (result == TaskDialogButton.Yes) {
+                    var r = await CheckUserAuthenticationAsync();
+                    return r;
+                }
+
+                return false;
+            }
+
+            catch (OpenIddictExceptions.ProtocolException exception) when (exception.Error is OpenIddictConstants.Errors
+                                                                               .AccessDenied) {
+                error = true;
+
+
+                _window.LabelStatusText = "サーバ認証失敗（拒否）";
+                _window.SetStatusSubWindow("×", Color.Red);
+
+                _window.OpeningDialog = true;
+                TaskDialog.ShowDialog(_window, new TaskDialogPage {
+                    Caption = $"サーバ認証失敗（拒否） | {_window.SystemNameLong} - ダイヤ運転会",
+                    Heading = "サーバ認証失敗（拒否）",
+                    Icon = TaskDialogIcon.Error,
+                    Text = CTCPWindow.IsAprilFool ? "あらやだ...サーバ認証拒否されちゃったみたいよ...\n入鋏されていないかもだから、\n早く入鋏してもらってちょうだいね。\nもっかい試すんだったら、再起動してくることね" :
+                    "サーバ認証は拒否されました。\n入鋏されていない可能性があります。\n入鋏を受け、必要な権限を取得してください。\n再試行する場合はアプリケーションを再起動してください。"
+                });
+                _window.OpeningDialog = false;
+                return false;
+            }
+
+            catch (Exception exception) {
+                error = true;
+
+                Debug.WriteLine(exception);
+                _window.LabelStatusText = "サーバ認証失敗";
+                _window.SetStatusSubWindow("×", Color.Red);
+
+
+                _window.OpeningDialog = true;
+                var result = TaskDialog.ShowDialog(_window, new TaskDialogPage {
+                    Caption = $"サーバ認証失敗 | {_window.SystemNameLong} - ダイヤ運転会",
+                    Icon = TaskDialogIcon.Error,
+                    Text = CTCPWindow.IsAprilFool ? $"サーバ認証に失敗しちゃったらしいわよ...\n再認証するのかしら？\n\n{exception.Message}\n{exception.StackTrace}" : $"サーバ認証に失敗しました。\n再認証しますか？\n\n{exception.Message}\n{exception.StackTrace}",
+                    Buttons = { TaskDialogButton.Yes, TaskDialogButton.No },
+                    DefaultButton = TaskDialogButton.Yes
+                });
+                _window.OpeningDialog = false;
+
+                /*DialogResult result =
+                    MessageBox.Show($"サーバ認証に失敗しました。\n再認証しますか？\n\n{exception.Message}\n{exception.StackTrace})",
+                        $"サーバ認証失敗 | {_window.SystemName} - ダイヤ運転会", MessageBoxButtons.YesNo, MessageBoxIcon.Error);*/
+                if (result == TaskDialogButton.Yes) {
+                    var r = await Authorize();
+                    return r;
+                }
+
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 破棄処理
+        /// </summary>
+        public async ValueTask DisposeAsync() {
+            await DisposeAndStopConnectionAsync(CancellationToken.None);
+        }
+
+        /// <summary>
+        /// コネクションの破棄
+        /// </summary>
+        private async Task DisposeAndStopConnectionAsync(CancellationToken cancellationToken) {
+            if (_connection == null) {
+                return;
+            }
+
+            try {
+                await _connection.StopAsync(cancellationToken);
+                await _connection.DisposeAsync();
+            }
+            catch (Exception ex) {
+                Debug.WriteLine($"Dispose error: {ex.Message}");
+            }
+
+            _connection = null;
+            _eventHandlersSet = false;
+        }
+
+        /// <summary>
+        /// コネクション初期化
+        /// </summary>
+        private void InitializeConnection() {
+            if (_connection != null) {
+                throw new InvalidOperationException("_connection is already initialized.");
+            }
+
+            _connection = new HubConnectionBuilder()
+                .WithUrl($"{ServerAddress.SignalAddress}/hub/CTCP?access_token={_token}")
+                .Build();
+            _eventHandlersSet = false;
+        }
+
+        /// <summary>
+        /// イベントハンドラ設定
+        /// </summary>
+        private void SetEventHandlers() {
+            if (_connection == null) {
+                throw new InvalidOperationException("_connection is not initialized.");
+            }
+
+            if (_eventHandlersSet) {
+                return; // イベントハンドラは一度だけ設定する
+            }
+
+            _connection.On<DataToCTCP>("ReceiveData", OnReceiveDataFromServer);
+
+            _connection.Closed += async error => {
+                Debug.WriteLine(error == null
+                    ? "Connection closed normally."
+                    : $"Connection closed with error: {error.Message}");
+                LogManager.AddWarningLog("接続が切断されました。再接続を試行します");
+
+                connected = false;
+                ConnectionStatusChanged?.Invoke(connected);
+                await TryReconnectAsync();
+            };
+
+            _eventHandlersSet = true;
+        }
+
+        /// <summary>
+        /// 再接続とリフレッシュトークンフロー
+        /// </summary>
+        /// <returns>ユーザーアクションが必要かどうか</returns>
+        private async Task TryReconnectAsync() {
+            while (true) {
+                try {
+                    var isActionNeeded = await TryReconnectOnceAsync();
+                    if (isActionNeeded) {
+                        return;
+                    }
+
+                    if (_connection != null && _connection.State == HubConnectionState.Connected) {
+                        Debug.WriteLine("Reconnected successfully.");
+                        connected = true;
+                        ConnectionStatusChanged?.Invoke(connected);
+                        LogManager.AddInfoLog("再接続に成功しました");
+                        _window.LabelStatusText = "サーバ接続成功";
+                        break;
+                    }
+                }
+                catch (Exception ex) {
+                    Debug.WriteLine($"Reconnect attempt failed: {ex.Message}");
+                    LogManager.AddWarningLog("再接続に失敗しました。再試行します");
+                    _window.LabelStatusText = "サーバ再接続失敗。再試行中...";
+                    _window.SetStatusSubWindow("×", Color.Red);
+                }
+
+                await Task.Delay(ReconnectIntervalMs);
+            }
+        }
+
+        /// <summary>
+        /// 再接続を一度試みます。
+        /// </summary>
+        /// <returns>ユーザーによるアクションが必要かどうか</returns>
+        private async Task<bool> TryReconnectOnceAsync() {
+            // トークンが切れていない場合 かつ 切れるまで余裕がある場合はそのまま再接続
+            if (_tokenExpiration > DateTimeOffset.UtcNow + _renewMargin) {
+                Debug.WriteLine("Try reconnect with current token...");
+                var isActionNeeded = await ConnectAsync();
+                if (isActionNeeded) {
+                    return true; // アクションが必要な場合はtrueを返す
+                }
+
+                SetEventHandlers(); // イベントハンドラを設定
+                return false;
+            }
+
+            // トークンが切れていてリフレッシュトークンが有効な場合はリフレッシュ
+            try {
+                Debug.WriteLine("Refreshing token...");
+                await RefreshTokenWithHandlingAsync(CancellationToken.None);
+
+                await DisposeAndStopConnectionAsync(CancellationToken.None); // 古いクライアントを破棄
+                InitializeConnection(); // 新しいクライアントを初期化
+
+                var isActionNeeded = await ConnectAsync();
+                if (isActionNeeded) {
+                    return true;
+                }
+
+                SetEventHandlers(); // イベントハンドラを設定
+                return false;
+            }
+            catch (OpenIddictExceptions.ProtocolException ex)
+                when (ex.Error is
+                          OpenIddictConstants.Errors.InvalidToken
+                          or OpenIddictConstants.Errors.InvalidGrant
+                          or OpenIddictConstants.Errors.ExpiredToken) {
+                Debug.WriteLine($"Refresh token error: {ex.Error}");
+                // リフレッシュトークンが無効な場合、再認証が必要
+                return await HandleTokenRefreshFailure();
+            }
+            catch (InvalidOperationException) {
+                Debug.WriteLine("Refresh token is not set.");
+                return await HandleTokenRefreshFailure();
+            }
+            catch (Exception ex) {
+                Debug.WriteLine($"Unexpected error during token refresh: {ex.Message}");
+                return await HandleTokenRefreshFailure();
+            }
+        }
+
+        /// <summary>
+        /// トークンリフレッシュ失敗時の処理
+        /// </summary>
+        private async Task<bool> HandleTokenRefreshFailure() {
+            Debug.WriteLine("Refresh token is invalid or expired.");
+            LogManager.AddWarningLog("トークンが切れました");
+
+            _window.OpeningDialog = true;
+            var result = TaskDialog.ShowDialog(_window, new TaskDialogPage {
+                Caption = $"認証失敗 | {_window.SystemNameLong} - ダイヤ運転会",
+                Icon = TaskDialogIcon.Error,
+                Text = CTCPWindow.IsAprilFool ? $"やだも～トークンが切れちゃったわ...\n再認証しなきゃじゃないの...！\n※いいえを選んだら、再認証にはアプリケーション再起動がいるわよ。" : "トークンが切れました。\n再認証してください。\n※いいえを選択した場合、再認証にはアプリケーション再起動が必要です。",
+                Buttons = { TaskDialogButton.Yes, TaskDialogButton.No },
+                DefaultButton = TaskDialogButton.Yes
+            });
+            _window.OpeningDialog = false;
+
+            /*DialogResult dialogResult = MessageBox.Show(
+                "トークンが切れました。\n再認証してください。\n※いいえを選択した場合、再認証にはアプリケーション再起動が必要です。",
+                $"認証失敗 | {_window.SystemName} - ダイヤ運転会", MessageBoxButtons.YesNo, MessageBoxIcon.Error);*/
+            if (result == TaskDialogButton.Yes) {
+                LogManager.AddInfoLog("再認証を行います");
+                var r = await Authorize();
+                return r;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// リフレッシュトークンを使用してトークンを更新します。
+        /// </summary>
+        private async Task RefreshTokenWithHandlingAsync(CancellationToken cancellationToken) {
+            if (string.IsNullOrEmpty(_refreshToken)) {
+                throw new InvalidOperationException("Refresh token is not set.");
+            }
+
+            var result = await _service.AuthenticateWithRefreshTokenAsync(new() {
+                CancellationToken = cancellationToken,
+                RefreshToken = _refreshToken
+            });
+
+            _token = result.AccessToken;
+            _tokenExpiration = result.AccessTokenExpirationDate ?? DateTimeOffset.MinValue;
+            _refreshToken = result.RefreshToken ?? "";
+            LogManager.AddInfoLog("トークンの更新に成功しました。");
+            Debug.WriteLine($"Token refreshed successfully");
+        }
+
+        /// <summary>
+        /// 接続処理
+        /// </summary>
+        /// <returns>ユーザーのアクションが必要かどうか</returns>
+        private async Task<bool> ConnectAsync() {
+            if (_connection == null) {
+                throw new InvalidOperationException("Connection is not initialized.");
+            }
+
+            try {
+                await _connection.StartAsync();
+                connected = true;
+                ConnectionStatusChanged?.Invoke(connected);
+                return false;
+            }
+            catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Forbidden) {
+                LogManager.AddExceptionLog(ex);
+                LogManager.OutputLog();
+
+                _window.OpeningDialog = true;
+                var result = TaskDialog.ShowDialog(_window, new TaskDialogPage {
+                    Caption = $"認証拒否 | {_window.SystemNameLong} - ダイヤ運転会",
+                    Icon = TaskDialogIcon.Error,
+                    Text = CTCPWindow.IsAprilFool ? "あらやだ...サーバ認証拒否されちゃったみたいよ...\n再認証しなきゃじゃないの...！" : "認証が拒否されました。\n再認証してください。",
+                    Buttons = { TaskDialogButton.Yes, TaskDialogButton.No },
+                    DefaultButton = TaskDialogButton.Yes
+                });
+                _window.OpeningDialog = false;
+
+                /*DialogResult dialogResult = MessageBox.Show(
+                    "認証が拒否されました。\n再認証してください。",
+                    $"認証拒否 | {_window.SystemName} - ダイヤ運転会", MessageBoxButtons.YesNo, MessageBoxIcon.Error);*/
+                if (result == TaskDialogButton.Yes) {
+                    var r = await Authorize();
+                    return r;
+                }
+
+                return true;
+            }
+            catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.BadGateway) {
+                LogManager.AddExceptionLog(ex);
+                LogManager.OutputLog();
+                Debug.WriteLine($"Connection error: {ex.Message}");
+                throw;
+            }
+            catch (HttpRequestException ex) {
+                LogManager.AddExceptionLog(ex);
+                LogManager.OutputLog(true);
+                Debug.WriteLine($"Connection error: {ex.Message}");
+                throw;
+            }
+            catch (InvalidOperationException ex) {
+                LogManager.AddExceptionLog(ex);
+                LogManager.OutputLog();
+                Debug.WriteLine("Maybe using disposed connection");
+                // 一旦接続を破棄して再初期化
+                await DisposeAndStopConnectionAsync(CancellationToken.None);
+                InitializeConnection();
+                return false;
+            }
+            catch (Exception ex) {
+                LogManager.AddExceptionLog(ex);
+                LogManager.OutputLog(true);
+                Debug.WriteLine($"Connection error: {ex.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// サーバーからデータが来たときの処理
+        /// </summary>
+        /// <param name="data">サーバーから受信されたデータ</param>
+        private void OnReceiveDataFromServer(DataToCTCP data) {
+            if (data == null) {
+                Debug.WriteLine("Failed to receive Data.");
+                return;
+            }
+
+            try {
+                var trackCircuitList = data.TrackCircuits;
+                DataUpdated?.Invoke(data);
+                if (error) {
+                    error = false;
+                    LogManager.AddInfoLog("サーバからの受信が再開しました");
+                    NotificationManager.AddNotification($"サーバからデータの受信が再開しました。", false);
+                    NavigationWindow.Instance?.UpdateNotification();
+                }
+                _window.LabelStatusText = "データ正常受信";
+                _window.SetStatusSubWindow("●", Color.LightGreen);
+                UpdatedTime = DateTime.UtcNow.AddHours(9);
+            }
+            catch (WebSocketException e) when (e.WebSocketErrorCode == WebSocketError.ConnectionClosedPrematurely) {
+                LogManager.AddExceptionLog(e);
+                LogManager.OutputLog();
+                Debug.WriteLine($"Server send failed: {e.Message}\n{e.StackTrace}");
+            }
+            catch (WebSocketException e) {
+                LogManager.AddExceptionLog(e);
+                LogManager.OutputLog();
+                Debug.WriteLine($"Server send failed: {e.Message}\nerrorCode: {e.WebSocketErrorCode}\n{e.StackTrace}");
+                if (!error) {
+                    error = true;
+                    _window.LabelStatusText = "データ受信失敗";
+                    _window.SetStatusSubWindow("×", Color.Red);
+                    if (!_window.Silent) {
+                        _window.OpeningDialog = true;
+                        TaskDialog.ShowDialog(_window, new TaskDialogPage {
+                            Caption = $"データ受信失敗 | {_window.SystemNameLong} - ダイヤ運転会",
+                            Heading = "データ受信失敗",
+                            Icon = TaskDialogIcon.Error,
+                            Text = CTCPWindow.IsAprilFool ? $"あらっデータの受信に失敗しちゃったようね。\n頑張って復旧してみるけど、ダメそうだったらごめんなさいね\nerrorcode:{e.WebSocketErrorCode}" :
+                                $"データの受信に失敗しました。\n復旧を試みますが、しばらく経っても復旧しない場合はアプリケーションの再起動をお願いします。\nerrorcode:{e.WebSocketErrorCode}"
+                        });
+                        _window.OpeningDialog = false;
+                    }
+                    else {
+                        CTCPWindow.PlayWarningSound();
+                    }
+                }
+            }
+            catch (TimeoutException e) {
+                LogManager.AddExceptionLog(e);
+                LogManager.OutputLog();
+                Debug.WriteLine($"Server send failed: {e.Message}\n{e.StackTrace}");
+                if (!error) {
+                    error = true;
+                    _window.LabelStatusText = "タイムアウト";
+                    _window.SetStatusSubWindow("×", Color.Red);
+                    if (!_window.Silent) {
+                        _window.OpeningDialog = true;
+                        TaskDialog.ShowDialog(_window, new TaskDialogPage {
+                            Caption = $"タイムアウト | {_window.SystemNameLong} - ダイヤ運転会",
+                            Heading = "タイムアウト",
+                            Icon = TaskDialogIcon.Error,
+                            Text = CTCPWindow.IsAprilFool ? $"な～んかタイムアウトしちゃったみたいね。\n頑張って復旧してみるけど、ダメそうだったらごめんなさいね" : "サーバとの通信がタイムアウトしました。\n復旧を試みますが、しばらく経っても復旧しない場合はアプリケーションの再起動をお願いします。"
+                        });
+                        _window.OpeningDialog = false;
+                    }
+                    else {
+                        CTCPWindow.PlayWarningSound();
+                    }
+                }
+            }
+            catch (ObjectDisposedException) {
+            }
+            catch (Exception e) {
+                LogManager.AddExceptionLog(e);
+                LogManager.OutputLog(true);
+                Debug.WriteLine($"Server send failed: {e.Message}\n{e.StackTrace}");
+                if (!error) {
+                    error = true;
+                    _window.LabelStatusText = "未知のエラー";
+                    _window.SetStatusSubWindow("×", Color.Red);
+                    if (!_window.Silent) {
+                        if (_window.InvokeRequired) {
+                            _window.Invoke(() => {
+                                _window.OpeningDialog = true;
+                                TaskDialog.ShowDialog(_window, new TaskDialogPage {
+                                    Caption = $"未知の{_window.ErrorText} | {_window.SystemNameLong} - ダイヤ運転会",
+                                    Heading = $"未知の{_window.ErrorText}",
+                                    Icon = TaskDialogIcon.Error,
+                                    Text = CTCPWindow.IsAprilFool ? $"も～やだ...未知の{_window.ErrorText}ですって。\nソフト作った人に教えてあげた方がいいんじゃないかしら..." : $"未知の{_window.ErrorText}です。\nCTCP製作者に状況を報告願います。"
+                                });
+                                _window.OpeningDialog = false;
+                            });
+                        }
+                        else {
+                            _window.OpeningDialog = true;
+                            TaskDialog.ShowDialog(_window, new TaskDialogPage {
+                                Caption = $"未知の{_window.ErrorText} | {_window.SystemNameLong} - ダイヤ運転会",
+                                Heading = $"未知の{_window.ErrorText}",
+                                Icon = TaskDialogIcon.Error,
+                                Text = CTCPWindow.IsAprilFool ? $"も～やだ...未知の{_window.ErrorText}ですって。\nソフト作った人に教えてあげた方がいいんじゃないかしら..." : $"未知の{_window.ErrorText}です。\nCTCP製作者に状況を報告願います。"
+                            });
+                            _window.OpeningDialog = false;
+                        }
+                    }
+                    else {
+                        CTCPWindow.PlayWarningSound();
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 進路を扛上または落下させる
+        /// </summary>
+        /// <param name="TcName">進路名</param>
+        /// <param name="raiseDrop">扛上・落下</param>
+        /// <returns></returns>
+        public async Task SetCtcRelay(string TcName, RaiseDrop raiseDrop, bool auto = false) {
+            if (_connection == null) {
+                return;
+            }
+            if (reservations.ContainsKey(TcName)) {
+                reservations.Remove(TcName);
+            }
+            try {
+                Debug.WriteLine($"{TcName}: {raiseDrop}");
+                // 更新されたRouteDataを受け取る
+                var d = DataToCTCP.Latest;
+                for (int i = 0; i < d.RouteDatas.Count; i++) {
+                    var r = d.RouteDatas[i];
+                    if (r.TcName == TcName && r.RouteState != null && r.RouteState.R12 != raiseDrop) {
+                        NotificationManager.AddNotification($"{TcName} の {(raiseDrop == RaiseDrop.Drop ? "落下" : "扛上")}要求 を送信しました{(auto ? "（自動）" : "")}", false);
+                        LogManager.AddInfoLog($"{TcName} の {(raiseDrop == RaiseDrop.Drop ? "落下" : "扛上")}要求 を送信しました{(auto ? "（自動）" : "")}");
+                        RouteData newRouteData = await _connection.InvokeAsync<RouteData>("SetCtcRelay", TcName, raiseDrop);
+                        d.RouteDatas[i] = newRouteData;
+                        break;
+                    }
+                }
+
+                DataUpdated?.Invoke(d);
+            }
+            catch (Exception ex) {
+                Debug.WriteLine($"Error server receiving: {ex.Message}{ex.StackTrace}");
+                NotificationManager.AddNotification($"{TcName} の {(raiseDrop == RaiseDrop.Drop ? "落下" : "扛上")}要求 を送信中にエラーが発生しました", false);
+                LogManager.AddWarningLog($"{TcName} の {(raiseDrop == RaiseDrop.Drop ? "落下" : "扛上")}要求 を送信中にエラーが発生しました");
+            }
+            finally {
+                
+                reservations.Add(TcName, new(TcName, raiseDrop));
+            }
+        }
+
+        public void SetCtcRelayFromReservations() {
+            if (_connection == null) {
+                return;
+            }
+            var l = new List<CtcRelayReservation>(reservations.Values);
+            while(l.Count > 0) {
+                var r = l[0];
+                l.Remove(r);
+                reservations.Remove(r.TcName);
+                if (DataToCTCP.Latest.RouteDatas.FirstOrDefault(rd => rd.TcName == r.TcName)?.RouteState?.R12 == r.RaiseDrop) {
+                    NotificationManager.AddNotification($"{r.TcName} の {(r.RaiseDrop == RaiseDrop.Drop ? "落下" : "扛上")} を確認しました", false);
+                    LogManager.AddInfoLog($"{r.TcName} の {(r.RaiseDrop == RaiseDrop.Drop ? "落下" : "扛上")} を確認しました");
+                    continue;
+                }
+                NotificationManager.AddNotification($"{r.TcName} の {(r.RaiseDrop == RaiseDrop.Drop ? "落下" : "扛上")} に失敗しました 再試行します", false);
+                LogManager.AddWarningLog($"{r.TcName} の {(r.RaiseDrop == RaiseDrop.Drop ? "落下" : "扛上")} に失敗しました 再試行します");
+                _ = SetCtcRelay(r.TcName, r.RaiseDrop);
+            }
+        }
+
+
+
+/*
+        /// <summary>
+        /// サーバーへ物理てこイベント送信用データをリクエスト
+        /// </summary>
+        /// <param name="leverData"></param>
+        /// <returns></returns>
+        public async Task SendLeverEventDataRequestToServerAsync(InterlockingLeverData leverData) {
+            if(_connection == null) {
+                return;
+            }
+            try {
+                // サーバーメソッドの呼び出し
+                var data = await _connection.InvokeAsync<InterlockingLeverData>(
+                    "SetPhysicalLeverData", leverData);
+                try {
+                    if (data != null) {
+                        // 変更があれば更新
+                        *//*var lever = _dataManager.DataFromServer
+                            .PhysicalLevers.FirstOrDefault(l => l.Name == data.Name);
+                        foreach (var property in data.GetType().GetProperties()) {
+                            var newValue = property.GetValue(data);
+                            var oldValue = property.GetValue(lever);
+                            if (newValue != null && !newValue.Equals(oldValue)) {
+                                property.SetValue(lever, newValue);
+                            }
+                        }*//*
+
+                        // コントロール更新処理
+                        *//*_dataUpdateViewModel.UpdateControl(_dataManager.DataFromServer);*//*
+                    }
+                    else {
+                        Debug.WriteLine("Failed to receive Data.");
+                    }
+                }
+                catch (Exception ex) {
+                    Debug.WriteLine($"Error server receiving: {ex.Message}{ex.StackTrace}");
+                }
+            }
+            catch (Exception exception) {
+                Debug.WriteLine($"Failed to send event data to server: {exception.Message}");
+            }
+        }*/
+    }
+}
