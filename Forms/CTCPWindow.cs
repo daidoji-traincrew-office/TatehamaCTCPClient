@@ -914,6 +914,7 @@ namespace TatehamaCTCPClient.Forms {
 
                 var differenceTracks = DataToCTCP./*Latest.TrackCircuits.Where(t => t.On && routes.ContainsKey(t.Name))*/DifferenceTracks;
                 var droppingTracks = DataToCTCP.DropingTracks;
+                /* 接近通知（処理全体を無効化）
                 if (droppingTracks.Count > 0) {
                     foreach (var alert in displayManager.AlertAprSettings.Where(a => a.Station.Active)) {
                         foreach (var a in alert.Settings) {
@@ -947,7 +948,6 @@ namespace TatehamaCTCPClient.Forms {
                             }
 
 
-                            /*
                             var signals1 = a.Signals.Count > 0 ? routeDatas.Where(r => a.Signals.Any(s => s == r.TcName)) : null;
                             // Debug.WriteLine($"sig1");
                             var isSignalDroped = true;
@@ -965,26 +965,25 @@ namespace TatehamaCTCPClient.Forms {
                             if (!isSignalDroped) {
                                 continue;
                             }
-                            */
 
                             var route2 = displayManager.GetRouteGroup(alert.RouteGroup);
                             if (route2 == null) {
                                 break;
                             }
-                            /*Debug.WriteLine($"sig2");*/
+                            // Debug.WriteLine($"sig2");
                             var signals2 = route2.Count > 0 ? routeDatas.Where(r => route2.Any(s => s.RouteName == r.TcName)) : null;
                             var isRouteRaised = false;
                             if (signals2 != null) {
                                 foreach (var s in signals2) {
                                     if (s.RouteState?.IsCtcControlled == RaiseDrop.Raise || s.RouteState?.IsSignalControlRaised == RaiseDrop.Raise) {
                                         isRouteRaised = true;
-                                        /*Debug.WriteLine($"sig2t {alert.RouteGroup} {s.TcName} {s.RouteState?.IsCtcControlled == RaiseDrop.Raise} {s.RouteState?.IsSignalControlRaised == RaiseDrop.Raise}");*/
+                                        // Debug.WriteLine($"sig2t {alert.RouteGroup} {s.TcName} {s.RouteState?.IsCtcControlled == RaiseDrop.Raise} {s.RouteState?.IsSignalControlRaised == RaiseDrop.Raise}");
                                         break;
                                     }
-                                    /*Debug.WriteLine($"sig2f {alert.RouteGroup} {s.TcName} {s.RouteState?.IsCtcControlled == RaiseDrop.Raise} {s.RouteState?.IsSignalControlRaised == RaiseDrop.Raise}");*/
+                                    // Debug.WriteLine($"sig2f {alert.RouteGroup} {s.TcName} {s.RouteState?.IsCtcControlled == RaiseDrop.Raise} {s.RouteState?.IsSignalControlRaised == RaiseDrop.Raise}");
                                 }
                             }
-                            /*Debug.WriteLine($"sig2end");*/
+                            // Debug.WriteLine($"sig2end");
                             if (isRouteRaised) {
                                 continue;
                             }
@@ -1022,6 +1021,7 @@ namespace TatehamaCTCPClient.Forms {
                         }
                     }
                 }
+                */
                 foreach (var t in differenceTracks.Keys) {
                     var tc = differenceTracks[t];
                     var isTrain = int.TryParse(Regex.Replace(tc.Last, @"[^0-9]", ""), out var numBody);  // 列番本体（数字部分）
