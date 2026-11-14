@@ -80,9 +80,6 @@ jobs:
             SERVER_ADDRESS=${{ secrets.SERVER_ADDRESS }}
           fi
           echo "namespace ${{ env.NAMESPACE }}; public static class ServerAddress { public const string SignalAddress = \"${SERVER_ADDRESS}\"; public const string Version = \"${{ env.ZIP_FILE_BASE }}\"; public static bool IsDebug = false; }" > ./ServerAddress.cs
-      - name: Write RouteStateData.cs
-        run:
-          echo "namespace ${{ env.NAMESPACE }}.Models; ${{ secrets.ROUTE_STATE_DATA }}" > ./Models/RouteStateData.cs
       - name: Setup dotnet 8.0.x
         uses: actions/setup-dotnet@v4.3.1
         with:

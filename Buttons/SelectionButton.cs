@@ -41,12 +41,12 @@ namespace TatehamaCTCPClient.Buttons
                     if (route == null) {
                         continue;
                     }
-                    var r = new List<RouteData>(DataToCTCP.Latest.RouteDatas).FirstOrDefault(r => r.TcName == route.RouteName);
+                    var r = new List<RouteData>(DataToCTCP.Latest.Routes).FirstOrDefault(r => r.TcName == route.RouteName);
                     if (r == null || r.RouteState == null) {
                         return LightingType.NONE;
                     }
-                    blinking |= r.RouteState.R12 == RaiseDrop.Raise;
-                    lighting |= r.RouteState.R03 == RaiseDrop.Raise;
+                    blinking |= r.RouteState.IsCtcControlled == RaiseDrop.Raise;
+                    lighting |= r.RouteState.IsSignalControlRaised == RaiseDrop.Raise;
                 }
                 return lighting ? LightingType.LIGHTING : (blinking ? LightingType.BLINKING_FAST : LightingType.NONE);
 
@@ -222,12 +222,12 @@ namespace TatehamaCTCPClient.Buttons
                 if (route == null) {
                     continue;
                 }
-                var r = new List<RouteData>(DataToCTCP.Latest.RouteDatas).FirstOrDefault(r => r.TcName == route.RouteName);
+                var r = new List<RouteData>(DataToCTCP.Latest.Routes).FirstOrDefault(r => r.TcName == route.RouteName);
                 if (r == null || r.RouteState == null) {
                     return LightingType.NONE;
                 }
-                blinking |= r.RouteState.R12 == RaiseDrop.Raise;
-                lighting |= r.RouteState.R03 == RaiseDrop.Raise;
+                blinking |= r.RouteState.IsCtcControlled == RaiseDrop.Raise;
+                lighting |= r.RouteState.IsSignalControlRaised == RaiseDrop.Raise;
             }
             return lighting ? LightingType.LIGHTING : (blinking ? LightingType.BLINKING_FAST : LightingType.NONE);
         }
