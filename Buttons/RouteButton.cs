@@ -18,7 +18,7 @@ namespace TatehamaCTCPClient.Buttons
                 if(Route == null) {
                     return LightingType.NONE;
                 }
-                var r = new List<RouteData>(DataToCTCP.Latest.RouteDatas).FirstOrDefault(r => r.TcName == Route.RouteName);
+                var r = new List<RouteData>(DataToCTCP.Latest.Routes).FirstOrDefault(r => r.TcName == Route.RouteName);
                 if (r == null || r.RouteState == null) {
                     return LightingType.NONE;
                 }
@@ -86,7 +86,7 @@ namespace TatehamaCTCPClient.Buttons
             if (Route == null) {
                 return LightingType.NONE;
             }
-            var r = new List<RouteData>(DataToCTCP.Latest.RouteDatas).FirstOrDefault(r => r.TcName == Route.RouteName);
+            var r = new List<RouteData>(DataToCTCP.Latest.Routes).FirstOrDefault(r => r.TcName == Route.RouteName);
             if (r == null || r.RouteState == null) {
                 return LightingType.NONE;
             }

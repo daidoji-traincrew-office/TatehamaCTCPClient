@@ -877,10 +877,10 @@ namespace TatehamaCTCPClient.Forms {
 
             if (serverCommunication != null) {
                 var routes = displayManager.Routes;
-                var routeDatas = new List<RouteData>(DataToCTCP.Latest.RouteDatas);
+                var Routes = new List<RouteData>(DataToCTCP.Latest.Routes);
 
                 /*
-                var rrr = routeDatas.FirstOrDefault(r => r.TcName == "TH63_15R");
+                var rrr = Routes.FirstOrDefault(r => r.TcName == "TH63_15R");
                 var rrrr = routes["TH63_22ロT"].FirstOrDefault();
                 var tcc = DataToCTCP.Latest.TrackCircuits.FirstOrDefault(t => t.Name == "TH63_22ロT");
                 if (rrr != null && rrrr != null && tcc != null) {
@@ -948,7 +948,7 @@ namespace TatehamaCTCPClient.Forms {
                             }
 
 
-                            var signals1 = a.Signals.Count > 0 ? routeDatas.Where(r => a.Signals.Any(s => s == r.TcName)) : null;
+                            var signals1 = a.Signals.Count > 0 ? Routes.Where(r => a.Signals.Any(s => s == r.TcName)) : null;
                             // Debug.WriteLine($"sig1");
                             var isSignalDroped = true;
                             if (signals1 != null) {
@@ -971,7 +971,7 @@ namespace TatehamaCTCPClient.Forms {
                                 break;
                             }
                             // Debug.WriteLine($"sig2");
-                            var signals2 = route2.Count > 0 ? routeDatas.Where(r => route2.Any(s => s.RouteName == r.TcName)) : null;
+                            var signals2 = route2.Count > 0 ? Routes.Where(r => route2.Any(s => s.RouteName == r.TcName)) : null;
                             var isRouteRaised = false;
                             if (signals2 != null) {
                                 foreach (var s in signals2) {
@@ -1054,7 +1054,7 @@ namespace TatehamaCTCPClient.Forms {
                             continue;
                         }
                         /*
-                        if (routeDatas.Any(rd => {
+                        if (Routes.Any(rd => {
                             if (rd.TcName != r.RouteName) {
                                 return false;
                             }

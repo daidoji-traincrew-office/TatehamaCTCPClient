@@ -33,7 +33,7 @@ namespace TatehamaCTCPClient.Buttons
                 var blinking = false;
                 var lighting = false;
                 foreach (var route in Routes) {
-                    var r = new List<RouteData>(DataToCTCP.Latest.RouteDatas).FirstOrDefault(r => r.TcName == route.RouteName);
+                    var r = new List<RouteData>(DataToCTCP.Latest.Routes).FirstOrDefault(r => r.TcName == route.RouteName);
                     if (r == null || r.RouteState == null) {
                         continue;
                     }
@@ -118,7 +118,7 @@ namespace TatehamaCTCPClient.Buttons
             var blinking = false;
             var lighting = false;
             foreach (var route in Routes) {
-                var r = new List<RouteData>(DataToCTCP.Latest.RouteDatas).FirstOrDefault(r => r.TcName == route.RouteName);
+                var r = new List<RouteData>(DataToCTCP.Latest.Routes).FirstOrDefault(r => r.TcName == route.RouteName);
                 if (r == null || r.RouteState == null) {
                     continue;
                 }
