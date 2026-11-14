@@ -84,9 +84,9 @@ namespace TatehamaCTCPClient.Models {
             var rdp = new List<RouteData>(previous.RouteDatas);
             foreach (var rd in new List<RouteData>(latest.RouteDatas)) {
                 var rp = rdp.FirstOrDefault(tp => tp.TcName == rd.TcName);
-                if (rp == null || rp.RouteState?.R06 != rd.RouteState?.R06 ||
-                    rp.RouteState?.R12 != rd.RouteState?.R12 ||
-                    rp.RouteState?.R03 != rd.RouteState?.R03) {
+                if (rp == null || /*rp.RouteState?.R06 != rd.RouteState?.R06 ||*/
+                    rp.RouteState?.IsCtcControlled != rd.RouteState?.IsCtcControlled ||
+                    rp.RouteState?.IsSignalControlRaised != rd.RouteState?.IsSignalControlRaised) {
                     rl.Add(rd.TcName, rd);
                 }
             }
@@ -132,7 +132,7 @@ namespace TatehamaCTCPClient.Models {
             var rdp = new List<RouteData>(previous.RouteDatas);
             foreach (var rl in new List<RouteData>(latest.RouteDatas)) {
                 var rp = rdp.FirstOrDefault(r => r.TcName == rl.TcName);
-                if (rp == null || rp.RouteState?.R12 != rl.RouteState?.R12 || rp.RouteState?.R03 != rl.RouteState?.R03) {
+                if (rp == null || rp.RouteState?.IsCtcControlled != rl.RouteState?.IsCtcControlled || rp.RouteState?.IsSignalControlRaised != rl.RouteState?.IsSignalControlRaised) {
                     return true;
                 }
             }

@@ -22,8 +22,8 @@ namespace TatehamaCTCPClient.Buttons
                 if (r == null || r.RouteState == null) {
                     return LightingType.NONE;
                 }
-                var blinking = r.RouteState.R12 == RaiseDrop.Raise;
-                var lighting = r.RouteState.R03 == RaiseDrop.Raise;
+                var blinking = r.RouteState.IsCtcControlled == RaiseDrop.Raise;
+                var lighting = r.RouteState.IsSignalControlRaised == RaiseDrop.Raise;
                 return lighting ? LightingType.LIGHTING : (blinking ? LightingType.BLINKING_FAST : LightingType.NONE);
 
             }
@@ -90,8 +90,8 @@ namespace TatehamaCTCPClient.Buttons
             if (r == null || r.RouteState == null) {
                 return LightingType.NONE;
             }
-            var blinking = r.RouteState.R12 == RaiseDrop.Raise;
-            var lighting = r.RouteState.R03 == RaiseDrop.Raise;
+            var blinking = r.RouteState.IsCtcControlled == RaiseDrop.Raise;
+            var lighting = r.RouteState.IsSignalControlRaised == RaiseDrop.Raise;
             return lighting ? LightingType.LIGHTING : (blinking ? LightingType.BLINKING_FAST : LightingType.NONE);
         }
     }

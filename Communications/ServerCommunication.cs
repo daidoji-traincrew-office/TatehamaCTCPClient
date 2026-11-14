@@ -605,7 +605,7 @@ namespace TatehamaCTCPClient.Communications {
                 var d = DataToCTCP.Latest;
                 for (int i = 0; i < d.RouteDatas.Count; i++) {
                     var r = d.RouteDatas[i];
-                    if (r.TcName == TcName && r.RouteState != null && r.RouteState.R12 != raiseDrop) {
+                    if (r.TcName == TcName && r.RouteState != null && r.RouteState.IsCtcControlled != raiseDrop) {
                         NotificationManager.AddNotification($"{TcName} の {(raiseDrop == RaiseDrop.Drop ? "落下" : "扛上")}要求 を送信しました{(auto ? "（自動）" : "")}", false);
                         LogManager.AddInfoLog($"{TcName} の {(raiseDrop == RaiseDrop.Drop ? "落下" : "扛上")}要求 を送信しました{(auto ? "（自動）" : "")}");
                         RouteData newRouteData = await _connection.InvokeAsync<RouteData>("SetCtcRelay", TcName, raiseDrop);
@@ -636,7 +636,7 @@ namespace TatehamaCTCPClient.Communications {
                 var r = l[0];
                 l.Remove(r);
                 reservations.Remove(r.TcName);
-                if (DataToCTCP.Latest.RouteDatas.FirstOrDefault(rd => rd.TcName == r.TcName)?.RouteState?.R12 == r.RaiseDrop) {
+                if (DataToCTCP.Latest.RouteDatas.FirstOrDefault(rd => rd.TcName == r.TcName)?.RouteState?.IsCtcControlled == r.RaiseDrop) {
                     NotificationManager.AddNotification($"{r.TcName} の {(r.RaiseDrop == RaiseDrop.Drop ? "落下" : "扛上")} を確認しました", false);
                     LogManager.AddInfoLog($"{r.TcName} の {(r.RaiseDrop == RaiseDrop.Drop ? "落下" : "扛上")} を確認しました");
                     continue;

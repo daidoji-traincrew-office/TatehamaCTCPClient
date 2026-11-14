@@ -884,7 +884,7 @@ namespace TatehamaCTCPClient.Forms {
                 var rrrr = routes["TH63_22ロT"].FirstOrDefault();
                 var tcc = DataToCTCP.Latest.TrackCircuits.FirstOrDefault(t => t.Name == "TH63_22ロT");
                 if (rrr != null && rrrr != null && tcc != null) {
-                    Debug.WriteLine($"TH63_15R: TH63_22ロT {tcc.On}  ForcedDrop {rrrr.ForcedDrop}   R12 {rrr.RouteState?.R12}  R06 {rrr.RouteState?.R06}  R04 {rrr.RouteState?.R04}");
+                    Debug.WriteLine($"TH63_15R: TH63_22ロT {tcc.On}  ForcedDrop {rrrr.ForcedDrop}   R12 {rrr.RouteState?.IsCtcControlled}  R06 {rrr.RouteState?.R06}  R04 {rrr.RouteState?.R04}");
                 }*/
 
                 var alertUpdated = false;
@@ -902,7 +902,7 @@ namespace TatehamaCTCPClient.Forms {
                         continue;
                     }
                     foreach (var r in routeGroup) {
-                        if (differenceRoutes.TryGetValue(r.RouteName, out var dr) && (dr.RouteState?.R12 == RaiseDrop.Raise || dr.RouteState?.R03 == RaiseDrop.Raise)) {
+                        if (differenceRoutes.TryGetValue(r.RouteName, out var dr) && (dr.RouteState?.IsCtcControlled == RaiseDrop.Raise || dr.RouteState?.IsSignalControlRaised == RaiseDrop.Raise)) {
                             TrainAlertManager.RemoveAlert(a.RouteGroup);
                             alertUpdated = true;
                         }
@@ -947,23 +947,25 @@ namespace TatehamaCTCPClient.Forms {
                             }
 
 
+                            /*
                             var signals1 = a.Signals.Count > 0 ? routeDatas.Where(r => a.Signals.Any(s => s == r.TcName)) : null;
-                            /*Debug.WriteLine($"sig1");*/
+                            // Debug.WriteLine($"sig1");
                             var isSignalDroped = true;
                             if (signals1 != null) {
                                 foreach (var s in signals1) {
                                     if (s.RouteState?.R06 == RaiseDrop.Raise) {
                                         isSignalDroped = false;
-                                        /*Debug.WriteLine($"sig1t {alert.RouteGroup} {s.TcName} {s.RouteState?.R06 == RaiseDrop.Raise}");*/
+                                        // Debug.WriteLine($"sig1t {alert.RouteGroup} {s.TcName} {s.RouteState?.R06 == RaiseDrop.Raise}");
                                         break;
                                     }
-                                    /*Debug.WriteLine($"sig1f {alert.RouteGroup} {s.TcName} {s.RouteState?.R06 == RaiseDrop.Raise}");*/
+                                    // Debug.WriteLine($"sig1f {alert.RouteGroup} {s.TcName} {s.RouteState?.R06 == RaiseDrop.Raise}");
                                 }
                             }
-                            /*Debug.WriteLine($"sig1end");*/
+                            // Debug.WriteLine($"sig1end");
                             if (!isSignalDroped) {
                                 continue;
                             }
+                            */
 
                             var route2 = displayManager.GetRouteGroup(alert.RouteGroup);
                             if (route2 == null) {
@@ -974,12 +976,12 @@ namespace TatehamaCTCPClient.Forms {
                             var isRouteRaised = false;
                             if (signals2 != null) {
                                 foreach (var s in signals2) {
-                                    if (s.RouteState?.R12 == RaiseDrop.Raise || s.RouteState?.R03 == RaiseDrop.Raise) {
+                                    if (s.RouteState?.IsCtcControlled == RaiseDrop.Raise || s.RouteState?.IsSignalControlRaised == RaiseDrop.Raise) {
                                         isRouteRaised = true;
-                                        /*Debug.WriteLine($"sig2t {alert.RouteGroup} {s.TcName} {s.RouteState?.R12 == RaiseDrop.Raise} {s.RouteState?.R03 == RaiseDrop.Raise}");*/
+                                        /*Debug.WriteLine($"sig2t {alert.RouteGroup} {s.TcName} {s.RouteState?.IsCtcControlled == RaiseDrop.Raise} {s.RouteState?.IsSignalControlRaised == RaiseDrop.Raise}");*/
                                         break;
                                     }
-                                    /*Debug.WriteLine($"sig2f {alert.RouteGroup} {s.TcName} {s.RouteState?.R12 == RaiseDrop.Raise} {s.RouteState?.R03 == RaiseDrop.Raise}");*/
+                                    /*Debug.WriteLine($"sig2f {alert.RouteGroup} {s.TcName} {s.RouteState?.IsCtcControlled == RaiseDrop.Raise} {s.RouteState?.IsSignalControlRaised == RaiseDrop.Raise}");*/
                                 }
                             }
                             /*Debug.WriteLine($"sig2end");*/
@@ -1051,6 +1053,7 @@ namespace TatehamaCTCPClient.Forms {
                         if (!r.Station.Active || r.IsHikipper || !r.RouteName.Contains(direction)) {
                             continue;
                         }
+                        /*
                         if (routeDatas.Any(rd => {
                             if (rd.TcName != r.RouteName) {
                                 return false;
@@ -1059,11 +1062,11 @@ namespace TatehamaCTCPClient.Forms {
                             if (rs == null) {
                                 return false;
                             }
-                            if (rs.R12 == RaiseDrop.Raise) {
+                            if (rs.IsCtcControlled == RaiseDrop.Raise) {
                                 LogManager.AddInfoLog($"進路：{r.RouteName} R06：{(rs.R06 == RaiseDrop.Drop ? "Drop" : "Raised")} R04：{(rs.R04 == RaiseDrop.Drop ? "Drop" : "Raised")}");
                             }
                             TrainAlertManager.RemoveAlert(r.RouteGroup, tc.Last);
-                            return /*justDrop &&*/ rs.R12 == RaiseDrop.Raise && (r.ForcedDrop || rs.R06 == RaiseDrop.Drop && rs.R04 == RaiseDrop.Raise);
+                            return rs.IsCtcControlled == RaiseDrop.Raise && (r.ForcedDrop || rs.R06 == RaiseDrop.Drop && rs.R04 == RaiseDrop.Raise);
                         })) {
                             r.SetHikipper(false);
                             _ = serverCommunication.SetCtcRelay(r.RouteName, RaiseDrop.Drop, true);
@@ -1072,6 +1075,7 @@ namespace TatehamaCTCPClient.Forms {
                             NavigationWindow.Instance?.UpdateNotification();
                             updated = true;
                         }
+                        */
                     }
                 }
                 if (alertUpdated) {
